@@ -2058,6 +2058,7 @@ a{color:inherit}
          '<p class="fine">칸을 눌러 바로 고치실 수 있습니다. 고친 내용이 그대로 PDF로 나갑니다.</p>' +
          '<div class="sp"></div>' +
          '<button class="pb-cta" id="dkPdf">PDF로 내보내기</button>' +
+         '<button class="pb-cta sub" style="margin-top:8px" id="dkKeep">이 덱 보관</button>' +
          '<button class="pb-cta sub" style="margin-top:8px" id="dkRegen">덱 전체 다시 만들기</button>' +
          '<button class="pb-cta sub" style="margin-top:8px" id="dkBack">← 결과로 돌아가기</button>';
     $('pbLeft').innerHTML = h;
@@ -2080,6 +2081,7 @@ a{color:inherit}
         '도식 하나만 다시 뽑으려면 그 도식 위의 [도식만 다시]를 쓰십시오.\n\n덱 전체를 다시 만들까요?')) return;
       makeDeck();
     };
+    $('dkKeep').onclick = function(){ saveOutput('피칭 덱', this); };
     $('dkBack').onclick = goResult;
   }
 
@@ -2415,6 +2417,54 @@ a{color:inherit}
     box.innerHTML = h;
   }
 
+  // ── ④ 최종 산출물 보관 ──
+  //  ①(단계별 원고)은 덮어쓰지만 ④는 만들 때마다 쌓인다 — 지난 덱을 되찾을 수 있어야 한다.
+  function saveOutput(kind, btn){
+    if(!serverOn()){ alert('서버에 연결돼 있지 않아 보관할 수 없습니다.'); return; }
+    var fd = state.formData, tot = 0, n = 0;
+    steps().forEach(function(s){ s.inputs.forEach(function(i){
+      tot++; if((fd[i.key] || '').trim()) n++; }); });
+
+    var body = { action:'saveoutput', id:llm.id, code:llm.code,
+                 kind:kind, snapshot:snapshot(),
+                 filledRatio: tot ? Math.round(n / tot * 100) / 100 : 0 };
+
+    if(kind === '피칭 덱' && state.lastDeck){
+      body.deck = state.lastDeck.slides;
+      body.diagrams = state.lastDeck.diagrams;
+      body.slideCount = arr(state.lastDeck.slides).length;
+      // 어떤 형태를 왜 골랐는지 — 나중에 이 덱을 다시 볼 때 판단 근거가 된다
+      var notes = [];
+      DG_ORDER.forEach(function(k){
+        var dd = (state.lastDeck.diagrams || {})[k];
+        if(dd && dd.type) notes.push(k + '=' + ((DG_TYPE[dd.type] || {}).name || dd.type) +
+                                     (dd.why ? ' · ' + dd.why : ''));
+      });
+      body.figureNote = notes.join(' / ');
+      var bad = 0;
+      arr(state.lastDeck.slides).forEach(function(s){
+        [s.headline, s.sub].concat(arr(s.bullets)).forEach(function(t){ bad += badNumbers(t).length; });
+      });
+      body.unverified = bad;
+    }
+    if(kind === '도식 묶음' && state.lastDiagrams){
+      body.diagrams = state.lastDiagrams;
+      var n2 = [];
+      DG_ORDER.forEach(function(k){
+        var dd = state.lastDiagrams[k];
+        if(dd && dd.type) n2.push(k + '=' + ((DG_TYPE[dd.type] || {}).name || dd.type));
+      });
+      body.figureNote = n2.join(' / ');
+    }
+
+    var label = btn ? btn.textContent : '';
+    if(btn){ btn.disabled = true; btn.textContent = '보관 중…'; }
+    callProxy(body)
+      .then(function(){ alert('노션 ④ 최종 산출물에 보관했습니다.'); })
+      .catch(function(err){ alert('보관하지 못했습니다 — ' + (err.message || '오류')); })
+      .then(function(){ if(btn){ btn.disabled = false; btn.textContent = label; } });
+  }
+
   function doSubmit(){
     if(!serverOn()){ alert('서버에 연결돼 있지 않아 제출할 수 없습니다.'); return; }
     var already = state.status === '제출';
@@ -2557,6 +2607,10 @@ a{color:inherit}
            '</p>' +
            '<button class="pb-cta" style="margin-top:14px;width:auto;padding:11px 22px" id="btnSubmit">' +
              (state.status === '제출' ? '다시 제출하기' : '제출하기') + '</button>' +
+           '<button class="pb-cta sub" style="margin-top:14px;margin-left:8px;width:auto;padding:11px 18px" id="btnKeepIR">' +
+             '이 상태로 보관</button>' +
+           '<p class="pb-note" style="margin-top:10px">보관은 제출과 다릅니다. ' +
+           '지금 원고·채점·도식을 <b>한 벌 통째로</b> 노션에 쌓아 둡니다 — 나중에 되찾아 견줄 수 있습니다.</p>' +
          '</div>';
 
     $('pbCenter').innerHTML = h;
@@ -2567,6 +2621,7 @@ a{color:inherit}
     $('btnTips').onclick   = runTips;
     $('btnAudit').onclick  = runAudit;
     $('btnSubmit').onclick = doSubmit;
+    $('btnKeepIR').onclick = function(){ saveOutput('IR 완성본', this); };
   }
 
   // ── 자격 게이트 ──
