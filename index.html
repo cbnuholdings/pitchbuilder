@@ -560,8 +560,9 @@ a{color:inherit}
   <div class="sp"></div>
   <button class="pb-toggle" id="hdTips">TIPS 준비 모드<span class="sw"></span></button>
   <div class="pb-chip" id="hdChip"><span class="dot"></span><span id="hdChipTxt">저장 대기</span></div>
+  <button class="pb-hbtn" id="hdB1">신청서 불러오기</button>
   <button class="pb-hbtn" id="hdSave">저장</button>
-  <button class="pb-hbtn" id="hdLoad">불러오기</button>
+  <button class="pb-hbtn" id="hdLoad">저장분 불러오기</button>
   <button class="pb-hbtn ghost" id="hdExit">나가기</button>
 </header>
 
@@ -3076,6 +3077,61 @@ a{color:inherit}
     }).catch(function(err){ alert('불러오지 못했습니다 — ' + (err.message || '오류')); });
   }
 
+  // ══ B1 이노테크 접수 불러오기 ═════════════════════════════════
+  //  ★출발점을 옮기는 것이지 완성이 아니다. 기업이 이 위에서 고치고, 고칠 때마다 피드백을 받는다.
+  //  ★덮어쓰기는 전체다. 부분 병합하면 무엇이 남고 무엇이 바뀌었는지 알 수 없게 된다.
+  //  ★되돌리기는 두지 않는다 — 사전 경고가 그 역할이다.
+  //    되돌리기가 있으면 "일단 눌러보자"가 되어 경고가 무의미해진다.
+  function loadB1(){
+    if(!serverOn()){ alert('서버에 연결돼 있지 않아 신청서를 불러올 수 없습니다.'); return; }
+    if(busy) return;
+
+    var written = Object.keys(state.formData).filter(function(k){
+      return String(state.formData[k] || '').trim();
+    }).length;
+    if(written && !confirm(
+        '신청서 내용으로 ' + written + '개 칸이 통째로 대체됩니다.\n\n' +
+        '지금까지 고치신 내용은 사라집니다' +
+        (llm.tipsMode ? ' (R&D 3단계 포함).' : '.') + '\n' +
+        'AI 진단·TIPS 채점 결과도 함께 지워집니다.\n\n계속할까요?')) return;
+
+    var btn = $('hdB1');
+    busy = true; btn.disabled = true; btn.textContent = '불러오는 중…';
+    apiGet('b1', {})
+      .then(function(d){
+        if(!d || !d.ok) throw new Error((d && d.error) || '불러오지 못했습니다.');
+        if(!d.found){
+          alert('접수 시스템에서 귀사의 신청서를 찾지 못했습니다.\n' +
+                '접수번호가 다르거나 신청 자료가 없는 경우입니다.');
+          return;
+        }
+        // 전체 대체 — 아는 필드만 받는다(신청 DB가 바뀌어도 엉뚱한 키가 들어오지 않게)
+        state.formData = {};
+        Object.keys(d.formData || {}).forEach(function(k){
+          if(PLACEHOLDER_RESULT[k] !== undefined && String(d.formData[k] || '').trim()){
+            state.formData[k] = d.formData[k];
+          }
+        });
+        // 내용이 통째로 바뀌었으므로 그 위에서 나온 판단은 전부 버린다
+        state.diag = null; state.lastTips = null; state.lastAudit = null;
+        state.lastDiagrams = null; state.lastDeck = null;
+        state.b1ref = d.ref || null;
+        state.b1At = new Date().toISOString();
+        state.stepIndex = 0;
+
+        saveLocal();
+        syncToServer();
+        render();
+        alert('신청서에서 ' + (d.filled || 0) + '개 칸을 가져왔습니다.\n\n' +
+              '이제 고치실 차례입니다 — 고칠 때마다 코치가 다시 봅니다.');
+      })
+      .catch(function(err){ alert('불러오지 못했습니다 — ' + (err.message || '오류')); })
+      .then(function(){
+        busy = false;
+        if($('hdB1')){ $('hdB1').disabled = false; $('hdB1').textContent = '신청서 불러오기'; }
+      });
+  }
+
   // ══ 로그인 ════════════════════════════════════════════════════
   //  ★인증의 정본은 서버다. 로컬 검수 모드(?local=1)에서만 아이디로 역할을 흉내낸다.
   function enter(){
@@ -3158,6 +3214,7 @@ a{color:inherit}
     $('inCode').value = '';
     state.formData = {};                      // 메모리도 비운다
   };
+  $('hdB1').onclick   = loadB1;
   $('hdSave').onclick = function(){ saveLocal(); syncToServer(); };
   $('hdLoad').onclick = notionLoad;
 
