@@ -1,0 +1,3117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PitchBuilder — 2026 이노테크 창업 IR 작성 도구</title>
+<style>
+/* ══════════════════════════════════════════════════════════════
+   PitchBuilder v2 — 원페이지
+   디자인 근거: 작성 마법사 화면 와이어프레임\handoff\
+     · README_디자인_핸드오프.md (레이아웃·상태·카피 톤)
+     · tokens.css (색·글자체·형태)  ★값 하드코딩 금지, 변수를 쓴다
+   기능 근거: 설계정본_v1.md
+
+   디자인 판단 3개가 코드 구조와 맞물린다.
+   1. 작성 화면에 점수를 두지 않는다 — 채점기가 아니라 작성 도구다.
+   2. 작성 영역은 종이, 판단 영역은 잉크 — 내 원고와 남의 의견을 재질로 가른다.
+   3. 경고는 지우지 않고 문장 위에 남긴다 — 자동 삭제 없음.
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  /* 색 — 3색 + 상태색만. 그라디언트 없음. */
+  --pb-ink:        #101720;
+  --pb-navy:       #1B3A5B;
+  --pb-accent:     #7FA0C4;
+  --pb-accent-ink: #3D6392;
+  --pb-accent-soft:#B6CBE2;
+  --pb-paper:      #F7F5F1;
+  --pb-paper-deep: #EDEAE3;
+  --pb-surface:    #FFFFFF;
+  --pb-line:       #DCD6CB;
+  --pb-line-soft:  #E7E2D9;
+  --pb-line-input: #C9C2B6;
+  --pb-text:       #101720;
+  --pb-text-body:  #3C3934;
+  --pb-text-mute:  #6B6660;
+  --pb-text-faint: #8C857B;
+  --pb-text-ghost: #A9A29A;
+  --pb-ok:         #2F5F55;
+  --pb-ok-on-ink:  #8FBFA8;
+  --pb-warn:       #9E2B25;
+  --pb-warn-deep:  #8B2822;
+  --pb-warn-bg:    #FBF1F0;
+  --pb-warn-line:  #E8C8C4;
+  --pb-warn-on-ink:#E06C60;
+  --pb-warn-txt-on-ink:#F2C4BE;
+
+  --pb-on-ink-1: rgba(247,245,241,.86);
+  --pb-on-ink-2: rgba(247,245,241,.72);
+  --pb-on-ink-3: rgba(247,245,241,.50);
+  --pb-on-ink-4: rgba(247,245,241,.42);
+  --pb-on-ink-line:  rgba(247,245,241,.12);
+  --pb-on-ink-line2: rgba(247,245,241,.24);
+
+  --pb-font-serif: 'Noto Serif KR','Nanum Myeongjo',serif;
+  --pb-font-sans:  'IBM Plex Sans KR','Malgun Gothic',sans-serif;
+  --pb-font-mono:  'IBM Plex Mono','D2Coding',monospace;
+
+  --pb-radius: 2px;
+  --pb-radius-card: 3px;
+  --pb-col-left: 250px;
+  --pb-col-right: 320px;
+  --pb-col-right-collapsed: 48px;
+  --pb-shadow-card: 0 2px 8px rgba(16,23,32,.08);
+  --pb-shadow-slide: 0 2px 6px rgba(16,23,32,.10);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--pb-paper);
+  color:var(--pb-text-body);
+  font:400 15px/1.65 var(--pb-font-sans);
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,textarea,select{font:inherit;color:inherit}
+a{color:inherit}
+.hidden{display:none !important}
+.mono{font-family:var(--pb-font-mono);font-weight:500;letter-spacing:.12em}
+.serif{font-family:var(--pb-font-serif)}
+
+/* ── 헤더 (잉크) ───────────────────────────── */
+.pb-head{
+  display:flex;align-items:center;gap:18px;
+  padding:14px 26px;background:var(--pb-ink);
+  position:sticky;top:0;z-index:50;
+}
+.pb-brand{display:flex;align-items:baseline;gap:9px}
+.pb-brand b{font:600 19px/1 var(--pb-font-serif);color:var(--pb-paper)}
+.pb-brand span{font:500 10px/1 var(--pb-font-mono);letter-spacing:.14em;color:var(--pb-accent)}
+.pb-who{
+  padding-left:18px;border-left:1px solid rgba(247,245,241,.18);
+  font-size:13px;color:var(--pb-on-ink-2);
+}
+.pb-head .sp{flex:1}
+.pb-toggle{
+  display:flex;align-items:center;gap:9px;padding:6px 13px;
+  border:1px solid rgba(127,160,196,.55);border-radius:var(--pb-radius);
+  font-size:12px;font-weight:500;color:var(--pb-accent-soft);
+}
+.pb-toggle .sw{
+  display:inline-block;width:30px;height:16px;background:rgba(247,245,241,.24);
+  border-radius:999px;position:relative;transition:background .15s;
+}
+.pb-toggle .sw::after{
+  content:'';position:absolute;left:2px;top:2px;width:12px;height:12px;
+  background:var(--pb-paper);border-radius:50%;transition:transform .15s,background .15s;
+}
+.pb-toggle.on .sw{background:var(--pb-accent)}
+.pb-toggle.on .sw::after{transform:translateX(14px);background:var(--pb-ink)}
+
+/* 저장 상태칩 — 실패는 자동으로 사라지지 않는다 */
+.pb-chip{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--pb-ok-on-ink)}
+.pb-chip .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.pb-chip.is-fail{
+  background:var(--pb-warn);color:#fff;padding:6px 12px;border-radius:var(--pb-radius);
+}
+.pb-chip.is-fail .dot{background:#fff}
+.pb-chip .retry{margin-left:6px;text-decoration:underline;font-size:11px}
+
+.pb-hbtn{
+  padding:7px 14px;border:1px solid rgba(247,245,241,.28);
+  border-radius:var(--pb-radius);font-size:12px;font-weight:500;color:var(--pb-paper);
+}
+.pb-hbtn:hover{background:rgba(247,245,241,.08)}
+.pb-hbtn.ghost{border-color:transparent;color:var(--pb-on-ink-3);font-weight:400}
+.pb-hbtn.ghost:hover{color:var(--pb-paper)}
+
+/* ── 메타 스트립 (네이비) ───────────────────── */
+.pb-meta{
+  display:flex;align-items:center;padding:0 26px;
+  background:var(--pb-navy);border-bottom:1px solid var(--pb-on-ink-line);
+}
+.pb-meta .m{
+  display:flex;align-items:baseline;gap:7px;padding:9px 16px;
+  border-left:1px solid rgba(247,245,241,.14);
+  font-size:11px;color:var(--pb-on-ink-3);
+}
+.pb-meta .m:first-child{padding-left:0;border-left:none}
+.pb-meta .m b{font:500 12px var(--pb-font-mono);color:var(--pb-paper)}
+.pb-meta .m.warn b{color:var(--pb-warn-txt-on-ink)}
+.pb-meta .sp{flex:1}
+.pb-meta .note{padding:9px 0;font-size:11px;color:var(--pb-on-ink-4)}
+
+/* ── 3열 셸 ─────────────────────────────────── */
+.pb-shell{
+  display:grid;
+  grid-template-columns:var(--pb-col-left) 1fr var(--pb-col-right);
+  min-height:calc(100vh - 96px);
+  background:var(--pb-paper);
+}
+.pb-shell.is-collapsed{grid-template-columns:var(--pb-col-left) 1fr var(--pb-col-right-collapsed)}
+.pb-shell.no-left{grid-template-columns:1fr var(--pb-col-right)}
+.pb-center{min-width:0}   /* 표의 min-content가 우측 열을 밀어내는 사고를 막는다 */
+
+/* 좌: 목차 */
+.pb-left{
+  border-right:1px solid var(--pb-line);padding:24px 20px;
+  display:flex;flex-direction:column;gap:3px;
+}
+.pb-left h4{
+  display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;
+  font:500 10px/1 var(--pb-font-mono);letter-spacing:.15em;color:var(--pb-text-faint);
+}
+.pb-left h4 em{font:400 11px var(--pb-font-sans);font-style:normal;color:var(--pb-text-ghost)}
+.pb-nav{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  padding:9px 11px;border-radius:var(--pb-radius);
+  font-size:14px;color:var(--pb-text-body);text-align:left;width:100%;
+}
+.pb-nav:hover{background:var(--pb-line-soft)}
+.pb-nav.is-on{background:var(--pb-ink);color:var(--pb-paper);font-weight:500}
+.pb-nav.is-on .pt{font:500 11px var(--pb-font-mono);color:var(--pb-accent)}
+.pb-nav.is-todo{color:var(--pb-text-ghost)}
+.pb-nav .ok{color:var(--pb-ok)}
+.pb-nav.is-risk{border-left:2px solid var(--pb-warn);background:var(--pb-warn-bg);color:var(--pb-warn-deep)}
+.pb-nav.is-risk .pt{font-size:11px;color:var(--pb-warn-deep)}
+.pb-hr{height:1px;background:var(--pb-line);margin:16px 0}
+.pb-left .fine{font-size:12px;line-height:1.6;color:var(--pb-text-faint)}
+.pb-left .sp{flex:1}
+.pb-cta{
+  padding:12px;background:var(--pb-navy);border-radius:var(--pb-radius);
+  font-size:13px;font-weight:500;color:var(--pb-paper);text-align:center;width:100%;
+}
+.pb-cta:hover{background:var(--pb-ink)}
+.pb-cta.sub{background:transparent;color:var(--pb-text-mute);border:1px solid var(--pb-line)}
+.pb-cta.sub:hover{background:var(--pb-line-soft);color:var(--pb-text-body)}
+
+/* 중앙: 종이 */
+.pb-center{padding:18px 24px;display:flex;flex-direction:column;gap:6px}
+
+/* 접힌 단계 행 — 단계명 · 미리보기 · 글자수 3열 */
+.pb-row{
+  display:grid;grid-template-columns:150px 1fr 128px;align-items:center;gap:14px;
+  padding:9px 14px;background:var(--pb-surface);
+  border:1px solid var(--pb-line-soft);border-radius:var(--pb-radius);
+  text-align:left;width:100%;
+}
+.pb-row:hover{border-color:var(--pb-line-input)}
+.pb-row .t{font-size:13px;font-weight:500;color:var(--pb-text-body)}
+.pb-row .p{
+  font-size:12px;color:var(--pb-text-faint);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.pb-row .n{
+  display:flex;justify-content:flex-end;gap:9px;
+  font:400 11px var(--pb-font-mono);color:var(--pb-text-ghost);
+}
+.pb-row .n .ok{color:var(--pb-ok)}
+.pb-row.is-empty .p{color:var(--pb-text-ghost);font-style:italic}
+
+/* 펼친 단계 — 질문 + 입력 */
+.pb-open{
+  background:var(--pb-surface);border:1px solid var(--pb-line);
+  border-radius:var(--pb-radius-card);padding:26px 28px;box-shadow:var(--pb-shadow-card);
+}
+.pb-open .step-no{
+  font:500 10px var(--pb-font-mono);letter-spacing:.15em;color:var(--pb-text-faint);
+}
+.pb-open h2{
+  margin-top:8px;font:600 30px/1.25 var(--pb-font-serif);color:var(--pb-text);
+}
+.pb-open .sub{margin-top:8px;font-size:14px;color:var(--pb-text-mute)}
+.pb-field{margin-top:24px}
+.pb-field label{
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-size:16px;font-weight:600;color:var(--pb-text);margin-bottom:8px;
+}
+.pb-field label .key{font:500 10px var(--pb-font-mono);letter-spacing:.12em;color:var(--pb-text-ghost)}
+.pb-field textarea{
+  width:100%;min-height:104px;resize:vertical;
+  padding:14px 15px;background:var(--pb-paper);
+  border:1px solid var(--pb-line-input);border-radius:var(--pb-radius);
+  font-size:15px;line-height:1.7;color:var(--pb-text-body);
+}
+.pb-field textarea:focus{outline:none;border-color:var(--pb-accent-ink);background:var(--pb-surface)}
+.pb-field textarea::placeholder{color:var(--pb-text-ghost)}
+.pb-cnt{margin-top:6px;text-align:right;font:400 11px var(--pb-font-mono);color:var(--pb-text-ghost)}
+.pb-steps-btn{display:flex;justify-content:space-between;gap:10px;margin-top:26px}
+
+/* 우: 잉크 판단 열 */
+.pb-right{background:var(--pb-ink);color:var(--pb-on-ink-1);display:flex;flex-direction:column}
+.pb-right.is-collapsed{align-items:center;padding:18px 0}
+.pb-rail{
+  writing-mode:vertical-rl;font:500 10px var(--pb-font-mono);letter-spacing:.2em;
+  color:var(--pb-on-ink-3);padding-top:8px;
+}
+.pb-tabs{display:flex;border-bottom:1px solid var(--pb-on-ink-line)}
+.pb-tab{
+  flex:1;padding:12px 6px;font-size:11px;color:var(--pb-on-ink-3);
+  border-bottom:2px solid transparent;position:relative;
+}
+.pb-tab.is-on{color:var(--pb-paper);border-bottom-color:var(--pb-accent)}
+.pb-tab .badge{
+  position:absolute;top:7px;right:7px;width:5px;height:5px;
+  border-radius:50%;background:var(--pb-accent);
+}
+.pb-panel{padding:18px 20px;overflow-y:auto;flex:1}
+.pb-panel h5{
+  font:500 10px var(--pb-font-mono);letter-spacing:.15em;
+  color:var(--pb-on-ink-3);margin-bottom:10px;
+}
+.pb-panel p{font-size:13px;line-height:1.7;color:var(--pb-on-ink-2)}
+.pb-panel ul{list-style:none;display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.pb-panel li{display:flex;gap:9px;font-size:13px;line-height:1.7;color:var(--pb-on-ink-2)}
+.pb-panel li::before{
+  content:'';flex-shrink:0;width:5px;height:5px;margin-top:8px;
+  border-radius:50%;background:var(--pb-accent);
+}
+.pb-corpus{
+  margin-top:18px;padding:13px 14px;
+  border:1px solid var(--pb-on-ink-line2);border-radius:var(--pb-radius);
+}
+.pb-corpus h5{color:var(--pb-accent-soft)}
+.pb-corpus p{font-size:12.5px;color:var(--pb-on-ink-2)}
+.pb-corpus b{color:var(--pb-paper)}
+.pb-mentor{
+  margin:-18px -20px 18px;padding:16px 20px;
+  background:var(--pb-navy);border-bottom:1px solid var(--pb-on-ink-line);
+}
+.pb-mentor h5{color:var(--pb-accent-soft)}
+.pb-mentor p{font-size:13px;color:var(--pb-on-ink-1)}
+.pb-mentor .by{margin-top:8px;font-size:11px;color:var(--pb-on-ink-3)}
+
+.pb-inkbtn{
+  width:100%;padding:11px;background:var(--pb-accent);color:var(--pb-ink);
+  border-radius:var(--pb-radius);font-size:13px;font-weight:600;margin-top:16px;
+}
+.pb-inkbtn:hover{background:var(--pb-accent-soft)}
+.pb-inkbtn:disabled{background:var(--pb-on-ink-line2);color:var(--pb-on-ink-3);cursor:default}
+.pb-inkbtn.ghost{background:transparent;border:1px solid var(--pb-on-ink-line2);color:var(--pb-on-ink-2)}
+
+/* 진단 결과 */
+.pb-diag{margin-top:16px;display:flex;flex-direction:column;gap:12px}
+.pb-issue{
+  padding:12px 13px;border-left:2px solid var(--pb-accent);
+  background:rgba(247,245,241,.05);border-radius:0 var(--pb-radius) var(--pb-radius) 0;
+}
+.pb-issue.sev-high{border-left-color:var(--pb-warn-on-ink)}
+.pb-issue .f{font:500 10px var(--pb-font-mono);letter-spacing:.12em;color:var(--pb-on-ink-3)}
+.pb-issue .q{margin-top:6px;font-size:13px;color:var(--pb-paper)}
+.pb-issue .w{margin-top:5px;font-size:12px;color:var(--pb-on-ink-3)}
+.pb-rw{
+  margin-top:10px;padding:12px 13px;background:rgba(127,160,196,.12);
+  border:1px solid rgba(127,160,196,.3);border-radius:var(--pb-radius);
+}
+.pb-rw p{font-size:13px;color:var(--pb-paper)}
+.pb-rw button{
+  margin-top:9px;padding:6px 11px;border:1px solid var(--pb-accent);
+  border-radius:var(--pb-radius);font-size:11px;font-weight:600;color:var(--pb-accent-soft);
+}
+
+/* ── 로그인 ─────────────────────────────────── */
+.pb-login{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+.pb-login .l{
+  background:var(--pb-ink);color:var(--pb-paper);
+  padding:64px 56px;display:flex;flex-direction:column;justify-content:center;
+}
+.pb-login .l h1{font:600 40px/1.25 var(--pb-font-serif)}
+.pb-login .l p{margin-top:20px;font-size:15px;line-height:1.8;color:var(--pb-on-ink-2);max-width:38ch}
+.pb-login .l .fine{margin-top:32px;font-size:12px;color:var(--pb-on-ink-3);line-height:1.7}
+.pb-login .r{
+  padding:64px 56px;display:flex;flex-direction:column;justify-content:center;
+  background:var(--pb-paper);
+}
+.pb-login .r h3{font:600 22px var(--pb-font-serif);color:var(--pb-text)}
+.pb-in{margin-top:22px}
+.pb-in label{display:block;font-size:13px;font-weight:600;margin-bottom:7px;color:var(--pb-text)}
+.pb-in input{
+  width:100%;padding:12px 14px;background:var(--pb-surface);
+  border:1px solid var(--pb-line-input);border-radius:var(--pb-radius);font-size:15px;
+}
+.pb-in input:focus{outline:none;border-color:var(--pb-accent-ink)}
+.pb-in .hint{margin-top:6px;font-size:12px;color:var(--pb-text-faint)}
+.pb-solid{
+  width:100%;margin-top:26px;padding:13px;background:var(--pb-ink);color:var(--pb-paper);
+  border-radius:var(--pb-radius);font-size:15px;font-weight:600;
+}
+.pb-solid:hover{background:var(--pb-navy)}
+.pb-err{
+  margin-top:16px;padding:12px 14px;background:var(--pb-warn-bg);
+  border:1px solid var(--pb-warn-line);border-radius:var(--pb-radius);
+  font-size:13px;color:var(--pb-warn-deep);
+}
+
+/* ── 공통 조각 ──────────────────────────────── */
+.pb-card{
+  background:var(--pb-surface);border:1px solid var(--pb-line);
+  border-radius:var(--pb-radius-card);padding:22px 24px;
+}
+.pb-card + .pb-card{margin-top:14px}
+.pb-card h3{font:600 20px var(--pb-font-serif);color:var(--pb-text);margin-bottom:12px}
+.pb-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.pb-tbl th{
+  text-align:left;padding:9px 10px;border-bottom:1px solid var(--pb-line);
+  font:500 10px var(--pb-font-mono);letter-spacing:.12em;color:var(--pb-text-faint);
+}
+.pb-tbl td{padding:11px 10px;border-bottom:1px solid var(--pb-line-soft);vertical-align:top}
+.pb-tbl tr:last-child td{border-bottom:none}
+.pb-warnbox{
+  padding:13px 15px;background:var(--pb-warn-bg);border:1px solid var(--pb-warn-line);
+  border-radius:var(--pb-radius);font-size:13px;color:var(--pb-warn-deep);line-height:1.7;
+}
+.pb-note{font-size:12px;color:var(--pb-text-faint);line-height:1.7}
+
+/* 근거 없는 수치 — 지우지 않고 문장 위에 남긴다 */
+.pb-badnum{
+  border-bottom:2px solid var(--pb-warn);cursor:help;
+  background:rgba(158,43,37,.06);
+}
+
+/* ── 결과 화면 ─────────────────────────────── */
+.pb-ir{background:var(--pb-surface);border:1px solid var(--pb-line);
+  border-radius:var(--pb-radius-card);padding:38px 42px}
+.pb-ir h1{font:600 34px/1.3 var(--pb-font-serif);color:var(--pb-text)}
+.pb-ir .lead{margin-top:10px;font-size:17px;color:var(--pb-text-mute);line-height:1.7}
+.pb-sec{margin-top:32px;padding-top:26px;border-top:1px solid var(--pb-line-soft)}
+.pb-sec:first-of-type{border-top:none}
+.pb-sec h3{font:500 10px var(--pb-font-mono);letter-spacing:.15em;color:var(--pb-text-faint)}
+.pb-sec .fl{margin-top:14px}
+.pb-sec .fl b{display:block;font-size:13px;font-weight:600;color:var(--pb-text);margin-bottom:5px}
+.pb-sec .fl p{font-size:15px;line-height:1.75;color:var(--pb-text-body);white-space:pre-wrap}
+.pb-sec .fl p.void{color:var(--pb-text-ghost);font-style:italic}
+
+/* 도식 카드 */
+.pb-fig{margin-top:20px;padding:20px;border:1px solid var(--pb-line-soft);
+  border-radius:var(--pb-radius);background:var(--pb-surface);break-inside:avoid}
+.pb-fig h4{display:flex;align-items:baseline;gap:9px;font:600 14px var(--pb-font-serif);
+  color:var(--pb-text);margin-bottom:14px}
+.pb-fig h4 em{font:400 11px var(--pb-font-sans);font-style:normal;color:var(--pb-text-faint)}
+.pb-fig svg{width:100%;height:auto;display:block;overflow:visible}
+
+/* TIPS 점수표 (우측 잉크 열) */
+.pb-score{display:flex;align-items:baseline;gap:10px;padding:14px 0 16px;
+  border-bottom:1px solid var(--pb-on-ink-line)}
+.pb-score b{font:600 34px/1 var(--pb-font-mono);color:var(--pb-paper)}
+.pb-score span{font-size:12px;color:var(--pb-on-ink-3)}
+.pb-srow{display:grid;grid-template-columns:1fr 34px 26px;gap:8px;align-items:center;
+  padding:9px 0;border-bottom:1px solid var(--pb-on-ink-line);font-size:12.5px}
+.pb-srow .nm{color:var(--pb-on-ink-2)}
+.pb-srow .pt{font:500 11px var(--pb-font-mono);color:var(--pb-on-ink-3);text-align:right}
+.pb-srow .gd{font:600 12px var(--pb-font-mono);text-align:center;color:var(--pb-accent-soft)}
+.pb-srow.na .nm,.pb-srow.na .pt{color:var(--pb-on-ink-4)}
+.pb-srow.na .gd{color:var(--pb-on-ink-4)}
+.pb-sdet{padding:10px 0 14px;font-size:12px;line-height:1.7;color:var(--pb-on-ink-3)}
+.pb-sdet q{color:var(--pb-on-ink-2)}
+.pb-sdet .bad{color:var(--pb-warn-txt-on-ink);font-weight:600}
+.pb-sdet .fix{color:var(--pb-accent-soft);margin-top:5px;display:block}
+
+/* 자격 게이트 */
+.pb-gate{display:flex;flex-direction:column;gap:2px}
+.pb-gate .g{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:center;
+  padding:13px 0;border-bottom:1px solid var(--pb-line-soft)}
+.pb-gate .g b{font-size:14px;font-weight:600;color:var(--pb-text)}
+.pb-gate select{width:100%;padding:9px 11px;background:var(--pb-surface);
+  border:1px solid var(--pb-line-input);border-radius:var(--pb-radius);font-size:14px}
+.pb-gate .g.is-fail{background:var(--pb-warn-bg)}
+.pb-gate .why{grid-column:1/-1;font-size:12.5px;color:var(--pb-warn-deep);line-height:1.6}
+
+/* ── 피칭 덱 ───────────────────────────────── */
+.pb-deck{background:var(--pb-paper-deep);padding:22px 24px;display:flex;flex-direction:column;gap:18px}
+.pb-slide{
+  position:relative;aspect-ratio:16/9;background:var(--pb-surface);
+  border:1px solid var(--pb-line);border-radius:var(--pb-radius-card);
+  box-shadow:var(--pb-shadow-slide);padding:44px 52px;
+  display:flex;flex-direction:column;
+}
+.pb-slide .sno{
+  position:absolute;top:16px;right:20px;
+  font:500 10px var(--pb-font-mono);letter-spacing:.14em;color:var(--pb-text-ghost);
+}
+.pb-slide.is-cover{justify-content:center;background:var(--pb-ink)}
+.pb-slide.is-cover .s-head{color:var(--pb-paper)}
+.pb-slide.is-cover .s-sub{color:var(--pb-on-ink-2)}
+.pb-slide.is-appx{border-style:dashed}
+.s-head{
+  width:100%;border:none;background:transparent;resize:none;overflow:hidden;
+  font:600 34px/1.3 var(--pb-font-serif);color:var(--pb-text);padding:2px 4px;
+  border-radius:var(--pb-radius);
+}
+.pb-slide.is-cover .s-head{font-size:44px}
+.s-sub{
+  width:100%;border:none;background:transparent;resize:none;overflow:hidden;
+  margin-top:12px;font:400 17px/1.6 var(--pb-font-sans);color:var(--pb-text-mute);padding:2px 4px;
+}
+.s-bullets{list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:9px}
+.s-bullets li{display:flex;gap:11px;align-items:flex-start}
+.s-dot{flex-shrink:0;width:5px;height:5px;margin-top:11px;border-radius:50%;background:var(--pb-accent-ink)}
+.s-bullet{
+  flex:1;border:none;background:transparent;resize:none;overflow:hidden;
+  font:400 16px/1.65 var(--pb-font-sans);color:var(--pb-text-body);padding:2px 4px;
+}
+.s-head:hover,.s-sub:hover,.s-bullet:hover{background:var(--pb-paper)}
+.s-head:focus,.s-sub:focus,.s-bullet:focus{outline:none;background:var(--pb-paper);
+  box-shadow:inset 0 0 0 1px var(--pb-accent-ink)}
+.pb-slide.is-cover .s-head:hover,.pb-slide.is-cover .s-head:focus,
+.pb-slide.is-cover .s-sub:hover,.pb-slide.is-cover .s-sub:focus{background:rgba(247,245,241,.08)}
+
+.s-fig{margin-top:auto;padding-top:16px;position:relative}
+.s-fig svg{width:100%;height:auto;display:block;max-height:210px;overflow:visible}
+.s-fig-kind{position:absolute;top:16px;left:0;font-size:11px;color:var(--pb-text-ghost)}
+.s-fig-regen{
+  position:absolute;top:14px;right:0;padding:4px 10px;font-size:11px;font-weight:600;
+  color:var(--pb-text-mute);background:var(--pb-surface);
+  border:1px solid var(--pb-line);border-radius:var(--pb-radius);opacity:0;transition:opacity .15s;
+}
+.s-fig:hover .s-fig-regen{opacity:1}
+.s-fig-regen:hover{color:var(--pb-accent-ink);border-color:var(--pb-accent-ink)}
+.s-fig-none{
+  font-size:12px;color:var(--pb-text-ghost);padding:12px;text-align:center;
+  border:1px dashed var(--pb-line);border-radius:var(--pb-radius);
+}
+
+/* ── 관리자 ────────────────────────────────── */
+.pb-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.pb-kpi .k{padding:16px 18px;background:var(--pb-surface);border:1px solid var(--pb-line);
+  border-radius:var(--pb-radius-card)}
+.pb-kpi .k b{display:block;font:600 30px/1 var(--pb-font-mono);color:var(--pb-text)}
+.pb-kpi .k span{display:block;margin-top:7px;font-size:12px;color:var(--pb-text-mute)}
+.pb-atbl{width:100%;border-collapse:collapse;font-size:13px;background:var(--pb-surface)}
+.pb-atbl th{text-align:left;padding:11px 12px;background:var(--pb-paper);
+  border-bottom:1px solid var(--pb-line);
+  font:500 10px var(--pb-font-mono);letter-spacing:.12em;color:var(--pb-text-faint);white-space:nowrap}
+.pb-atbl td{padding:12px;border-bottom:1px solid var(--pb-line-soft);vertical-align:middle}
+.pb-atbl tr{cursor:pointer}
+.pb-atbl tr:hover td{background:var(--pb-paper)}
+.pb-atbl tr.is-on td{background:var(--pb-ink);color:var(--pb-paper)}
+.pb-atbl tr.is-on td .sub{color:var(--pb-on-ink-3)}
+.pb-atbl .sub{display:block;margin-top:3px;font-size:11px;color:var(--pb-text-faint)}
+.pb-pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600}
+.pb-pill.on{background:#E4EFE9;color:var(--pb-ok)}
+.pb-pill.off{background:var(--pb-line-soft);color:var(--pb-text-faint)}
+.pb-mfield{margin-top:14px}
+.pb-mfield label{display:flex;justify-content:space-between;align-items:baseline;
+  font:500 10px var(--pb-font-mono);letter-spacing:.12em;color:var(--pb-on-ink-3);margin-bottom:6px}
+.pb-mfield textarea{width:100%;min-height:64px;resize:vertical;padding:10px 11px;
+  background:rgba(247,245,241,.06);border:1px solid var(--pb-on-ink-line2);
+  border-radius:var(--pb-radius);font-size:13px;line-height:1.6;color:var(--pb-paper)}
+.pb-mfield textarea:focus{outline:none;border-color:var(--pb-accent)}
+.pb-mfield .cur{font-size:11px;color:var(--pb-on-ink-4);font-weight:400;letter-spacing:0}
+
+/* 숫자 대조 (우측 잉크 열) */
+.pb-num{padding:11px 0;border-bottom:1px solid var(--pb-on-ink-line);font-size:12.5px}
+.pb-num .w{font:600 13px var(--pb-font-mono);color:var(--pb-warn-txt-on-ink)}
+.pb-num .o{font:600 13px var(--pb-font-mono);color:var(--pb-ok-on-ink)}
+.pb-num .s{display:block;margin-top:4px;color:var(--pb-on-ink-3);font-size:11.5px}
+
+@media print{
+  .pb-head, .pb-meta, .pb-left, .pb-right, .pb-noprint{display:none !important}
+  .pb-shell{display:block}
+  body{background:#fff}
+  /* 덱은 가로 A4, 장당 한 쪽 */
+  body.deck-print{background:#fff}
+  body.deck-print .pb-deck{padding:0;gap:0;background:#fff}
+  body.deck-print .pb-slide{
+    border:none;box-shadow:none;border-radius:0;aspect-ratio:auto;
+    height:100vh;break-after:page;page-break-after:always;
+  }
+  body.deck-print .pb-slide:last-child{break-after:auto;page-break-after:auto}
+  body.deck-print .sno{display:none}
+  /* 재생성 버튼·형태 배지·빈 자리 안내는 투자자에게 가는 PDF에 실리면 안 된다 */
+  .s-fig-regen, .s-fig-kind, .s-fig-none{display:none !important}
+  .s-head:focus,.s-bullet:focus,.s-sub:focus{box-shadow:none;background:transparent}
+}
+@page{ size:A4 landscape; margin:0; }
+</style>
+</head>
+<body>
+
+<!-- ══ 로그인 ══════════════════════════════════ -->
+<div id="viewLogin" class="pb-login">
+  <div class="l">
+    <h1>투자자가 읽는<br>순서대로 씁니다.</h1>
+    <p>여섯 단계를 채우면 IR 한 벌이 됩니다. TIPS 준비 모드를 켜면 R&amp;D 세 단계가 더해집니다.</p>
+    <p class="fine">
+      이 도구는 채점기가 아닙니다. 점수는 어디를 고쳐야 하는지 가리키는 표시일 뿐입니다.<br>
+      빈칸 자동 생성은 제공하지 않습니다 — 없는 근거를 만들어 넣지 않기 위해서입니다.
+    </p>
+  </div>
+  <div class="r">
+    <h3>접속</h3>
+    <div class="pb-in">
+      <label for="inId">접수번호</label>
+      <input id="inId" type="text" placeholder="ITC2026-000" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="pb-in">
+      <label for="inCode">접속코드</label>
+      <input id="inCode" type="password" placeholder="8자" autocomplete="off">
+      <p class="hint">성장관리플랫폼에서 쓰시던 코드와 같습니다. 새로 발급되지 않았습니다.</p>
+    </div>
+    <button class="pb-solid" id="btnLogin">들어가기</button>
+    <div id="loginErr" class="pb-err hidden"></div>
+  </div>
+</div>
+
+<!-- ══ 헤더 (로그인 후) ════════════════════════ -->
+<header id="pbHead" class="pb-head hidden">
+  <div class="pb-brand"><b>PitchBuilder</b><span>IR / TIPS</span></div>
+  <div class="pb-who" id="hdWho"></div>
+  <div class="sp"></div>
+  <button class="pb-toggle" id="hdTips">TIPS 준비 모드<span class="sw"></span></button>
+  <div class="pb-chip" id="hdChip"><span class="dot"></span><span id="hdChipTxt">저장 대기</span></div>
+  <button class="pb-hbtn" id="hdSave">저장</button>
+  <button class="pb-hbtn" id="hdLoad">불러오기</button>
+  <button class="pb-hbtn ghost" id="hdExit">나가기</button>
+</header>
+
+<!-- ══ 메타 스트립 ═════════════════════════════ -->
+<div id="pbMeta" class="pb-meta hidden"></div>
+
+<!-- ══ 본문 셸 ════════════════════════════════ -->
+<main id="pbShell" class="pb-shell hidden">
+  <aside class="pb-left" id="pbLeft"></aside>
+  <section class="pb-center" id="pbCenter"></section>
+  <aside class="pb-right" id="pbRight"></aside>
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  var $ = function(id){ return document.getElementById(id); };
+
+  // ══ 상태 ══════════════════════════════════════════════════════
+  //  아래 이식 로직의 steps()·who()·contextBlock()·stepPrompt()가 이 두 객체를 본다.
+  var state = { stepIndex:0, formData:{}, completed:false,
+                cid:'', lastTips:null, lastAudit:null, lastGate:null,
+                status:'', submittedAt:'', lastDeck:null, lastDiagrams:null,
+                tab:0, view:'write', diag:null };   // tab·view·diag = 화면 상태
+  var llm = { conn:'byok', key:'', proxy:'', id:'', code:'',
+              model:'gemini-flash-latest', reviewer:false, tipsMode:false };
+  var busy = false;
+  var mentor = { comments:{}, overall:'', who:'', loaded:false };
+
+    /* ══════════════════════════════════════════════════════════════
+     아래는 구 실행본(PitchBuilder_Pro.html)에서 **문자 그대로 옮긴** 로직이다.
+     검증 137건을 통과한 코드이므로 손으로 고쳐 쓰지 않는다.
+     추출: extract_logic.py
+     ══════════════════════════════════════════════════════════════ */
+  var IR_STEPS = [
+    {
+      id:'cover', icon:'file',
+      title:'1. 한 줄 소개 (Cover)',
+      subtitle:'우리 회사의 정체성을 5초 안에 각인시킵니다.',
+      inputs:[
+        {key:'companyName', label:'회사명/서비스명', placeholder:'예: 토스(Toss)'},
+        {key:'oneLiner', label:'한 줄 소개 (Declarative Sentence)', placeholder:'예: 금융의 모든 것을 쉽고 간편하게 만드는 모바일 금융 앱'}
+      ],
+      coachTips:[
+        '형용사를 빼고 명확한 명사 위주로 작성하세요.',
+        "우리가 '무엇을 하는지' 비전문가도 이해할 수 있어야 합니다.",
+        '나쁜 예: 4차 산업혁명을 선도하는 글로벌 혁신 플랫폼'
+      ]
+    },
+    {
+      id:'problem', icon:'alert',
+      title:'2. 문제 정의 (Problem)',
+      subtitle:'고객이 겪는 페인포인트를 수치화하여 심각성을 강조합니다.',
+      inputs:[
+        {key:'targetCustomer', label:'타겟 고객 (Persona)', placeholder:'예: 하루 50건 이상의 송장을 처리하는 중소 물류센터 직원'},
+        {key:'problemDescription', label:'고객의 문제 (Pain Point)', placeholder:'예: 수작업 엑셀 입력으로 인해 매일 평균 3시간이 낭비되며, 오입력으로 인한 반품 비용이 월 100만원 발생함'}
+      ],
+      coachTips:[
+        '거시적인 사회 문제(예: 고령화)가 아닌 특정 페르소나의 직접적인 고통을 적으세요.',
+        "문제를 '낭비되는 시간'이나 '비용(돈)'으로 수치화하는 것이 핵심입니다."
+      ],
+      corpusNote:'상장사 IR은 문제 정의를 <b>6%</b>만 씁니다. 이미 증명된 회사라 답할 필요가 없기 때문입니다. ' +
+                 '하지만 당신은 아직 상장사가 아닙니다. <b>TIPS는 이 항목(개발 필요성)에 15점을 겁니다.</b> ' +
+                 '상장사 IR을 흉내 내면 이 15점이 통째로 빕니다.'
+    },
+    {
+      id:'solution', icon:'bulb',
+      title:'3. 해결책 및 기술 (Solution & Tech)',
+      subtitle:'우리의 제품이 그 문제를 어떻게 해결하는지 직관적으로 설명합니다.',
+      inputs:[
+        {key:'solutionCore', label:'해결책의 핵심 작동 원리 (3단계)', placeholder:'예: 1. 사진 촬영 -> 2. AI 자동 텍스트 변환 -> 3. ERP 자동 연동'},
+        {key:'moat', label:'기술적 방어 해자 (Moat) / TIPS 기술성 어필', placeholder:'예: 10만 건의 물류 특화 데이터셋 파인튜닝, OCR 관련 원천 특허 2건 보유'}
+      ],
+      coachTips:[
+        "복잡한 백엔드 기술 스펙을 나열하지 말고, '고객이 얻는 가치' 중심으로 번역하세요.",
+        '경쟁사가 내일 당장 베낄 수 없는 우리만의 무기(데이터, 특허, 네트워크)를 명시하세요.'
+      ]
+    },
+    {
+      id:'market', icon:'target',
+      title:'4. 시장 규모 (Market & TAM)',
+      subtitle:'벤처 투자를 받을 만큼 거대한 시장인지 증명합니다.',
+      inputs:[
+        {key:'somTarget', label:'초기 타겟 고객 수 (SOM)', placeholder:'예: 국내 수도권 중소형 물류센터 5,000곳'},
+        {key:'somValue', label:'연간 객단가 및 시장 크기 (Bottom-up)', placeholder:'예: 연 120만원 구독료 × 5,000곳 = 60억 원 규모의 초기 시장'}
+      ],
+      coachTips:[
+        '전체 시장 100조 중 1%를 차지하겠다는 하향식(Top-down) 논리를 절대 피하세요.',
+        "반드시 '타겟 고객 수 × 객단가' 형태의 Bottom-up 논리로 시장을 산출하세요."
+      ],
+      corpusNote:'상장사 IR에 시장 항목은 <b>20%</b>뿐입니다. 대신 재무 실적을 4.5페이지 씁니다 — ' +
+                 '이미 번 돈이 시장을 증명하기 때문입니다. 당신에겐 그 실적이 없습니다. ' +
+                 '<b>TIPS 기대효과 15점은 실적이 아니라 시장 논리로만 받습니다.</b>'
+    },
+    {
+      id:'business', icon:'chart',
+      title:'5. 비즈니스 모델 & GTM',
+      subtitle:'어떻게 돈을 벌고, 어떻게 고객을 모을 것인가?',
+      inputs:[
+        {key:'revenueModel', label:'수익 모델 (과금 방식)', placeholder:'예: 기본 기능 무료(Freemium), 건당 100원 과금 또는 월 99,000원 무제한 구독'},
+        {key:'gtmStrategy', label:'초기 1,000명 고객 확보 전략 (GTM)', placeholder:'예: 기존 확보된 창고 관리자 카페(회원 3만명) 제휴 프로모션 진행 및 B2B 콜드메일'}
+      ],
+      coachTips:[
+        '돈의 흐름(누가, 언제, 얼마를 내는지)이 명확해야 합니다.',
+        '돈을 쏟아붓는 퍼포먼스 마케팅이 아닌, 초기 저비용 고효율 고객 획득 채널을 적으세요.'
+      ],
+      corpusNote:'상장사 IR에서 사업화 전략을 쓰는 덱은 <b>7%</b>에 불과합니다. ' +
+                 '그런데 <b>TIPS 최대 배점이 바로 이 항목(사업화 전략 20점)입니다.</b> ' +
+                 '가장 안 쓰이는 항목에 가장 많은 점수가 걸려 있습니다 — 여기서 격차가 벌어집니다.'
+    },
+    {
+      id:'team_ask', icon:'users',
+      title:'6. 팀 역량 및 자금 조달 (Team & Ask)',
+      subtitle:'왜 우리가 유일한 적임자이며, 얼마가 필요한가?',
+      inputs:[
+        {key:'teamStrength', label:'창업팀의 도메인 전문성 (Founder-Market Fit)', placeholder:'예: 물류센터 현장직 5년 경험의 대표와 네이버 AI 엔지니어 출신 CTO의 결합'},
+        {key:'fundingAsk', label:'조달 목표 금액 및 주요 마일스톤', placeholder:'예: Seed 5억 조달 (+TIPS 5억 매칭). 18개월 내 MRR 5천만원 및 B2B 고객 300개사 확보'}
+      ],
+      coachTips:[
+        "화려한 스펙 나열보다는 이 '문제'를 푸는 데 최적화된 팀임을 어필하세요.",
+        "단순히 '5억 투자 요망'이 아니라, 그 돈으로 어떤 정량적 성과를 낼지 적어야 합니다."
+      ],
+      corpusNote:'상장사 IR은 팀을 <b>13%</b>만 소개합니다. 회사가 곧 신뢰이기 때문입니다. ' +
+                 '초기기업은 반대입니다 — 회사가 아직 아무것도 아니므로 <b>사람이 유일한 담보</b>입니다. ' +
+                 'TIPS 창업기업 전문성 10점은 여기서 갈립니다.'
+    }
+  ];
+
+  // ══════════════════════════════════════════════════════════════
+  //  TIPS 준비 모드 — 추가 3단계
+  //  IR 6단계로는 TIPS 100점 중 40점(개발적정성15·실현성10·글로벌5·운영사10)을
+  //  담을 그릇이 없다. IR과 R&D 사업계획서는 서로 다른 문서이기 때문이다.
+  //  이 3단계를 채우면 채점 가능 범위가 60점 → 90점이 된다.
+  //  (운영사 지원계획 10점은 창업팀이 아니라 추천 운영사가 쓰므로 영영 제외다.)
+  // ══════════════════════════════════════════════════════════════
+  var TIPS_STEPS = [
+    {
+      id:'rnd_goal', icon:'flask',
+      title:'7. 개발 목표 및 내용 (R&D)',
+      subtitle:'TIPS 기술성 15점 — 무엇을, 어디까지 개발할 것인가.',
+      inputs:[
+        {key:'devGoal',  label:'개발 최종 목표와 산출물',
+         placeholder:'예: 2년 내 물류 송장 OCR 엔진 v2.0 개발. 최종 산출물 = 상용 API + ERP 연동 모듈. 1차년도 인식엔진, 2차년도 현장 실증'},
+        {key:'devPrior', label:'선행 R&D 이력 및 활용 계획',
+         placeholder:'예: 2025년 창업진흥원 예비창업패키지로 프로토타입 개발(TRL 4). 본 과제에서 TRL 4→7로 고도화. 기존 학습데이터 3만 건 그대로 활용'}
+      ],
+      coachTips:[
+        '"AI로 혁신하겠다"가 아니라 "무엇을 어느 수준까지"를 적으세요. 평가위원은 개발 범위의 구체성을 봅니다.',
+        'TRL(기술성숙도)을 현재 → 목표로 명시하면 개발 범위가 한눈에 보입니다.',
+        '선행 연구가 없으면 없다고 쓰세요. 없는 이력을 지어내면 실사에서 걸립니다.'
+      ]
+    },
+    {
+      id:'rnd_kpi', icon:'gauge',
+      title:'8. 성능지표 및 검증방법 (R&D)',
+      subtitle:'TIPS 기술성 10점 — 여기서 탈락하는 팀이 가장 많습니다.',
+      inputs:[
+        {key:'devKpi',    label:'정량적 성능지표 (KPI)',
+         placeholder:'예: 송장 인식 정확도 95% 이상(현재 87%), 처리속도 건당 2초 이내, 오인식률 3% 이하'},
+        {key:'devVerify', label:'검증 방법 및 검증 기관',
+         placeholder:'예: 공인시험기관(KTL) 성능시험성적서로 정확도 검증. 실증은 협력 물류센터 3곳에서 실데이터 1만 건 기준 측정'}
+      ],
+      coachTips:[
+        '★가장 중요한 단계입니다. "성능 향상"이 아니라 숫자여야 합니다 — 무엇을, 얼마에서 얼마로.',
+        '"자체 테스트로 검증"은 인정받기 어렵습니다. 공인시험기관·실증 현장·제3자 검증을 명시하세요.',
+        '목표치만 있고 현재값이 없으면 개선폭을 알 수 없습니다. 현재 → 목표를 함께 쓰세요.'
+      ]
+    },
+    {
+      id:'rnd_global', icon:'globe',
+      title:'9. 글로벌 진출 전략',
+      subtitle:'TIPS 사업성 5점 — 작지만, 안 쓰면 0점입니다.',
+      inputs:[
+        {key:'globalPlan', label:'해외 목표시장과 진출 전략',
+         placeholder:'예: 3년 내 일본 물류시장 진출. 현지 3PL 사업자와 파트너십 협의 중. 일본어 OCR 데이터셋 확보가 선결과제'}
+      ],
+      coachTips:[
+        '"글로벌 진출을 추진하겠다"는 0점입니다. 어느 나라, 왜 그 나라, 누구와, 언제인지 적으세요.',
+        '아직 계획뿐이라면 계획이라고 쓰되, 그 나라를 고른 근거(시장 규모·규제·파트너)를 대세요.',
+        '국내에 집중할 계획이면 솔직히 쓰고 그 이유를 대는 편이 억지 글로벌보다 낫습니다.'
+      ]
+    }
+  ];
+
+  // 현재 모드에 맞는 단계 목록 — 코드 전체가 이 함수 하나만 본다
+  function steps(){
+    return llm.tipsMode ? IR_STEPS.concat(TIPS_STEPS) : IR_STEPS;
+  }
+
+  var PLACEHOLDER_RESULT = {
+    companyName:'[회사명]', oneLiner:'[한 줄 소개]',
+    targetCustomer:'[타겟 고객]', problemDescription:'[문제 상황]',
+    solutionCore:'[작동 원리]', moat:'[기술적 방어 해자]',
+    somTarget:'[SOM 타겟]', somValue:'[시장 가치 산출]',
+    revenueModel:'[과금 방식]', gtmStrategy:'[GTM 전략]',
+    teamStrength:'[팀 역량]', fundingAsk:'[투자 유치 계획]',
+    devGoal:'[개발 목표]', devPrior:'[선행 R&D 이력]',
+    devKpi:'[성능지표]', devVerify:'[검증 방법]', globalPlan:'[글로벌 전략]'
+  };
+
+  // ★작성 데이터는 계정별로 나눠 담는다.
+  //   전에는 'pitchbuilder.pro.v1' 한 칸에 담았다 — 같은 PC에서 A기업이 쓰고 나간 뒤
+  //   B기업이 로그인하면 A가 쓴 IR이 그대로 떠 있었다(같은 origin의 localStorage를 공유하므로).
+  //   접수번호를 키에 박아 칸을 갈라두면 그 사고가 구조적으로 불가능해진다.
+  var STORAGE_BASE = 'pitchbuilder.pro.v1';
+
+  var TIPS_BASE = 'pitchbuilder.tips.v1';
+
+  var LLM_KEY = 'pitchbuilder.llm.v1';
+
+  function who(){ return (llm.id || '').trim() || 'anon'; }
+
+  function skey(){ return STORAGE_BASE + '::' + who(); }
+
+  function tkey(){ return TIPS_BASE + '::' + who(); }
+
+  var TIPS_RUBRIC = {
+    name: 'TIPS 일반트랙 (2026)',
+    source: '2026년 팁스 총괄 운영지침(2차 개정) 별지 제4-③호 선정평가표',
+    passMark: 60,          // 종합평점 60점 미만 = 지원제외 (운영지침 9.라.13)
+    gradePoints: ['S','A','B','C','D'],
+    items: [
+      { id:'need',    cat:'기술성',       name:'개발 필요성',      max:15, pts:[15,12,9,6,3],
+        criteria:'기술아이템 개발의 차별성·필요성, 기술적 난이도와 도전성',
+        coverage:'partial', fields:['problemDescription','moat','solutionCore'],
+        gapHint:'경쟁기술 대비 무엇이 다른지, 기술적으로 무엇이 어려운지가 IR에는 대개 빠져 있습니다.' },
+
+      { id:'fit',     cat:'기술성',       name:'개발 적정성',      max:15, pts:[15,12,9,6,3],
+        criteria:'개발목표·개발내용의 수준과 구체성, 선행 R&D 이력과 활용',
+        coverage:'none', tipsFields:['devGoal','devPrior'],
+        gapHint:'R&D 사업계획서 항목입니다. 설정에서 <b>TIPS 준비 모드</b>를 켜면 7단계에서 작성할 수 있습니다.' },
+
+      { id:'exec',    cat:'기술성',       name:'개발 실현성',      max:10, pts:[10,8,6,4,2],
+        criteria:'개발방법·계획의 적정성, 성능지표와 검증방법의 타당성, 기술적 파급효과',
+        coverage:'none', tipsFields:['devKpi','devVerify'],
+        gapHint:'정량 성능지표(KPI)와 검증방법이 필요합니다. <b>여기서 탈락하는 팀이 가장 많습니다.</b> TIPS 준비 모드 8단계에서 작성할 수 있습니다.' },
+
+      { id:'biz',     cat:'사업성',       name:'사업화 전략',      max:20, pts:[20,16,12,8,4],
+        criteria:'목표시장의 적절성, 사업화 추진계획의 실현가능성, 지원예산 대비 경제성',
+        coverage:'full', fields:['somTarget','somValue','revenueModel','gtmStrategy'] },
+
+      { id:'global',  cat:'사업성',       name:'글로벌 성장가능성', max:5,  pts:[5,4,3,2,1],
+        criteria:'글로벌 진출 성공가능성과 전략의 구체성',
+        coverage:'none', tipsFields:['globalPlan'],
+        gapHint:'해외 진출 전략이 IR에 없습니다. TIPS 준비 모드 9단계에서 작성할 수 있습니다.' },
+
+      { id:'impact',  cat:'사업성',       name:'기대효과',         max:15, pts:[15,12,9,6,3],
+        criteria:'일자리 창출·유지 계획, R&D의 경제적 파급효과',
+        coverage:'partial', fields:['fundingAsk','somValue'],
+        gapHint:'고용 계획(몇 명을 언제 뽑을지)이 대개 빠져 있습니다.' },
+
+      { id:'team',    cat:'사업수행역량', name:'창업기업 전문성',  max:10, pts:[10,8,6,4,2],
+        criteria:'구성원의 역량과 역할, 특허·논문 등 기술기반, 창업자의 사업의지와 사전준비',
+        coverage:'full', fields:['teamStrength','moat'] },
+
+      { id:'oper',    cat:'사업수행역량', name:'운영사 지원계획',  max:10, pts:[10,8,6,4,2],
+        criteria:'운영사의 추천사유와 투자지원 의지, 보육계획·수행관리의 구체성',
+        coverage:'none',
+        gapHint:'이 항목은 창업팀이 아니라 추천 운영사가 작성합니다. 채점 대상에서 제외합니다.' }
+    ]
+  };
+
+  // 자격 게이트 — 미달이면 채점하지 않는다 (itc_rules.py의 ELIG_CAP과 같은 사상)
+  // 출처: 2026년 팁스 창업기업 지원계획 공고(중기부 제2026-40호) 신청자격
+  var TIPS_GATE = [
+    { id:'age',   q:'창업 후 업력',                 opts:[
+        {v:'ok',   t:'7년 이내'},
+        {v:'ok10', t:'7~10년 (신산업 분야)'},
+        {v:'no',   t:'초과'}],
+      fail:'no', why:'업력 7년 초과(신산업 분야는 10년)는 신청 자격이 없습니다.' },
+
+    { id:'team',  q:'창업팀 구성',                  opts:[
+        {v:'ok', t:'대표 포함 2인 이상'},
+        {v:'no', t:'1인'}],
+      fail:'no', why:'(예비)창업기업은 2인 이상으로 구성되어야 합니다.' },
+
+    { id:'inv',   q:'TIPS 운영사 투자(확약)',        opts:[
+        {v:'ok',   t:'수도권 2억원 이상'},
+        {v:'ok2',  t:'비수도권 1억원 이상'},
+        {v:'no',   t:'미달 또는 아직 없음'}],
+      fail:'no', why:'운영사 투자(확약)와 추천이 없으면 TIPS는 신청 자체가 불가능합니다. 이것이 첫 번째 관문입니다.' },
+
+    { id:'share', q:'지분 구조',                     opts:[
+        {v:'ok',   t:'창업기업 60% 이상 · 운영사 30% 이하'},
+        {v:'no',   t:'요건 미달'},
+        {v:'unk',  t:'아직 모름'}],
+      fail:'no', why:'창업기업이 60% 이상(2인 이상 분산 보유), 운영사는 30% 이하여야 합니다. 협약체결일까지 유지해야 합니다.' },
+
+    { id:'rev',   q:'직전연도 매출액',               opts:[
+        {v:'ok', t:'20억원 미만'},
+        {v:'no', t:'20억원 이상'}],
+      fail:'no', why:'일반트랙은 직전연도 매출 20억원 미만이어야 합니다.' },
+
+    { id:'again', q:'TIPS R&D 기선정 이력',          opts:[
+        {v:'ok', t:'없음'},
+        {v:'no', t:'있음 (일반·딥테크·글로벌·스케일업 중)'}],
+      fail:'no', why:'TIPS R&D를 이미 수행한 기업은 재참여할 수 없습니다.' }
+  ];
+
+  // ── 진단 결과 렌더링 ────────────────────
+  function esc(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function arr(v){ return Array.isArray(v) ? v : []; }
+
+  function scoreClass(n){ return n >= 75 ? 'sc-high' : (n >= 50 ? 'sc-mid' : 'sc-low'); }
+
+  // 모델이 코드펜스를 씌우거나 앞뒤에 말을 붙여도 살려낸다.
+  function parseJSON(text){
+    if(!text) throw new Error('응답이 비어 있습니다.');
+    var t = String(text).trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    try{ return JSON.parse(t); }catch(e){}
+    var a = t.indexOf('{'), b = t.lastIndexOf('}');
+    if(a >= 0 && b > a){
+      try{ return JSON.parse(t.slice(a, b+1)); }catch(e2){}
+    }
+    throw new Error('응답을 해석하지 못했습니다. 다시 시도해 주세요.');
+  }
+
+  // ── 프롬프트 ────────────────────────────
+  // 헌법: 없는 사실을 지어내지 않는다. 모르면 물어본다.
+  var SYSTEM = [
+    '너는 한국 초기기업 투자 심사역이다. 실리콘밸리 VC와 TIPS 운영사 심사 관점으로 창업팀의 IR 초안을 진단한다.',
+    '',
+    '# 절대 규칙 (어기면 실패다)',
+    '- 사용자가 제공하지 않은 정량 수치·고객사명·연도·특허번호·인원수를 절대 지어내지 마라.',
+    '- 개선 문장을 제안할 때 근거가 필요한 자리는 반드시 대괄호 빈칸으로 남겨라. 예: "월 [__]시간 절감", "고객 [__]곳 확보".',
+    '- 확인되지 않은 것을 아는 척하지 말고 questions 항목으로 되물어라. 빈칸을 추측으로 메우는 것이 가장 큰 잘못이다.',
+    '- 칭찬은 짧게, 지적은 구체적으로. 두루뭉술한 조언("더 구체적으로 쓰세요")은 금지다. 무엇을 어떻게 바꿔야 하는지 적어라.',
+    '',
+    '# 심사 기준',
+    '- Problem: 거시 담론이 아니라 특정 페르소나의 고통인가. 시간 또는 돈으로 수치화되었는가.',
+    '- Solution: 기술 스펙 나열이 아니라 고객 가치로 번역되었는가. 경쟁사가 못 베끼는 해자가 있는가.',
+    '- Market: Bottom-up(타겟 고객 수 × 객단가)인가. "100조 시장의 1%" 같은 Top-down 논리는 즉시 감점이다.',
+    '- Business: 누가·언제·얼마를 내는지 명확한가. GTM이 저비용 고효율 채널인가.',
+    '- Team: 화려한 스펙이 아니라 이 문제를 푸는 데 최적화된 팀(Founder-Market Fit)임을 보여주는가.',
+    '- Ask: 금액만 있고 그 돈으로 낼 정량적 성과(마일스톤)가 없으면 감점이다.',
+    '',
+    '한국어로, 반드시 지정된 JSON 스키마만 출력한다. 그 외 텍스트는 쓰지 마라.'
+  ]
+
+  // 지금까지 채운 다른 단계 (일관성 지적용 맥락)
+  function contextBlock(excludeKeys){
+    var lines = [];
+    steps().forEach(function(s){
+      s.inputs.forEach(function(i){
+        if(excludeKeys && excludeKeys.indexOf(i.key) >= 0) return;
+        var v = (state.formData[i.key] || '').trim();
+        if(v) lines.push('- ' + i.label + ': ' + v);
+      });
+    });
+    return lines.length ? lines.join('\n') : '(아직 작성된 다른 항목 없음)';
+  }
+
+  function stepPrompt(){
+    var step = steps()[state.stepIndex];
+    var keys = step.inputs.map(function(i){ return i.key; });
+    var answers = step.inputs.map(function(i){
+      return '## ' + i.label + ' (field: ' + i.key + ')\n' + ((state.formData[i.key] || '').trim() || '(비어 있음)');
+    }).join('\n\n');
+
+    return [
+      '다음은 창업팀이 작성한 IR의 "' + step.title + '" 단계 답변이다. 이 단계만 집중해서 진단하라.',
+      '',
+      '# 진단 대상',
+      answers,
+      '',
+      '# 참고 — 이 팀이 다른 단계에 쓴 내용 (모순이 보이면 지적하라)',
+      contextBlock(keys),
+      '',
+      '# 출력 JSON 스키마',
+      '{',
+      '  "score": 0~100 정수 (심사역이 이 단계에 줄 점수),',
+      '  "verdict": "한 문장 총평",',
+      '  "issues": [{ "field": "' + keys.join('" | "') + '", "severity": "high"|"medium"|"low", "problem": "무엇이 잘못됐는지", "why": "심사역이 왜 이걸 문제 삼는지" }],',
+      '  "rewrites": [{ "field": "' + keys.join('" | "') + '", "text": "그대로 붙여넣을 수 있는 개선 문장. 근거가 필요한 수치는 [__]로 비워 둘 것" }],',
+      '  "questions": ["실사에서 반드시 나올 질문 또는 빠진 근거를 묻는 질문"]',
+      '}',
+      '',
+      'issues는 최대 4개, rewrites는 비어 있지 않은 필드에 대해서만 최대 2개, questions는 최대 3개.',
+      '답변이 비어 있는 필드는 rewrite를 만들지 말고 questions로 물어라.'
+    ].join('\n');
+  }
+
+  function auditPrompt(){
+    return [
+      '다음은 창업팀이 완성한 IR 스토리 전문이다. 단계별이 아니라 IR 전체를 하나의 논리로 보고 감수하라.',
+      '특히 단계 사이의 모순을 찾아라. 예: 타겟 고객이 Problem과 Market에서 다르다, 객단가가 수익 모델과 어긋난다, 마일스톤이 GTM으로는 달성 불가능하다.',
+      '',
+      '# IR 전문',
+      contextBlock(null),
+      '',
+      '# 출력 JSON 스키마',
+      '{',
+      '  "score": 0~100 정수 (이 IR로 투자 검토 미팅을 잡을 만한가),',
+      '  "verdict": "한두 문장 총평",',
+      '  "strengths": ["이 IR에서 실제로 강한 지점"],',
+      '  "inconsistencies": [{ "problem": "어느 항목과 어느 항목이 어떻게 어긋나는지", "why": "왜 문제인지" }],',
+      '  "questions": [{ "q": "심사위원이 던질 질문", "intent": "이 질문으로 무엇을 검증하려는지" }]',
+      '}',
+      '',
+      'strengths 최대 3개, inconsistencies 최대 4개, questions는 5개.',
+      '모순이 없으면 inconsistencies를 빈 배열로 두되, 억지로 만들지는 마라.'
+    ].join('\n');
+  }
+
+  function diagramPrompt(){
+    return [
+      '아래 IR 내용에서 도식으로 그릴 구조를 추출하라. 새로 창작하지 말고 이미 쓰인 내용에서 뽑아내라.',
+      '',
+      DG_RULE,
+      '',
+      '# IR 내용',
+      contextBlock(null),
+      '',
+      '# 자리와 후보 — 자리마다 하나만 고른다',
+      slotMenu(),
+      '',
+      '# 출력 JSON',
+      '{ "pain":{…}, "solution":{…}, "moat":{…}, "market":{…}, "gtm":{…}, "ask":{…} }',
+      '- 각 값에 "type"과 "why"를 반드시 넣는다. 위 후보에 없는 type은 쓰지 마라.',
+      '- 해당 관계가 IR에 없으면 그 자리는 null이다.',
+      '',
+      '# 공통 규칙',
+      '- ★IR에 없는 숫자·기관명·연도·회사명을 절대 지어내지 마라. 모르면 "[__]"로 비워라.',
+      '- 경쟁사 실명이 IR에 없으면 유형으로 적어라(예: "기존 수작업", "범용 SaaS").',
+      '- market은 Bottom-up(고객 수 × 객단가)만 쓴다. "전체 시장의 몇 %" 같은 Top-down은 쓰지 마라.',
+      '- timeline의 when은 IR에 적힌 시점만. 없으면 빈 문자열로 두고 연도·분기를 지어내지 마라.',
+      '- position 좌표는 0~1이고 우리가 우상단에 가깝게 선다.',
+      '- 라벨은 짧게, note는 15자 이내. 없으면 빈 문자열.',
+      '- ★서로 다른 자리에 같은 type을 반복하지 마라. 다른 관계인데 같은 그림이면 구분되지 않는다.'
+    ].join('\n');
+  }
+
+  // ── SVG 유틸 ────────────────────────────
+  //  ★키 이름을 줄여 쓰지 말 것 — 전에 C.bl / C.blLt 로 적힌 곳이 있었고(정의에 없는 키다),
+  //    SVG에 fill="undefined"가 들어가 타임라인·포지셔닝의 강조색이 통째로 죽어 있었다.
+  //    색이 안 나와도 예외가 나지 않아 눈으로 보기 전엔 모른다.
+  var C = { blue:'#2563eb', blueLt:'#eff6ff', blueBd:'#bfdbfe',
+            em:'#059669', emLt:'#ecfdf5', emBd:'#a7f3d0',
+            pu:'#9333ea', puLt:'#faf5ff', puBd:'#e9d5ff',
+            rd:'#dc2626', rdLt:'#fef2f2', rdBd:'#fecaca',
+            ink:'#0f172a', mute:'#64748b', line:'#cbd5e1' };
+
+  // 한글은 폭이 넓다 — 대략적 폭 계산으로 줄바꿈한다
+  function textW(s, fs){
+    var w = 0;
+    for(var i=0; i<s.length; i++){
+      var c = s.charCodeAt(i);
+      w += (c > 0x1100 && c < 0xD7FF) || (c >= 0xFF00 && c <= 0xFFEF) ? fs : fs * 0.55;
+    }
+    return w;
+  }
+
+  function wrap(s, fs, maxW){
+    s = String(s || '').trim();
+    if(!s) return [];
+    var words = s.split(/\s+/), lines = [], cur = '';
+    words.forEach(function(w){
+      var t = cur ? cur + ' ' + w : w;
+      if(textW(t, fs) <= maxW || !cur){ cur = t; }
+      else { lines.push(cur); cur = w; }
+    });
+    if(cur) lines.push(cur);
+    // 한 단어가 너무 길면 강제로 자른다
+    var out = [];
+    lines.forEach(function(l){
+      while(textW(l, fs) > maxW && l.length > 1){
+        var cut = l.length;
+        while(cut > 1 && textW(l.slice(0, cut), fs) > maxW) cut--;
+        out.push(l.slice(0, cut));
+        l = l.slice(cut);
+      }
+      if(l) out.push(l);
+    });
+    return out.slice(0, 3);
+  }
+
+  function tspans(lines, cx, y, fs, fill, weight){
+    return lines.map(function(l, i){
+      return '<text x="' + cx + '" y="' + (y + i * (fs + 5)) + '" text-anchor="middle" font-size="' + fs +
+             '" font-weight="' + (weight || 400) + '" fill="' + fill + '" font-family="inherit">' + esc(l) + '</text>';
+    }).join('');
+  }
+
+  function box(x, y, w, h, fill, stroke){
+    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="10" fill="' + fill +
+           '" stroke="' + stroke + '" stroke-width="1.5"/>';
+  }
+
+  function arrowDefs(id, color){
+    return '<defs><marker id="' + id + '" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">' +
+           '<path d="M0 0 L10 5 L0 10 z" fill="' + color + '"/></marker></defs>';
+  }
+
+  function svgWrap(w, h, inner){
+    return '<svg class="dg" viewBox="0 0 ' + w + ' ' + h + '" role="img" xmlns="http://www.w3.org/2000/svg">' + inner + '</svg>';
+  }
+
+  // ① 해결책 흐름도 — 가로 단계 박스 + 화살표
+  function drawFlow(d){
+    var steps = arr(d && d.steps).filter(function(s){ return s && s.label; }).slice(0, 5);
+    if(steps.length < 2) return '';
+
+    var W = 760, n = steps.length, GAP = 38, PAD = 14;
+    var bw = (W - GAP * (n - 1)) / n;
+    var inner = bw - 20;
+
+    var laid = steps.map(function(s){
+      return { l: wrap(s.label, 14, inner), n: wrap(s.note, 11, inner) };
+    });
+    var maxL = Math.max.apply(null, laid.map(function(o){ return o.l.length; }));
+    var maxN = Math.max.apply(null, laid.map(function(o){ return o.n.length; }));
+    var bh = PAD + 24 + 10 + maxL * 19 + (maxN ? 6 + maxN * 16 : 0) + PAD;
+
+    var s = arrowDefs('ar-flow', C.line);
+    laid.forEach(function(o, i){
+      var x = i * (bw + GAP), cx = x + bw / 2;
+      s += box(x, 0, bw, bh, C.blueLt, C.blueBd);
+      s += '<circle cx="' + cx + '" cy="' + (PAD + 12) + '" r="12" fill="' + C.blue + '"/>';
+      s += '<text x="' + cx + '" y="' + (PAD + 16) + '" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" font-family="inherit">' + (i + 1) + '</text>';
+      s += tspans(o.l, cx, PAD + 24 + 20, 14, C.ink, 600);
+      if(o.n.length) s += tspans(o.n, cx, PAD + 24 + 20 + maxL * 19 + 8, 11, C.mute);
+      if(i < n - 1){
+        var ax = x + bw + 8, ay = bh / 2;
+        s += '<line x1="' + ax + '" y1="' + ay + '" x2="' + (ax + GAP - 20) + '" y2="' + ay +
+             '" stroke="' + C.line + '" stroke-width="2" marker-end="url(#ar-flow)"/>';
+      }
+    });
+    return svgWrap(W, bh, s);
+  }
+
+  // ② Bottom-up 산식 — [고객 수] × [객단가] = [시장]
+  function drawMarket(d){
+    if(!d || (!d.unitValue && !d.priceValue && !d.totalValue)) return '';
+
+    var W = 760, SYM = 46, bw = (W - SYM * 2) / 3, PAD = 16;
+    var cells = [
+      { lab: d.unitLabel || '타겟 고객 수', val: d.unitValue || '[__]', accent: false },
+      { lab: d.priceLabel || '객단가',      val: d.priceValue || '[__]', accent: false },
+      { lab: d.totalLabel || '초기 시장(SOM)', val: d.totalValue || '[__]', accent: true }
+    ];
+    var laid = cells.map(function(c){
+      return { lab: wrap(c.lab, 11, bw - 24), val: wrap(c.val, 17, bw - 24), accent: c.accent };
+    });
+    var maxLab = Math.max.apply(null, laid.map(function(o){ return o.lab.length; }));
+    var maxVal = Math.max.apply(null, laid.map(function(o){ return o.val.length; }));
+    var bh = PAD + maxLab * 15 + 10 + maxVal * 23 + PAD;
+
+    var s = '';
+    laid.forEach(function(o, i){
+      var x = i * (bw + SYM), cx = x + bw / 2;
+      s += box(x, 0, bw, bh, o.accent ? C.em : C.emLt, o.accent ? C.em : C.emBd);
+      s += tspans(o.lab, cx, PAD + 11, 11, o.accent ? '#d1fae5' : C.mute, 600);
+      s += tspans(o.val, cx, PAD + maxLab * 15 + 20, 17, o.accent ? '#fff' : C.ink, 700);
+      if(i < 2){
+        s += '<text x="' + (x + bw + SYM / 2) + '" y="' + (bh / 2 + 8) + '" text-anchor="middle" font-size="22" font-weight="700" fill="' +
+             C.mute + '" font-family="inherit">' + (i === 0 ? '×' : '=') + '</text>';
+      }
+    });
+    return svgWrap(W, bh, s);
+  }
+
+  // ③ GTM 퍼널 — 위가 넓고 아래로 좁아지는 계단
+  function drawFunnel(d){
+    var stages = arr(d && d.stages).filter(function(s){ return s && s.label; }).slice(0, 4);
+    if(stages.length < 2) return '';
+
+    var W = 760, n = stages.length, SH = 66, GAP = 8;
+    var topW = 660, botW = 300, cx = W / 2;
+    var H = n * SH + (n - 1) * GAP;
+
+    var s = '';
+    stages.forEach(function(st, i){
+      var y = i * (SH + GAP);
+      var wT = topW - (topW - botW) * (i / n);
+      var wB = topW - (topW - botW) * ((i + 1) / n);
+      var pts = [
+        (cx - wT / 2) + ',' + y, (cx + wT / 2) + ',' + y,
+        (cx + wB / 2) + ',' + (y + SH), (cx - wB / 2) + ',' + (y + SH)
+      ].join(' ');
+      var op = 0.16 + i * 0.22;
+      s += '<polygon points="' + pts + '" fill="' + C.pu + '" fill-opacity="' + op.toFixed(2) + '" stroke="' + C.pu + '" stroke-width="1.5"/>';
+
+      var lab = wrap(st.label, 14, wB - 30);
+      var note = wrap(st.note, 11, wB - 30);
+      var dark = op > 0.5;
+      var ty = y + SH / 2 - (note.length ? 8 : 0) + 5 - (lab.length - 1) * 9;
+      s += tspans(lab, cx, ty, 14, dark ? '#fff' : C.ink, 600);
+      if(note.length) s += tspans(note, cx, ty + lab.length * 19 + 2, 11, dark ? '#f3e8ff' : C.mute);
+    });
+    return svgWrap(W, H, s);
+  }
+
+  // ④ 마일스톤 타임라인 — 조달 목표·마일스톤(fundingAsk)에서 뽑는다
+  //    돈 이야기를 하는 장(Ask)에 그림이 없으면 슬라이드가 맨 글자만 남는다.
+  function drawTimeline(d){
+    var items = arr(d && d.items).filter(function(x){ return x && x.label; }).slice(0, 5);
+    if(items.length < 2) return '';
+
+    var W = 760, n = items.length;
+    var PADX = 40, AXIS = 92;
+    var span = (W - PADX * 2) / (n - 1);
+    var s = arrowDefs('mkTl', C.line);
+
+    // 축
+    s += '<line x1="' + PADX + '" y1="' + AXIS + '" x2="' + (W - PADX + 14) + '" y2="' + AXIS +
+         '" stroke="' + C.line + '" stroke-width="2" marker-end="url(#mkTl)"/>';
+
+    items.forEach(function(it, i){
+      var cx = PADX + span * i;
+      var up = i % 2 === 0;                     // 위·아래 번갈아 — 글자가 겹치지 않는다
+      var isLast = i === n - 1;
+      var col = isLast ? C.pu : C.blue;
+
+      s += '<circle cx="' + cx + '" cy="' + AXIS + '" r="7" fill="#fff" stroke="' + col + '" stroke-width="3"/>';
+
+      var when = String(it.when || '').trim();
+      var lab = wrap(it.label, 13, span * 0.92);
+      var note = wrap(it.note, 10.5, span * 0.92);
+
+      var y = up ? AXIS - 26 : AXIS + 30;
+      s += '<line x1="' + cx + '" y1="' + (up ? AXIS - 8 : AXIS + 8) + '" x2="' + cx + '" y2="' +
+           (up ? y + 4 : y - 12) + '" stroke="' + C.line + '" stroke-width="1.5"/>';
+
+      var ty = up ? y - (lab.length - 1) * 17 - (note.length ? note.length * 13 : 0) - (when ? 15 : 0) : y;
+      if(when){ s += tspans([when], cx, ty, 11, col, 700); ty += 16; }
+      s += tspans(lab, cx, ty, 13, C.ink, 600);
+      if(note.length) s += tspans(note, cx, ty + lab.length * 17 + 1, 10.5, C.mute);
+    });
+    return svgWrap(W, 190, s);
+  }
+
+  // ⑤ 경쟁 포지셔닝 2×2 — 해자(moat)에서 뽑는다
+  //   ★좌표는 LLM이 0~1로만 낸다. 축·격자·점은 코드가 그린다.
+  function drawPositioning(d){
+    if(!d || !d.us || !d.xLabel || !d.yLabel) return '';
+    var others = arr(d.others).filter(function(o){ return o && o.label; }).slice(0, 4);
+
+    var W = 760, H = 420, PAD = 74;
+    var x0 = PAD, x1 = W - PAD, y0 = 30, y1 = H - PAD;
+    var px = function(v){ return x0 + (x1 - x0) * Math.max(0, Math.min(1, +v || 0)); };
+    var py = function(v){ return y1 - (y1 - y0) * Math.max(0, Math.min(1, +v || 0)); };
+
+    var s = '';
+    // 사분면 — 우상단(우리가 서야 할 자리)만 은은하게 칠한다
+    s += '<rect x="' + ((x0 + x1) / 2) + '" y="' + y0 + '" width="' + ((x1 - x0) / 2) +
+         '" height="' + ((y1 - y0) / 2) + '" fill="' + C.blueLt + '"/>';
+    s += '<line x1="' + x0 + '" y1="' + y1 + '" x2="' + x1 + '" y2="' + y1 + '" stroke="' + C.line + '" stroke-width="1.5"/>';
+    s += '<line x1="' + x0 + '" y1="' + y0 + '" x2="' + x0 + '" y2="' + y1 + '" stroke="' + C.line + '" stroke-width="1.5"/>';
+    s += '<line x1="' + ((x0 + x1) / 2) + '" y1="' + y0 + '" x2="' + ((x0 + x1) / 2) + '" y2="' + y1 +
+         '" stroke="' + C.line + '" stroke-width="1" stroke-dasharray="4 4"/>';
+    s += '<line x1="' + x0 + '" y1="' + ((y0 + y1) / 2) + '" x2="' + x1 + '" y2="' + ((y0 + y1) / 2) +
+         '" stroke="' + C.line + '" stroke-width="1" stroke-dasharray="4 4"/>';
+
+    // 축 이름
+    s += '<text x="' + ((x0 + x1) / 2) + '" y="' + (y1 + 40) + '" text-anchor="middle" font-size="12.5" font-weight="700" fill="' + C.mute + '" font-family="inherit">' + esc(d.xLabel) + ' →</text>';
+    s += '<text transform="translate(' + (x0 - 28) + ',' + ((y0 + y1) / 2) + ') rotate(-90)" text-anchor="middle" font-size="12.5" font-weight="700" fill="' + C.mute + '" font-family="inherit">' + esc(d.yLabel) + ' →</text>';
+
+    // 경쟁사 — 회색 점
+    others.forEach(function(o){
+      var cx = px(o.x), cy = py(o.y);
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="6" fill="#fff" stroke="' + C.mute + '" stroke-width="2"/>';
+      s += tspans(wrap(o.label, 11, 150), cx, cy + 22, 11, C.mute, 500);
+    });
+
+    // 우리 — 강조
+    var ux = px(d.us.x), uy = py(d.us.y);
+    s += '<circle cx="' + ux + '" cy="' + uy + '" r="13" fill="' + C.blue + '" fill-opacity="0.15"/>';
+    s += '<circle cx="' + ux + '" cy="' + uy + '" r="7.5" fill="' + C.blue + '"/>';
+    s += tspans(wrap(d.us.label || '우리', 12.5, 180), ux, uy - 18, 12.5, C.blue, 800);
+
+    return svgWrap(W, H, s);
+  }
+
+  // ⑥ Problem — 누가 무엇을 잃고 있는가 (targetCustomer + problemDescription에서 뽑는다)
+  //    덱 5장 중 cover·problem 두 장이 늘 맨 글자만 남던 자리다.
+  //    그런데 problem은 TIPS 「개발 필요성」 15점이 걸린 칸이고,
+  //    상장사 IR은 6%만 쓰지만 초기기업은 반드시 써야 하는 칸이다(코퍼스 1,344건 실측).
+  //
+  //  ★막대그래프로 그리지 않는다. "하루 3시간"과 "월 100만원"은 단위가 달라
+  //    한 축에 올릴 수 없다. 단위가 다른 값을 같은 축에 세우면 그림이 거짓말을 한다.
+  //    그래서 축 없이 카드로 나열한다 — 비교가 아니라 열거이기 때문이다.
+  function drawPain(d){
+    if(!d) return '';
+    var who   = String(d.who || '').trim();
+    var items = arr(d.items).filter(function(x){ return x && String(x.value || '').trim(); }).slice(0, 4);
+    if(!items.length) return '';        // 손실 수치가 하나도 없으면 그리지 않는다
+
+    var W = 760, GAP = 16, y = 0, s = '';
+
+    // 누가 겪는가 — 페르소나. 없으면 이 칸 자체를 생략한다.
+    if(who){
+      var wl = wrap(who, 14, W - 56);
+      var wh = 26 + wl.length * 20 + 14;
+      s += box(0, 0, W, wh, '#fff', C.line);
+      s += '<text x="20" y="24" font-size="10" font-weight="700" fill="' + C.mute +
+           '" font-family="inherit" letter-spacing="0.06em">WHO · 누가 겪는가</text>';
+      wl.forEach(function(l, i){
+        s += '<text x="20" y="' + (48 + i * 20) + '" font-size="14" font-weight="600" fill="' + C.ink +
+             '" font-family="inherit">' + esc(l) + '</text>';
+      });
+      y = wh + GAP;
+    }
+
+    // 무엇을 잃는가 — 손실 카드
+    var n = items.length, bw = (W - GAP * (n - 1)) / n;
+    var labs = items.map(function(it){ return wrap(it.label, 11.5, bw - 24); });
+    var maxL = Math.max.apply(null, labs.map(function(l){ return l.length; }));
+    var bh = 22 + 30 + 8 + maxL * 17 + 18;
+
+    items.forEach(function(it, i){
+      var x = i * (bw + GAP), cx = x + bw / 2;
+      var val = String(it.value);
+      // 값이 길면 글자를 줄인다 — 박스를 넘기느니 작게 쓴다
+      var vfs = 27;
+      while(vfs > 14 && textW(val, vfs) > bw - 24) vfs -= 1.5;
+
+      s += box(x, y, bw, bh, C.rdLt, C.rdBd);
+      s += '<text x="' + cx + '" y="' + (y + 24) + '" text-anchor="middle" font-size="9.5" font-weight="700" fill="' +
+           C.rd + '" font-family="inherit" letter-spacing="0.06em">LOSS</text>';
+      s += tspans([val], cx, y + 58, vfs, C.rd, 800);
+      s += tspans(labs[i], cx, y + 82, 11.5, C.ink, 500);
+    });
+
+    return svgWrap(W, y + bh, s);
+  }
+
+  // ⑦ 양자 비교 — 기존 방식 vs 우리 방식 (moat에서 뽑는다)
+  //    "무엇이 다른가"는 IR에서 가장 자주 나오는 관계인데 그릴 도식이 없었다.
+  function drawBeforeAfter(d){
+    if(!d || !d.left || !d.right) return '';
+    var L = d.left, R = d.right;
+    var li = arr(L.items).filter(Boolean).slice(0, 4).map(String);
+    var ri = arr(R.items).filter(Boolean).slice(0, 4).map(String);
+    if(!li.length && !ri.length) return '';
+
+    var W = 760, ARW = 64, bw = (W - ARW) / 2, PAD = 18;
+    var lw = li.map(function(t){ return wrap(t, 12.5, bw - PAD * 2); });
+    var rw = ri.map(function(t){ return wrap(t, 12.5, bw - PAD * 2); });
+    var lines = function(ws){ return ws.reduce(function(a, w){ return a + w.length; }, 0); };
+    var rows = Math.max(lines(lw), lines(rw));
+    var bh = 44 + rows * 20 + Math.max(li.length, ri.length) * 8 + PAD;
+
+    function side(x, title, ws, col, bg, bd){
+      var s = box(x, 0, bw, bh, bg, bd);
+      s += tspans(wrap(title, 13, bw - PAD * 2), x + bw / 2, 28, 13, col, 700);
+      var y = 56;
+      ws.forEach(function(w){
+        s += '<circle cx="' + (x + PAD + 4) + '" cy="' + (y - 4) + '" r="2.5" fill="' + col + '"/>';
+        w.forEach(function(l, i){
+          s += '<text x="' + (x + PAD + 14) + '" y="' + (y + i * 18) + '" font-size="12.5" fill="' +
+               C.ink + '" font-family="inherit">' + esc(l) + '</text>';
+        });
+        y += w.length * 18 + 10;
+      });
+      return s;
+    }
+
+    var s = arrowDefs('mkBA', C.mute);
+    s += side(0, L.title || '기존 방식', lw, C.mute, '#fff', C.line);
+    s += side(bw + ARW, R.title || '우리 방식', rw, C.blue, C.blueLt, C.blueBd);
+    s += '<line x1="' + (bw + 14) + '" y1="' + (bh / 2) + '" x2="' + (bw + ARW - 14) + '" y2="' + (bh / 2) +
+         '" stroke="' + C.mute + '" stroke-width="2" marker-end="url(#mkBA)"/>';
+    return svgWrap(W, bh, s);
+  }
+
+  // ⑧ 병렬 구성요소 — 순서가 없는 것에 화살표를 붙이지 않기 위해서다.
+  //    전에는 이런 내용도 flow로 그려져, 없는 순서를 있는 것처럼 주장했다.
+  function drawParallel(d){
+    var items = arr(d && d.items).filter(function(x){ return x && x.label; }).slice(0, 4);
+    if(items.length < 2) return '';
+
+    var W = 760, GAP = 16, PAD = 16;
+    var n = items.length, bw = (W - GAP * (n - 1)) / n;
+    var labs = items.map(function(it){ return wrap(it.label, 13.5, bw - PAD * 2); });
+    var nts  = items.map(function(it){ return wrap(it.note, 11, bw - PAD * 2); });
+    var maxL = Math.max.apply(null, labs.map(function(l){ return l.length; }));
+    var maxN = Math.max.apply(null, nts.map(function(l){ return l.length; }));
+    var bh = PAD + maxL * 19 + (maxN ? 8 + maxN * 16 : 0) + PAD;
+
+    var s = '';
+    items.forEach(function(it, i){
+      var x = i * (bw + GAP), cx = x + bw / 2;
+      s += box(x, 0, bw, bh, C.blueLt, C.blueBd);
+      s += tspans(labs[i], cx, PAD + 16, 13.5, C.ink, 700);
+      if(nts[i].length) s += tspans(nts[i], cx, PAD + maxL * 19 + 16, 11, C.mute);
+    });
+    return svgWrap(W, bh, s);
+  }
+
+  // ⑨ 순환 — 반복되는 과정. 직선으로 그리면 끝나는 것처럼 보인다.
+  function drawCycle(d){
+    var st = arr(d && d.stages).filter(function(x){ return x && x.label; }).slice(0, 5);
+    if(st.length < 3) return '';
+
+    var W = 760, H = 340, cx = W / 2, cy = H / 2, R = 108, nr = 46;
+    var n = st.length;
+    var ang = function(i){ return (-90 + (360 / n) * i) * Math.PI / 180; };
+    var px = function(i){ return cx + R * Math.cos(ang(i)); };
+    var py = function(i){ return cy + R * Math.sin(ang(i)); };
+
+    var s = arrowDefs('mkCy', C.pu);
+    // 노드 사이를 호로 잇는다 — 원 위를 도는 것이 눈에 보여야 순환으로 읽힌다
+    for(var i = 0; i < n; i++){
+      var a0 = ang(i), a1 = ang((i + 1) % n);
+      var pad = 0.30;                                  // 노드에 닿지 않도록 양끝을 물린다
+      var s0 = a0 + pad, s1 = a1 - pad;
+      s += '<path d="M ' + (cx + R * Math.cos(s0)) + ' ' + (cy + R * Math.sin(s0)) +
+           ' A ' + R + ' ' + R + ' 0 0 1 ' + (cx + R * Math.cos(s1)) + ' ' + (cy + R * Math.sin(s1)) +
+           '" fill="none" stroke="' + C.pu + '" stroke-width="2" marker-end="url(#mkCy)"/>';
+    }
+    st.forEach(function(it, i){
+      var x = px(i), y = py(i);
+      s += '<circle cx="' + x + '" cy="' + y + '" r="' + nr + '" fill="' + C.puLt + '" stroke="' + C.puBd + '" stroke-width="1.5"/>';
+      var lab = wrap(it.label, 12, nr * 1.75);
+      s += tspans(lab, x, y - (lab.length - 1) * 7 + 4, 12, C.ink, 600);
+    });
+    return svgWrap(W, H, s);
+  }
+
+  // ⑩ 허브 — 중심과 참여자. 플랫폼·생태계 서술에 쓰인다.
+  function drawHub(d){
+    if(!d || !d.center) return '';
+    var sp = arr(d.spokes).filter(function(x){ return x && x.label; }).slice(0, 6);
+    if(sp.length < 2) return '';
+
+    var W = 760, H = 340, cx = W / 2, cy = H / 2, R = 118, cr = 62;
+    var n = sp.length;
+    var s = '';
+    sp.forEach(function(it, i){
+      var a = (-90 + (360 / n) * i) * Math.PI / 180;
+      var x = cx + R * Math.cos(a), y = cy + R * Math.sin(a);
+      // 선은 중심 원 밖에서 시작한다 — 원을 관통하면 안 된다
+      s += '<line x1="' + (cx + cr * Math.cos(a)) + '" y1="' + (cy + cr * Math.sin(a)) +
+           '" x2="' + (x - 38 * Math.cos(a)) + '" y2="' + (y - 22 * Math.sin(a)) +
+           '" stroke="' + C.line + '" stroke-width="1.5"/>';
+      var lab = wrap(it.label, 12, 148);
+      var bh2 = 12 + lab.length * 17 + 12, bw2 = 156;
+      s += box(x - bw2 / 2, y - bh2 / 2, bw2, bh2, '#fff', C.emBd);
+      s += tspans(lab, x, y - (lab.length - 1) * 8.5 + 4, 12, C.ink, 600);
+    });
+    s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + cr + '" fill="' + C.emLt + '" stroke="' + C.em + '" stroke-width="2"/>';
+    var cl = wrap(d.center.label || '', 13, cr * 1.7);
+    s += tspans(cl, cx, cy - (cl.length - 1) * 8 + 4, 13, C.em, 800);
+    return svgWrap(W, H, s);
+  }
+
+  // ⑪ 격차 — 현재와 목표의 차이. "얼마나 모자란가"가 한눈에 보여야 한다.
+  function drawGap(d){
+    if(!d || !d.from || !d.to) return '';
+    var fv = String(d.from.value || '').trim(), tv = String(d.to.value || '').trim();
+    if(!fv || !tv) return '';
+
+    var W = 760, H = 210, bw = 232, gapW = W - bw * 2;
+    var s = arrowDefs('mkGap', C.em);
+
+    function pill(x, val, lab, col, bg, bd){
+      var t = box(x, 40, bw, 108, bg, bd);
+      t += tspans([val], x + bw / 2, 96, 30, col, 800);
+      t += tspans(wrap(lab, 12, bw - 24), x + bw / 2, 124, 12, C.mute);
+      return t;
+    }
+    s += pill(0, fv, d.from.label || '현재', C.mute, '#fff', C.line);
+    s += pill(bw + gapW, tv, d.to.label || '목표', C.em, C.emLt, C.emBd);
+
+    // 사이의 격차
+    var gx = bw, gc = bw + gapW / 2;
+    s += '<line x1="' + (gx + 14) + '" y1="94" x2="' + (gx + gapW - 14) + '" y2="94" stroke="' + C.em +
+         '" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#mkGap)"/>';
+    if(d.gap && String(d.gap.value || '').trim()){
+      s += tspans([String(d.gap.value)], gc, 74, 15, C.em, 800);
+      if(d.gap.label) s += tspans(wrap(d.gap.label, 11, gapW - 16), gc, 124, 11, C.mute);
+    }
+    return svgWrap(W, H, s);
+  }
+
+  // ⑫ 계층 — 위에서 아래로 쌓인 구조(기술 스택·서비스 층위).
+  function drawLayers(d){
+    var ls = arr(d && d.layers).filter(function(x){ return x && x.label; }).slice(0, 4);
+    if(ls.length < 2) return '';
+
+    var W = 760, GAP = 10, PAD = 14, y = 0, s = '';
+    var tones = [[C.blueLt, C.blueBd], [C.emLt, C.emBd], [C.puLt, C.puBd], ['#fff', C.line]];
+    ls.forEach(function(it, i){
+      var lab = wrap(it.label, 13.5, W - 240);
+      var nt  = wrap(it.note, 11, W - 240);
+      var h = PAD + lab.length * 19 + (nt.length ? 6 + nt.length * 16 : 0) + PAD;
+      var tone = tones[i % tones.length];
+      s += box(0, y, W, h, tone[0], tone[1]);
+      lab.forEach(function(l, j){
+        s += '<text x="24" y="' + (y + PAD + 15 + j * 19) + '" font-size="13.5" font-weight="700" fill="' +
+             C.ink + '" font-family="inherit">' + esc(l) + '</text>';
+      });
+      nt.forEach(function(l, j){
+        s += '<text x="24" y="' + (y + PAD + lab.length * 19 + 15 + j * 16) + '" font-size="11" fill="' +
+             C.mute + '" font-family="inherit">' + esc(l) + '</text>';
+      });
+      y += h + GAP;
+    });
+    return svgWrap(W, y - GAP, s);
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  //  도식 선택 — 자리(슬롯)마다 후보를 두고, 내용의 관계에 맞는 것을 고른다.
+  //
+  //  ★전에는 필드 하나에 도식 하나가 고정이었다. 그래서 순서가 없는 구성요소에도
+  //    화살표가 붙고(없는 순서를 주장), 순환 구조도 직선으로 그려졌다(끝나는 것처럼 보임).
+  //  ★그렇다고 LLM에게 그림을 맡기지는 않는다. LLM이 고르는 것은 **관계의 종류**뿐이고,
+  //    좌표와 레이아웃은 여전히 코드가 정한다. 후보 밖의 type은 코드가 거부한다.
+  // ══════════════════════════════════════════════════════════════
+  var DG_DRAW = {
+    pain: drawPain, gap: drawGap,
+    flow: drawFlow, parallel: drawParallel, layers: drawLayers,
+    position: drawPositioning, beforeafter: drawBeforeAfter,
+    market: drawMarket,
+    funnel: drawFunnel, cycle: drawCycle, hub: drawHub,
+    timeline: drawTimeline
+  };
+
+  //  when = LLM이 이 도식을 고를 조건. spec = 그때 내야 할 JSON 모양.
+  var DG_TYPE = {
+    pain:        { name:'손실 열거', when:'고객이 잃는 것을 수치로 나열할 때',
+                   spec:'"type":"pain", "who":"고통을 겪는 사람(25자 내외)", "items":[{"value":"3시간","label":"무엇을 잃는지(20자 이내)"}]' },
+    gap:         { name:'격차', when:'현재 값과 목표 값의 차이가 핵심일 때',
+                   spec:'"type":"gap", "from":{"value":"87%","label":"현재"}, "to":{"value":"95%","label":"목표"}, "gap":{"value":"8%p","label":"메워야 할 차이"}' },
+    flow:        { name:'순차 흐름', when:'단계가 정해진 순서로 이어질 때',
+                   spec:'"type":"flow", "steps":[{"label":"단계명(8자 내외)","note":"부연(15자 이내)"}]' },
+    parallel:    { name:'병렬 구성', when:'순서 없이 나란한 구성요소일 때',
+                   spec:'"type":"parallel", "items":[{"label":"구성요소","note":"부연(15자 이내)"}]' },
+    layers:      { name:'계층 구조', when:'위아래로 쌓인 층위일 때(기술 스택 등)',
+                   spec:'"type":"layers", "layers":[{"label":"층 이름","note":"부연"}]' },
+    position:    { name:'경쟁 2×2', when:'경쟁 기준 두 축으로 자리가 갈릴 때',
+                   spec:'"type":"position", "xLabel":"가로축","yLabel":"세로축","us":{"x":0.8,"y":0.8,"label":"우리"},"others":[{"x":0.3,"y":0.4,"label":"경쟁 유형"}]' },
+    beforeafter: { name:'양자 비교', when:'기존 방식과 우리 방식을 맞세울 때',
+                   spec:'"type":"beforeafter", "left":{"title":"기존 방식","items":["항목","항목"]}, "right":{"title":"우리 방식","items":["항목","항목"]}' },
+    market:      { name:'Bottom-up 산식', when:'고객 수 × 객단가 = 시장으로 산출할 때',
+                   spec:'"type":"market", "unitLabel":"고객 단위","unitValue":"고객 수","priceLabel":"객단가 항목","priceValue":"객단가","totalLabel":"시장 이름","totalValue":"금액"' },
+    funnel:      { name:'퍼널', when:'넓은 채널에서 좁은 고객으로 줄어들 때',
+                   spec:'"type":"funnel", "stages":[{"label":"단계","note":"부연"}]' },
+    cycle:       { name:'순환', when:'과정이 되돌아와 반복될 때(리텐션·데이터 선순환)',
+                   spec:'"type":"cycle", "stages":[{"label":"단계(12자 이내)"}]' },
+    hub:         { name:'허브', when:'우리를 중심으로 여러 참여자가 붙을 때(플랫폼)',
+                   spec:'"type":"hub", "center":{"label":"우리"}, "spokes":[{"label":"참여자"}]' },
+    timeline:    { name:'마일스톤', when:'시점별 목표가 있을 때',
+                   spec:'"type":"timeline", "items":[{"when":"시점","label":"마일스톤","note":"부연"}]' }
+  };
+
+  //  슬롯 = 슬라이드의 한 자리. 그 자리에 올 수 있는 후보를 **코드가** 정한다.
+  var DG_SLOTS = {
+    pain:     { label:'Problem — 고객이 잃는 것', src:'타겟 고객·고객의 문제', opts:['pain','gap'] },
+    solution: { label:'Solution — 어떻게 푸는가', src:'해결책 작동 원리',      opts:['flow','parallel','layers'] },
+    moat:     { label:'경쟁 — 우리의 자리',       src:'기술적 방어 해자',      opts:['position','beforeafter'] },
+    market:   { label:'Market — 시장 산출',       src:'SOM 타겟·시장 규모',    opts:['market'] },
+    gtm:      { label:'GTM — 고객 확보',          src:'수익 모델·GTM 전략',    opts:['funnel','cycle','hub'] },
+    ask:      { label:'Ask — 조달·마일스톤',      src:'조달 목표·마일스톤',    opts:['timeline'] }
+  };
+
+  var DG_ORDER = ['pain', 'solution', 'moat', 'market', 'gtm', 'ask'];
+
+  // 슬롯 하나 → SVG. renderDeck·renderDiagrams·regenDiagram이 모두 이 함수를 본다.
+  function drawOne(slot, spec){
+    var d = (spec || {})[slot];
+    if(!d) return '';
+    var S = DG_SLOTS[slot];
+    var t = String(d.type || '');
+    // ★후보 밖의 type은 거부한다. 엉뚱한 자리에 엉뚱한 그림이 들어가느니 비는 편이 낫다.
+    if(!S || S.opts.indexOf(t) < 0) return '';
+    return DG_DRAW[t] ? DG_DRAW[t](d) : '';
+  }
+
+  // 슬롯의 후보 메뉴 — 프롬프트에 넣는다. 전 도식을 다 나열하면 LLM이 고르지 못한다.
+  function slotMenu(only){
+    return (only ? [only] : DG_ORDER).map(function(k){
+      var S = DG_SLOTS[k];
+      var out = ['## ' + k + ' — ' + S.label + '   (재료: ' + S.src + ')'];
+      S.opts.forEach(function(t){
+        out.push('   · ' + t + ' = ' + DG_TYPE[t].name + ' — ' + DG_TYPE[t].when);
+        out.push('     { ' + DG_TYPE[t].spec + ' }');
+      });
+      return out.join('\n');
+    }).join('\n\n');
+  }
+
+  var DG_RULE = [
+    '# 도식을 고르는 법 — 이것이 가장 중요하다',
+    '자리마다 후보가 여럿이다. **내용이 어떤 관계인지 먼저 판정하고** 그에 맞는 것을 골라라.',
+    '- 정해진 순서로 이어지면 flow / 순서 없이 나란하면 parallel / 위아래로 쌓이면 layers',
+    '- 되돌아와 반복되면 cycle / 갈수록 줄어들면 funnel / 중심에 우리가 있고 참여자가 붙으면 hub',
+    '- 두 방식을 맞세우면 beforeafter / 두 기준으로 자리가 갈리면 position',
+    '★보기 좋아서가 아니라 **정보 사이에 그 관계가 실제로 있어서** 고른다.',
+    '  관계가 없으면 그 자리는 null이다. 억지로 만들지 마라 — 빈 자리가 틀린 그림보다 낫다.',
+    '★각 도식에 "why"를 25자 이내로 적어라. 왜 그 형태를 골랐는지다(예: "순서가 있어 흐름도").'
+  ]
+
+  // ══════════════════════════════════════════════════════════════
+  //  피칭 덱 (5장 + R&D 부록)
+  //
+  //  ★도식과 같은 원칙: LLM은 '무엇을 말할지'만 내고, '어떻게 보일지'는 코드가 정한다.
+  //  ★그리고 하나 더 — LLM이 낸 문구의 **숫자를 코드가 IR 원문과 대조**한다.
+  //    슬라이드에 박힌 허구 수치는 팀이 투자자 앞에서 그대로 읽게 된다.
+  //    "지어내지 마라"는 프롬프트만으로는 못 막는다(TIPS 채점에서 이미 겪었다).
+  //  ★슬라이드와 도식을 LLM 호출 '한 번'에 받는다 — 계정당 일일 상한을 아껴야 한다.
+  // ══════════════════════════════════════════════════════════════
+  //  figs = 그 장에 놓을 **슬롯** 이름이다(도식 이름이 아니다).
+  //  어떤 도식이 그려질지는 슬롯 안에서 내용의 관계에 따라 정해진다.
+  var DECK_SLIDES = [
+    { id:'cover',    label:'Cover',            figs:[] },
+    { id:'problem',  label:'Problem',          figs:['pain'] },
+    { id:'solution', label:'Solution',         figs:['solution', 'moat'] },
+    { id:'market',   label:'Market & BM',      figs:['market', 'gtm'] },
+    { id:'team_ask', label:'Team & Ask',       figs:['ask'] }
+  ];
+
+  function deckPrompt(){
+    return [
+      '아래 IR을 투자자 앞에서 띄우는 **피칭 덱 5장**으로 압축하라.',
+      'IR 문서를 그대로 옮기지 마라 — 슬라이드는 짧아야 한다. 이미 쓰인 내용에서만 뽑아라.',
+      '',
+      '# IR 내용',
+      contextBlock(null),
+      '',
+      '# 출력 JSON',
+      '{',
+      '  "slides": [',
+      '    { "id":"cover",    "headline":"회사명 — 한 줄 정체성", "sub":"보조 문장 1개" },',
+      '    { "id":"problem",  "headline":"문제를 한 문장으로", "bullets":["...","..."] },',
+      '    { "id":"solution", "headline":"해결책을 한 문장으로", "bullets":["...","..."] },',
+      '    { "id":"market",   "headline":"시장·수익모델을 한 문장으로", "bullets":["...","..."] },',
+      '    { "id":"team_ask", "headline":"왜 우리인가 + 얼마가 필요한가", "bullets":["...","..."] }',
+      '  ],',
+      '  "rnd": { "headline":"R&D 개발 목표를 한 문장으로", "bullets":["...","..."] },',
+      '  "diagrams": { "pain":{…}, "solution":{…}, "moat":{…}, "market":{…}, "gtm":{…}, "ask":{…} }',
+      '}',
+      '',
+      DG_RULE,
+      '',
+      '# 도식 자리와 후보',
+      slotMenu(),
+      '',
+      '# 규칙 (어기면 쓸 수 없는 덱이 된다)',
+      '- headline은 **한 문장, 40자 이내**. 슬로건이 아니라 주장이어야 한다.',
+      '  나쁜 예: "혁신적인 AI 플랫폼" / 좋은 예: "송장 입력에 하루 3시간을 쓴다"',
+      '- bullets는 **장당 2~3개, 각 45자 이내**. 문장을 잘라 넣지 말고 요점만.',
+      '- 형용사·수식어를 빼라("혁신적", "최고의", "글로벌 선도" 금지).',
+      '- ★★숫자는 IR에 적힌 것만 쓴다. IR에 없는 수치·연도·비율·금액을 만들어내면 안 된다.',
+      '  근거가 없으면 숫자를 아예 빼고 문장으로 써라. 코드가 원문과 대조해 걸러낸다.',
+      '- ★회사명·기관명·경쟁사명도 IR에 있는 것만. 없으면 유형으로 표현하라.',
+      '- rnd = R&D 항목(개발 목표·성능지표·글로벌)이 IR에 있을 때만. 없으면 null.',
+      '- diagrams = 위 "도식 자리와 후보"를 따른다. 각 자리에 "type"과 "why"를 넣고,',
+      '  해당 관계가 IR에 없으면 그 자리는 null. 후보에 없는 type은 쓰지 마라.',
+      '  market은 Bottom-up만, timeline의 when은 IR에 적힌 시점만, position 좌표는 0~1.'
+    ].join('\n');
+  }
+
+  // ★ IR 원문에 없는 숫자를 찾아낸다.
+  //   의미 있는 수치만 본다 — "3단계"의 3 같은 한 자리 맨숫자는 걸지 않는다.
+  //   단위(억·만·%·원·명…)가 붙었거나 두 자리 이상이면 검사 대상이다.
+  function irHay(){
+    return Object.keys(state.formData)
+      .map(function(k){ return state.formData[k] || ''; })
+      .join(' ')
+      .replace(/[,\s]/g, '');
+  }
+
+  function badNumbers(text){
+    var hay = irHay();
+    var out = [];
+    var toks = String(text || '').match(/\d[\d,.]*\s*(억|만|천|퍼센트|%|원|명|개사|개월|개|건|배|년|주|일|시간|배수|x|X)?/g) || [];
+    toks.forEach(function(t){
+      var norm = t.replace(/[,\s]/g, '');
+      var m = norm.match(/\d[\d.]*/);
+      if(!m) return;
+      var d = m[0];
+      var hasUnit = /[^\d.]/.test(norm);
+      if(d.replace(/\D/g, '').length < 2 && !hasUnit) return;   // 한 자리 맨숫자는 통과
+      if(hay.indexOf(d) < 0 && out.indexOf(t.trim()) < 0) out.push(t.trim());
+    });
+    return out;
+  }
+
+  // ★ 근거 인용 검증 — LLM을 믿지 않는다. 코드가 원문 대조한다.
+  //   "원문을 인용하라"는 프롬프트만으로는 가끔 지어낸다(라이브 검증에서 실제 발생).
+  //   인용문이 IR 어디에도 없으면 근거로 인정하지 않고 화면에 경고를 띄운다.
+  function verifyEvidence(ev){
+    if(!ev) return null;
+    var norm = function(s){ return String(s).replace(/[\s"'“”‘’·,.]/g, ''); };
+    var hay = norm(Object.keys(state.formData).map(function(k){ return state.formData[k] || ''; }).join(' '));
+    var needle = norm(ev);
+    if(!needle) return null;
+    if(hay.indexOf(needle) >= 0) return true;                    // 통째로 일치
+    var head = needle.slice(0, Math.min(16, needle.length));     // 앞부분만이라도 일치하는가
+    return hay.indexOf(head) >= 0;
+  }
+
+  var FIELD_LABEL = {};
+  IR_STEPS.concat(TIPS_STEPS).forEach(function(s){
+    s.inputs.forEach(function(i){ FIELD_LABEL[i.key] = i.label; });
+  });
+
+  // ══ 화면 ══════════════════════════════════════════════════════
+
+  // 목차에 쓸 짧은 이름 — IR_STEPS의 title은 "2. 문제 정의 (Problem)" 형태다
+  function shortTitle(s){
+    return String(s.title || '').replace(/^\s*\d+\.\s*/, '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+  }
+  function stepNo(i){ return ('0' + (i + 1)).slice(-2); }
+  function stepPts(s){
+    // 그 단계가 걸린 TIPS 배점 — 채점 항목의 fields/tipsFields로 되짚는다
+    var keys = s.inputs.map(function(x){ return x.key; });
+    var pts = 0;
+    TIPS_RUBRIC.items.forEach(function(it){
+      var f = (it.fields || []).concat(it.tipsFields || []);
+      if(f.some(function(k){ return keys.indexOf(k) >= 0; })) pts = Math.max(pts, it.max);
+    });
+    return pts;
+  }
+  function stepFilled(s){
+    return s.inputs.every(function(i){ return (state.formData[i.key] || '').trim(); });
+  }
+  function stepChars(s){
+    return s.inputs.reduce(function(a, i){ return a + (state.formData[i.key] || '').length; }, 0);
+  }
+
+  // ── 메타 스트립 ──
+  function renderMeta(){
+    var all = steps(), n = 0, tot = 0, ch = 0;
+    all.forEach(function(s){
+      s.inputs.forEach(function(i){
+        tot++;
+        var v = (state.formData[i.key] || '').trim();
+        if(v) n++;
+        ch += v.length;
+      });
+    });
+    var bad = state.lastTips ? (state.lastTips.unverified || 0) : 0;
+    $('pbMeta').innerHTML =
+      '<div class="m">작성 필드<b>' + n + ' / ' + tot + '</b></div>' +
+      '<div class="m">분량<b>' + ch.toLocaleString() + '자</b></div>' +
+      '<div class="m">직전 감수<b>' + (state.lastAudit ? '완료' : '—') + '</b></div>' +
+      '<div class="m' + (bad ? ' warn' : '') + '">근거 미확인<b>' + bad + '건</b></div>' +
+      '<div class="sp"></div>' +
+      '<div class="note">자동저장 켜짐 · 단계 이동마다</div>';
+  }
+
+  // ── 좌: 목차 ──
+  function renderLeft(){
+    var got = 0;
+    IR_STEPS.forEach(function(s){ if(stepFilled(s)) got += stepPts(s); });
+
+    var h = '<h4>IR 6 STEPS<em>' + got + ' / 60</em></h4>';
+    IR_STEPS.forEach(function(s, i){ h += navRow(s, i); });
+
+    if(llm.tipsMode){
+      h += '<div class="pb-hr"></div><h4>TIPS 3 STEPS<em style="color:var(--pb-accent-ink)">+30</em></h4>';
+      TIPS_STEPS.forEach(function(s, i){ h += navRow(s, IR_STEPS.length + i); });
+    }
+    h += '<div class="pb-hr"></div>' +
+         '<p class="fine">운영사 지원계획 10점은 추천 운영사가 작성합니다. 이 도구에서는 채울 수 없습니다.</p>';
+    if(!llm.tipsMode){
+      h += '<p class="fine" style="margin-top:12px;color:var(--pb-warn-deep)">' +
+           'IR 6단계만으로는 60점 컷에 구조적으로 닿지 않습니다. 채점 범위를 90점으로 넓히려면 TIPS 준비 모드를 켜십시오.</p>';
+    }
+    h += '<div class="sp"></div>' +
+         '<button class="pb-cta" id="btnResult">결과 보기</button>' +
+         '<button class="pb-cta sub" style="margin-top:8px" id="btnDeckGo">피칭 덱 만들기</button>';
+
+    $('pbLeft').innerHTML = h;
+    $('btnResult').onclick  = goResult;
+    $('btnDeckGo').onclick  = goDeck;
+    Array.prototype.forEach.call($('pbLeft').querySelectorAll('.pb-nav'), function(b){
+      b.onclick = function(){ state.stepIndex = +b.dataset.i; render(); };
+    });
+  }
+  function navRow(s, i){
+    var on = i === state.stepIndex, done = stepFilled(s);
+    var risk = s.id === 'rnd_kpi';                       // 탈락이 가장 많은 단계
+    var cls = 'pb-nav' + (on ? ' is-on' : (done ? '' : ' is-todo')) + (risk && !on ? ' is-risk' : '');
+    var right = on   ? '<span class="pt">' + stepPts(s) + '</span>'
+              : risk ? '<span class="pt">탈락 최다</span>'
+              : done ? '<span class="ok">✓</span>' : '';
+    return '<button class="' + cls + '" data-i="' + i + '">' + esc(shortTitle(s)) + right + '</button>';
+  }
+
+  // ── 중앙 ──
+  function renderCenter(){
+    $('pbCenter').style.padding = '';        // 덱 화면이 0으로 바꿔놓은 것을 되돌린다
+    var all = steps(), h = '';
+    all.forEach(function(s, i){
+      if(i === state.stepIndex){ h += openStep(s, i, all.length); return; }
+      var prev = '';
+      for(var k = 0; k < s.inputs.length && !prev; k++) prev = (state.formData[s.inputs[k].key] || '').trim();
+      h += '<button class="pb-row' + (prev ? '' : ' is-empty') + '" data-i="' + i + '">' +
+             '<span class="t">' + stepNo(i) + ' ' + esc(shortTitle(s)) + '</span>' +
+             '<span class="p">' + (prev ? esc(prev) : '비어 있습니다 — 초안 자동생성은 제공하지 않습니다') + '</span>' +
+             '<span class="n"><span>' + stepChars(s) + '자</span>' +
+               (stepFilled(s) ? '<span class="ok">✓</span>' : '') + '</span>' +
+           '</button>';
+    });
+    $('pbCenter').innerHTML = h;
+
+    Array.prototype.forEach.call($('pbCenter').querySelectorAll('.pb-row'), function(b){
+      b.onclick = function(){ state.stepIndex = +b.dataset.i; render(); };
+    });
+    Array.prototype.forEach.call($('pbCenter').querySelectorAll('textarea'), function(ta){
+      ta.oninput = function(){
+        state.formData[ta.dataset.k] = ta.value;
+        ta.parentNode.querySelector('.pb-cnt').textContent = ta.value.length + '자';
+        saveLocal();
+        renderMeta();
+      };
+    });
+    if($('btnPrev')) $('btnPrev').onclick = function(){ move(-1); };
+    if($('btnNext')) $('btnNext').onclick = function(){ move(1); };
+  }
+  function openStep(s, i, total){
+    var h = '<div class="pb-open">' +
+      '<div class="step-no">STEP ' + stepNo(i) + ' / ' + total + '</div>' +
+      '<h2>' + esc(s.title.replace(/^\s*\d+\.\s*/, '')) + '</h2>' +
+      '<p class="sub">' + esc(s.subtitle) + '</p>';
+    s.inputs.forEach(function(f){
+      var v = state.formData[f.key] || '';
+      h += '<div class="pb-field">' +
+             '<label>' + esc(f.label) + '<span class="key">' + esc(f.key) + '</span></label>' +
+             '<textarea data-k="' + esc(f.key) + '" placeholder="' + esc(f.placeholder || '') + '">' + esc(v) + '</textarea>' +
+             '<div class="pb-cnt">' + v.length + '자</div>' +
+           '</div>';
+    });
+    h += '<div class="pb-steps-btn">' +
+           '<button class="pb-cta sub" id="btnPrev" style="width:auto;padding:11px 20px">← 이전</button>' +
+           '<button class="pb-cta" id="btnNext" style="width:auto;padding:11px 20px">다음 →</button>' +
+         '</div></div>';
+    return h;
+  }
+  function move(d){
+    var n = steps().length;
+    state.stepIndex = Math.max(0, Math.min(n - 1, state.stepIndex + d));
+    // ★단계를 넘길 때마다 서버에 올린다.
+    //   수동 버튼뿐이던 시절, 캐시 삭제나 PC 변경이 곧 전량 소실이었다.
+    syncToServer();
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  // ── 우: 코치 4탭 ──
+  //   순서를 바꾸지 말 것. 사람 의견이 기계 의견보다 먼저 읽혀야 한다.
+  var TABS = ['멘토', '상장사', '가이드', 'AI 진단'];
+  function renderRight(){
+    var s = steps()[state.stepIndex];
+    var hasMentor = !!(mentor.comments[s.id] || '').trim();
+
+    var h = '<div class="pb-tabs">';
+    TABS.forEach(function(t, i){
+      h += '<button class="pb-tab' + (i === state.tab ? ' is-on' : '') + '" data-t="' + i + '">' +
+           esc(t) + (i === 0 && hasMentor ? '<span class="badge"></span>' : '') + '</button>';
+    });
+    h += '</div><div class="pb-panel">';
+
+    if(state.tab === 0){
+      h += hasMentor
+        ? '<div class="pb-mentor"><h5>멘토 코멘트</h5><p>' + esc(mentor.comments[s.id]) + '</p>' +
+          (mentor.who ? '<p class="by">' + esc(mentor.who) + '</p>' : '') + '</div>' +
+          '<p class="pb-note" style="color:var(--pb-on-ink-3)">사람이 남긴 의견입니다. 기계 의견보다 먼저 읽으십시오.</p>'
+        : '<h5>멘토 코멘트</h5><p>이 단계에 남겨진 코멘트가 없습니다.</p>';
+    } else if(state.tab === 1){
+      h += s.corpusNote
+        ? '<div class="pb-corpus"><h5>상장사는 이렇게 안 씁니다</h5><p>' + s.corpusNote + '</p></div>' +
+          '<p class="pb-note" style="margin-top:14px;color:var(--pb-on-ink-3)">KIND 상장사 IR 덱 1,344건 실측</p>'
+        : '<h5>상장사 대조군</h5><p>이 단계는 상장사 IR과 견줄 실측 자료가 없습니다.</p>';
+    } else if(state.tab === 2){
+      h += '<h5>작성 가이드</h5><ul>';
+      (s.coachTips || []).forEach(function(t){ h += '<li>' + esc(t) + '</li>'; });
+      h += '</ul>';
+    } else {
+      h += '<h5>AI 진단</h5>' +
+           '<p>이 단계를 진단하면 심사역 관점의 지적과 개선 문장을 제안합니다. ' +
+           '근거가 필요한 자리는 <b>[__]</b>로 비워 둡니다 — 없는 수치를 만들어 넣지 않기 위해서입니다.</p>' +
+           '<button class="pb-inkbtn" id="btnAI">이 단계 진단받기</button>' +
+           '<div id="pbDiag" class="pb-diag"></div>';
+    }
+    h += '</div>';
+    $('pbRight').innerHTML = h;
+
+    Array.prototype.forEach.call($('pbRight').querySelectorAll('.pb-tab'), function(b){
+      b.onclick = function(){ state.tab = +b.dataset.t; renderRight(); };
+    });
+    if($('btnAI')){
+      $('btnAI').onclick = runDiag;
+      if(state.diag && state.diag.step === s.id) renderDiagInto(state.diag.data);
+    }
+  }
+
+  // ── AI 진단 ──
+  function runDiag(){
+    if(busy) return;
+    var s = steps()[state.stepIndex];
+    var empty = s.inputs.every(function(i){ return !(state.formData[i.key] || '').trim(); });
+    if(empty){
+      renderDiagInto({ verdict:'이 단계가 비어 있습니다. 먼저 채우신 뒤 진단을 요청하십시오.' });
+      return;
+    }
+    var btn = $('btnAI');
+    busy = true; btn.disabled = true; btn.textContent = '진단 중…';
+    callLLM(SYSTEM, stepPrompt())
+      .then(function(d){
+        state.diag = { step:s.id, data:d };
+        renderDiagInto(d);
+      })
+      .catch(function(err){
+        renderDiagInto({ verdict:'진단하지 못했습니다 — ' + (err.message || '오류') });
+      })
+      .then(function(){
+        busy = false;
+        if($('btnAI')){ $('btnAI').disabled = false; $('btnAI').textContent = '이 단계 진단받기'; }
+      });
+  }
+  function renderDiagInto(d){
+    var box = $('pbDiag');
+    if(!box) return;
+    var h = '';
+    if(d.verdict) h += '<p style="font-size:13px;color:var(--pb-paper)">' + esc(d.verdict) + '</p>';
+
+    arr(d.issues).forEach(function(it){
+      var sev = (it.severity === 'high') ? ' sev-high' : '';
+      h += '<div class="pb-issue' + sev + '">' +
+             '<div class="f">' + esc(FIELD_LABEL[it.field] || it.field || '') + '</div>' +
+             '<div class="q">' + esc(it.problem || '') + '</div>' +
+             (it.why ? '<div class="w">' + esc(it.why) + '</div>' : '') +
+           '</div>';
+    });
+
+    var rw = arr(d.rewrites).filter(function(r){ return r && r.text && FIELD_LABEL[r.field]; });
+    rw.forEach(function(r, i){
+      h += '<div class="pb-rw">' +
+             '<div class="f" style="font:500 10px var(--pb-font-mono);letter-spacing:.12em;color:var(--pb-on-ink-3)">' +
+               esc(FIELD_LABEL[r.field]) + '</div>' +
+             '<p style="margin-top:6px">' + esc(r.text) + '</p>' +
+             '<button data-rw="' + i + '">입력란에 적용</button>' +
+           '</div>';
+    });
+
+    var qs = arr(d.questions);
+    if(qs.length){
+      h += '<div class="pb-issue"><div class="f">실사에서 나올 질문</div>';
+      qs.forEach(function(q){
+        h += '<div class="q" style="margin-top:6px">· ' + esc(typeof q === 'string' ? q : (q && q.q) || '') + '</div>';
+      });
+      h += '</div>';
+    }
+    box.innerHTML = h;
+
+    Array.prototype.forEach.call(box.querySelectorAll('[data-rw]'), function(b){
+      b.onclick = function(){
+        var r = rw[+b.dataset.rw];
+        if(!r) return;
+        state.formData[r.field] = r.text;
+        saveLocal();
+        render();                                  // 입력란·목차·메타가 함께 갱신된다
+        b.textContent = '적용됨';
+        b.disabled = true;
+      };
+    });
+  }
+
+  // ── 저장 (계정별 격리) ──
+  //  ★키를 계정별로 가르지 않으면, 같은 PC에서 A기업이 쓰고 나간 뒤
+  //    B기업이 들어왔을 때 A의 IR이 그대로 떠 있는다.
+  var saveTimer = null;
+  function saveLocal(){
+    chip('saving');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function(){
+      try{
+        localStorage.setItem(skey(), JSON.stringify({
+          stepIndex: state.stepIndex, formData: state.formData, completed: state.completed
+        }));
+        chip('ok');
+      }catch(e){ chip('fail'); }
+    }, 400);
+  }
+  function loadLocal(){
+    // ★먼저 비운다 — 로그아웃해도 스크립트가 메모리에 남아 앞 기업 내용이 새어 나온다
+    state.formData = {}; state.stepIndex = 0; state.completed = false;
+    state.lastTips = null; state.lastAudit = null; state.lastGate = null; state.lastDeck = null;
+    mentor = { comments:{}, overall:'', who:'', loaded:false };
+    try{
+      var raw = localStorage.getItem(skey());
+      if(!raw) return;
+      var s = JSON.parse(raw);
+      if(s && typeof s === 'object'){
+        state.formData  = s.formData || {};
+        state.stepIndex = Math.min(+s.stepIndex || 0, steps().length - 1);
+        state.completed = !!s.completed;
+      }
+    }catch(e){}
+  }
+
+  // ── 저장 상태칩 ── 실패는 자동으로 사라지지 않는다
+  function chip(mode){
+    var c = $('hdChip'), t = $('hdChipTxt');
+    c.classList.toggle('is-fail', mode === 'fail');
+    if(mode === 'saving'){ t.textContent = '저장중…'; }
+    else if(mode === 'fail'){
+      t.innerHTML = '저장 실패 — 브라우저를 닫지 마세요<button class="retry" id="hdRetry">다시 저장</button>';
+      var r = $('hdRetry'); if(r) r.onclick = saveLocal;
+    } else {
+      var d = new Date();
+      t.textContent = '저장됨 ' + ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
+    }
+  }
+
+  function notYet(what){
+    alert(what + '은(는) 다음 이식 단계에서 붙습니다.');
+  }
+
+  // ══ 화면 전환 ═════════════════════════════════════════════════
+  //  화면이 늘면 전환 함수가 전부를 알아야 한다 — 하나를 빠뜨리면 그 화면이 열린 채 남는다.
+  function render(){
+    if(state.view === 'result'){ renderResultView(); return; }
+    if(state.view === 'deck'){   renderDeckView();   return; }
+    if(state.view === 'admin'){  renderAdminView();  return; }
+    $('pbCenter').style.padding = '';
+    renderLeft(); renderCenter(); renderRight(); renderMeta();
+  }
+  function goResult(){ state.view = 'result'; state.stepIndex = 0; render(); window.scrollTo(0,0); }
+  function goWrite(){  state.view = 'write';  render(); window.scrollTo(0,0); }
+  function goDeck(){
+    if(!state.lastDeck){ makeDeck(); return; }
+    state.view = 'deck'; render(); window.scrollTo(0,0);
+  }
+
+  // ══ 피칭 덱 ═══════════════════════════════════════════════════
+  //  ★슬라이드 문구와 도식 구조를 LLM 호출 '한 번'에 받는다 — 일일 상한을 아껴야 한다.
+  //  ★LLM이 요약하며 지어낸 수치가 슬라이드에 박히면 팀이 투자자 앞에서 그대로 읽는다.
+  //    그래서 문구의 숫자를 코드가 IR 원문과 대조한다(badNumbers). 지우진 않는다 — 판단은 사람이 한다.
+  var deckEdited = false;
+
+  function makeDeck(){
+    if(busy) return;
+    var filledN = Object.keys(state.formData).filter(function(k){
+      return String(state.formData[k] || '').trim();
+    }).length;
+    if(filledN < 4){
+      alert('덱을 만들려면 내용이 더 필요합니다. 최소 4개 항목 이상 채워 주십시오. (현재 ' + filledN + '개)');
+      return;
+    }
+    busy = true;
+    var btn = $('btnDeckGo') || $('rlDeck');
+    if(btn){ btn.disabled = true; btn.textContent = '만드는 중…'; }
+
+    callLLM(SYSTEM, deckPrompt())
+      .then(function(d){
+        state.lastDeck = { slides: arr(d && d.slides), rnd:(d && d.rnd) || null,
+                           diagrams:(d && d.diagrams) || {} };
+        deckEdited = false;
+        state.view = 'deck';
+        render();
+        window.scrollTo(0, 0);
+      })
+      .catch(function(err){ alert('덱을 만들지 못했습니다 — ' + (err.message || '오류')); })
+      .then(function(){
+        busy = false;
+        if(btn){ btn.disabled = false; btn.textContent = '피칭 덱 만들기'; }
+      });
+  }
+
+  function renderDeckView(){
+    renderMeta();
+    renderDeckLeft();
+    renderDeckCenter();
+    renderDeckRight();
+  }
+
+  function renderDeckLeft(){
+    var deck = state.lastDeck || {};
+    var wantRnd = !!deck.rnd && state.deckRnd !== false;
+    var total = DECK_SLIDES.length + (wantRnd ? 1 : 0);
+    var h = '<h4>피칭 덱<em>' + total + '장</em></h4>';
+    DECK_SLIDES.forEach(function(sl, i){
+      h += '<button class="pb-nav" data-s="' + i + '">' + esc(sl.label) + '</button>';
+    });
+    if(deck.rnd) h += '<button class="pb-nav" data-s="' + DECK_SLIDES.length + '">R&amp;D 부록</button>';
+
+    if(deck.rnd){
+      h += '<div class="pb-hr"></div>' +
+           '<label style="display:flex;gap:9px;align-items:center;font-size:13px;color:var(--pb-text-body)">' +
+           '<input type="checkbox" id="ckRnd"' + (wantRnd ? ' checked' : '') + '> R&amp;D 부록 붙이기</label>';
+    }
+    h += '<div class="pb-hr"></div>' +
+         '<p class="fine">칸을 눌러 바로 고치실 수 있습니다. 고친 내용이 그대로 PDF로 나갑니다.</p>' +
+         '<div class="sp"></div>' +
+         '<button class="pb-cta" id="dkPdf">PDF로 내보내기</button>' +
+         '<button class="pb-cta sub" style="margin-top:8px" id="dkRegen">덱 전체 다시 만들기</button>' +
+         '<button class="pb-cta sub" style="margin-top:8px" id="dkBack">← 결과로 돌아가기</button>';
+    $('pbLeft').innerHTML = h;
+
+    Array.prototype.forEach.call($('pbLeft').querySelectorAll('[data-s]'), function(b){
+      b.onclick = function(){
+        var el = document.querySelectorAll('#pbCenter .pb-slide')[+b.dataset.s];
+        if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+      };
+    });
+    if($('ckRnd')) $('ckRnd').onchange = function(){ state.deckRnd = this.checked; render(); };
+    $('dkPdf').onclick = function(){
+      document.body.classList.add('deck-print');
+      window.print();
+      setTimeout(function(){ document.body.classList.remove('deck-print'); }, 300);
+    };
+    $('dkRegen').onclick = function(){
+      // ★덱 전체를 다시 만들면 고쳐 둔 문구가 사라진다. 도식 하나만 어색하면 그 도식만 다시 뽑는 편이 낫다.
+      if(deckEdited && !confirm('고치신 슬라이드 문구가 모두 새 내용으로 바뀝니다.\n\n' +
+        '도식 하나만 다시 뽑으려면 그 도식 위의 [도식만 다시]를 쓰십시오.\n\n덱 전체를 다시 만들까요?')) return;
+      makeDeck();
+    };
+    $('dkBack').onclick = goResult;
+  }
+
+  function renderDeckCenter(){
+    var deck = state.lastDeck || {};
+    var wantRnd = !!deck.rnd && state.deckRnd !== false;
+    var list = DECK_SLIDES.slice();
+    var total = list.length + (wantRnd ? 1 : 0);
+
+    var box = document.createElement('div');
+    box.className = 'pb-deck';
+    state.flagged = [];
+
+    list.forEach(function(def, i){
+      var data = (deck.slides || []).filter(function(s){ return s && s.id === def.id; })[0]
+              || { headline:'', bullets:[] };
+      box.appendChild(slideEl(def, data, i + 1, total, false));
+    });
+    if(wantRnd){
+      box.appendChild(slideEl({ id:'rnd', label:'R&D 부록', figs:[] }, deck.rnd, total, total, true));
+    }
+
+    $('pbCenter').innerHTML = '';
+    $('pbCenter').style.padding = '0';
+    $('pbCenter').appendChild(box);
+    renderDeckRight();                     // 숫자 대조는 슬라이드를 다 그린 뒤에 센다
+  }
+
+  function slideEl(def, data, no, total, isAppx){
+    var card = document.createElement('div');
+    card.className = 'pb-slide' + (def.id === 'cover' ? ' is-cover' : '') + (isAppx ? ' is-appx' : '');
+    card.innerHTML = '<div class="sno">' + esc(def.label) + ' · ' + no + ' / ' + total + '</div>';
+
+    flagNums(def.label, data.headline);
+    card.appendChild(field('s-head', data.headline, function(v){ data.headline = v; }));
+
+    if(def.id === 'cover'){
+      card.appendChild(field('s-sub', data.sub, function(v){ data.sub = v; }));
+    } else {
+      var ul = document.createElement('ul');
+      ul.className = 's-bullets';
+      arr(data.bullets).forEach(function(b, i){
+        flagNums(def.label, b);
+        var li = document.createElement('li');
+        var dot = document.createElement('span'); dot.className = 's-dot';
+        li.appendChild(dot);
+        li.appendChild(field('s-bullet', b, function(v){ data.bullets[i] = v; }));
+        ul.appendChild(li);
+      });
+      card.appendChild(ul);
+    }
+
+    (def.figs || []).forEach(function(k){
+      var spec = (state.lastDeck || {}).diagrams;
+      var svgStr = drawOne(k, spec);
+      var dd = (spec || {})[k] || {};
+      var kind = DG_TYPE[String(dd.type || '')];
+
+      var fig = document.createElement('div');
+      fig.className = 's-fig';
+      fig.innerHTML = svgStr ||
+        '<p class="s-fig-none">이 자리(' + esc((DG_SLOTS[k] || {}).label || k) +
+        ')에 넣을 구조가 IR에서 나오지 않았습니다.</p>';
+
+      if(svgStr && kind){
+        var kb = document.createElement('span');
+        kb.className = 's-fig-kind';
+        kb.textContent = kind.name + (dd.why ? ' · ' + dd.why : '');
+        fig.appendChild(kb);
+      }
+      var rb = document.createElement('button');
+      rb.className = 's-fig-regen';
+      rb.type = 'button';
+      rb.textContent = svgStr ? '도식만 다시' : '도식 뽑기';
+      rb.onclick = function(){ regenDiagram(k, rb); };
+      fig.appendChild(rb);
+
+      card.appendChild(fig);
+    });
+    return card;
+  }
+
+  function field(cls, val, onEdit){
+    var ta = document.createElement('textarea');
+    ta.className = cls;
+    ta.rows = 1;
+    ta.value = String(val || '');
+    ta.oninput = function(){
+      ta.style.height = 'auto';
+      ta.style.height = (ta.scrollHeight + 2) + 'px';
+      deckEdited = true;
+      onEdit(ta.value);
+      renderDeckRight();
+    };
+    setTimeout(function(){ ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; }, 0);
+    return ta;
+  }
+
+  // ★IR 원문에 없는 숫자를 모은다. 지우지 않고 우측에 남긴다.
+  function flagNums(where, text){
+    var bad = badNumbers(text);
+    if(bad.length) state.flagged.push({ where:where, nums:bad });
+  }
+
+  function renderDeckRight(){
+    // 지금 화면의 모든 슬라이드 문구를 다시 훑는다(편집분 반영)
+    var flags = [];
+    var deck = state.lastDeck || {};
+    (deck.slides || []).forEach(function(s){
+      var def = DECK_SLIDES.filter(function(x){ return x.id === s.id; })[0];
+      var label = def ? def.label : (s.id || '');
+      [s.headline, s.sub].concat(arr(s.bullets)).forEach(function(t){
+        var bad = badNumbers(t);
+        if(bad.length) flags.push({ where:label, nums:bad });
+      });
+    });
+
+    var h = '<div class="pb-panel"><h5>숫자 대조</h5>';
+    if(!flags.length){
+      h += '<p>슬라이드의 수치가 모두 IR 원문에서 확인됩니다.</p>' +
+           '<p class="pb-note" style="margin-top:12px;color:var(--pb-on-ink-4)">' +
+           '단위가 붙었거나 두 자리 이상인 숫자만 검사합니다.</p>';
+    } else {
+      h += '<p style="color:var(--pb-warn-txt-on-ink)">IR 원문에서 찾지 못한 수치가 ' +
+           flags.reduce(function(a,f){ return a + f.nums.length; }, 0) + '건 있습니다. ' +
+           '<b>지우지 않았습니다</b> — 맞는 값이면 IR에 근거를 채우시고, 아니면 문구를 고치십시오.</p>';
+      flags.forEach(function(f){
+        h += '<div class="pb-num"><span class="w">' + f.nums.map(esc).join(', ') + '</span>' +
+             '<span class="s">' + esc(f.where) + '</span></div>';
+      });
+    }
+    h += '<p class="pb-note" style="margin-top:16px;color:var(--pb-on-ink-4)">' +
+         '이 대조표와 도식 형태 표시는 화면에만 있습니다. PDF에는 슬라이드만 나갑니다.</p></div>';
+    $('pbRight').innerHTML = h;
+  }
+
+  // ══ 관리자 ════════════════════════════════════════════════════
+  //  ★쓰기 권한은 서버가 판정한다. 화면에서 감추는 것은 편의일 뿐 방어가 아니다.
+  //    (서버가 관리자가 아닌 요청의 코멘트 저장을 거부하고, 심사자 응답을 도려낸다.)
+  //  ★단계 id는 여기와 Code.gs의 MENTOR_COLS가 같아야 한다.
+  //    하나만 어긋나면 코멘트가 엉뚱한 단계에 붙는다 — 에러 없이 조용히 틀린다.
+  var MENTOR_STEPS = [
+    { id:'cover',      t:'1 한 줄 소개' }, { id:'problem',    t:'2 문제 정의' },
+    { id:'solution',   t:'3 해결책·기술' }, { id:'market',     t:'4 시장 규모' },
+    { id:'business',   t:'5 BM & GTM' },   { id:'team_ask',   t:'6 팀 & Ask' },
+    { id:'rnd_goal',   t:'7 개발 목표' },  { id:'rnd_kpi',    t:'8 성능지표·검증' },
+    { id:'rnd_global', t:'9 글로벌 진출' }
+  ];
+  var admin = { rows:[], sel:null, comments:{}, overall:'', loading:false };
+
+  function goAdmin(){ state.view = 'admin'; render(); loadAdmin(); window.scrollTo(0,0); }
+
+  function loadAdmin(){
+    if(!serverOn()){ admin.rows = []; renderAdminCenter(); return; }
+    admin.loading = true; renderAdminCenter();
+    apiGet('list', {}).then(function(d){
+      admin.rows = (d && d.ok) ? (d.companies || []) : [];
+    }).catch(function(){ admin.rows = []; })
+      .then(function(){ admin.loading = false; renderAdminCenter(); });
+  }
+
+  function renderAdminView(){
+    renderMeta();
+    renderAdminLeft();
+    renderAdminCenter();
+    renderAdminRight();
+  }
+
+  function renderAdminLeft(){
+    var h = '<h4>관리자</h4>' +
+            '<button class="pb-nav is-on">신청기업</button>' +
+            '<div class="pb-hr"></div>' +
+            '<h4>전체 설정</h4>' +
+            '<p class="fine">여기서 정한 값이 <b>전 계정의 다음 접속</b>에 그대로 적용됩니다. ' +
+            '팀에게는 설정 화면이 없습니다.</p>' +
+            '<label style="display:flex;gap:9px;align-items:center;margin-top:12px;font-size:13px">' +
+              '<input type="checkbox" id="cfgTips"' + (llm.tipsMode ? ' checked' : '') + '> TIPS 준비 모드(9단계)</label>' +
+            '<button class="pb-cta sub" style="margin-top:12px" id="cfgApply">전체 적용</button>' +
+            '<div class="sp"></div>' +
+            '<button class="pb-cta sub" id="adWrite">내 IR 작성 화면</button>';
+    $('pbLeft').innerHTML = h;
+    $('cfgApply').onclick = function(){
+      if(!serverOn()){ alert('서버에 연결돼 있지 않습니다.'); return; }
+      callProxy({ action:'setconfig', id:llm.id, code:llm.code,
+                  config:{ tipsMode: $('cfgTips').checked } })
+        .then(function(){ llm.tipsMode = $('cfgTips').checked; alert('전 계정에 적용했습니다.'); })
+        .catch(function(err){ alert('적용하지 못했습니다 — ' + (err.message || '오류')); });
+    };
+    $('adWrite').onclick = goWrite;
+  }
+
+  function renderAdminCenter(){
+    $('pbCenter').style.padding = '';
+    var rows = admin.rows;
+    var sub = rows.filter(function(r){ return r.status === '제출'; }).length;
+    var wrote = rows.filter(function(r){ return (r.filled || 0) > 0; }).length;
+
+    var h = '<div class="pb-kpi">' +
+              '<div class="k"><b>' + rows.length + '</b><span>신청기업</span></div>' +
+              '<div class="k"><b>' + wrote + '</b><span>작성 착수</span></div>' +
+              '<div class="k"><b>' + sub + '</b><span>제출 완료</span></div>' +
+            '</div>';
+
+    if(admin.loading){
+      h += '<div class="pb-card"><p class="pb-note">불러오는 중…</p></div>';
+    } else if(!rows.length){
+      h += '<div class="pb-card"><p class="pb-note">' +
+           (serverOn() ? '표시할 기업이 없습니다.'
+                       : '서버에 연결돼 있지 않습니다. 배포 후 <b>PROXY</b> 주소를 넣으면 실제 기업 목록이 뜹니다.') +
+           '</p></div>';
+    } else {
+      h += '<table class="pb-atbl"><thead><tr>' +
+             '<th>기업</th><th>작성</th><th>최근 점수</th><th>제출</th><th>코멘트</th>' +
+           '</tr></thead><tbody>';
+      rows.forEach(function(r, i){
+        var on = admin.sel === i;
+        h += '<tr data-i="' + i + '"' + (on ? ' class="is-on"' : '') + '>' +
+               '<td><b>' + esc(r.company || '—') + '</b><span class="sub">' + esc(r.cid || '') + '</span></td>' +
+               '<td>' + (r.filled != null ? r.filled + ' / 17' : '—') + '</td>' +
+               '<td>' + (r.score != null ? esc(String(r.score)) : '—') + '</td>' +
+               '<td>' + (r.status === '제출'
+                          ? '<span class="pb-pill on">제출</span>'
+                          : '<span class="pb-pill off">미제출</span>') + '</td>' +
+               '<td>' + (r.comments ? r.comments + '칸' : '—') + '</td>' +
+             '</tr>';
+      });
+      h += '</tbody></table>';
+    }
+    $('pbCenter').innerHTML = h;
+    Array.prototype.forEach.call($('pbCenter').querySelectorAll('tr[data-i]'), function(tr){
+      tr.onclick = function(){ selectCompany(+tr.dataset.i); };
+    });
+  }
+
+  function selectCompany(i){
+    admin.sel = i;
+    admin.comments = {}; admin.overall = '';
+    renderAdminCenter();
+    renderAdminRight();
+    var r = admin.rows[i];
+    if(!r || !serverOn()) return;
+    apiGet('comments', { company: r.company || '' }).then(function(d){
+      if(!d || !d.ok) return;
+      admin.comments = d.comments || {};
+      admin.overall = d.overall || '';
+      renderAdminRight();
+    }).catch(function(){});
+  }
+
+  function renderAdminRight(){
+    var r = admin.sel != null ? admin.rows[admin.sel] : null;
+    var h = '<div class="pb-panel">';
+    if(!r){
+      h += '<h5>멘토 코멘트</h5><p>왼쪽 표에서 기업을 고르시면 단계별로 코멘트를 남길 수 있습니다.</p>' +
+           '<p class="pb-note" style="margin-top:12px;color:var(--pb-on-ink-4)">' +
+           '여기 쓴 글은 그 팀이 <b>해당 단계를 쓸 때</b> 코치 열 첫 탭에 뜹니다. ' +
+           'AI 의견보다 위에 놓입니다.</p>';
+    } else {
+      h += '<h5>' + esc(r.company || '') + '</h5>';
+      MENTOR_STEPS.forEach(function(s){
+        var cur = admin.comments[s.id] || '';
+        h += '<div class="pb-mfield">' +
+               '<label>' + esc(s.t) + (cur ? '<span class="cur">작성됨</span>' : '') + '</label>' +
+               '<textarea data-m="' + s.id + '" placeholder="이 단계에 남길 의견">' + esc(cur) + '</textarea>' +
+             '</div>';
+      });
+      h += '<div class="pb-mfield"><label>총평</label>' +
+             '<textarea data-m="__overall" placeholder="전체 총평">' + esc(admin.overall) + '</textarea></div>' +
+           '<button class="pb-inkbtn" id="mSave">코멘트 저장</button>' +
+           '<p class="pb-note" style="margin-top:10px;color:var(--pb-on-ink-4)">' +
+           '저장하면 팀 화면에 바로 반영됩니다. 코멘트는 팀이 지울 수 없습니다.</p>';
+    }
+    h += '</div>';
+    $('pbRight').innerHTML = h;
+
+    Array.prototype.forEach.call($('pbRight').querySelectorAll('[data-m]'), function(ta){
+      ta.oninput = function(){
+        if(ta.dataset.m === '__overall') admin.overall = ta.value;
+        else admin.comments[ta.dataset.m] = ta.value;
+      };
+    });
+    if($('mSave')) $('mSave').onclick = function(){
+      if(!serverOn()){ alert('서버에 연결돼 있지 않습니다.'); return; }
+      var btn = $('mSave');
+      btn.disabled = true; btn.textContent = '저장 중…';
+      callProxy({ action:'savecomments', id:llm.id, code:llm.code,
+                  company: r.company, comments: admin.comments, overall: admin.overall })
+        .then(function(){ alert('저장했습니다.'); loadAdmin(); })
+        .catch(function(err){ alert('저장하지 못했습니다 — ' + (err.message || '오류')); })
+        .then(function(){ btn.disabled = false; btn.textContent = '코멘트 저장'; });
+    };
+  }
+
+  // ══ IR 전체 감수 · 제출 ═══════════════════════════════════════
+  function runAudit(){
+    if(busy) return;
+    var btn = $('btnAudit');
+    busy = true; btn.disabled = true; btn.textContent = '감수 중…';
+    callLLM(SYSTEM, auditPrompt())
+      .then(function(d){ state.lastAudit = d; renderAuditBox(); renderMeta(); syncToServer(); })
+      .catch(function(err){
+        $('auditBox').innerHTML = '<div class="pb-warnbox" style="margin-top:14px">감수하지 못했습니다 — ' +
+                                  esc(err.message || '오류') + '</div>';
+      })
+      .then(function(){
+        busy = false;
+        if($('btnAudit')){ $('btnAudit').disabled = false; $('btnAudit').textContent = 'IR 전체 감수'; }
+      });
+  }
+  function renderAuditBox(){
+    var a = state.lastAudit, box = $('auditBox');
+    if(!box || !a) return;
+    var h = '<div class="pb-card" style="margin-top:14px">';
+    if(a.verdict) h += '<p style="font-size:14px;color:var(--pb-text-body)">' + esc(a.verdict) + '</p>';
+
+    var inc = arr(a.inconsistencies);
+    if(inc.length){
+      h += '<h3 style="margin-top:18px;font-size:15px">단계 사이의 모순</h3>';
+      inc.forEach(function(it){
+        h += '<div class="pb-warnbox" style="margin-top:9px">' +
+             esc(typeof it === 'string' ? it : (it.problem || it.text || '')) + '</div>';
+      });
+    }
+    var qs = arr(a.questions);
+    if(qs.length){
+      h += '<h3 style="margin-top:18px;font-size:15px">실사에서 나올 질문</h3><ul style="margin-top:8px;padding-left:18px">';
+      qs.forEach(function(q){
+        h += '<li style="font-size:14px;line-height:1.7">' + esc(typeof q === 'string' ? q : (q && q.q) || '') + '</li>';
+      });
+      h += '</ul>';
+    }
+    h += '</div>';
+    box.innerHTML = h;
+  }
+
+  function doSubmit(){
+    if(!serverOn()){ alert('서버에 연결돼 있지 않아 제출할 수 없습니다.'); return; }
+    var already = state.status === '제출';
+    if(!confirm(already ? '다시 제출하시겠습니까? 마감은 없으며 최신 내용으로 갱신됩니다.'
+                        : '제출하시겠습니까? 제출 후에도 계속 고치고 다시 제출하실 수 있습니다.')) return;
+    syncToServer({ submit:true }).then(function(){
+      renderResultView();
+      alert('제출했습니다.');
+    });
+  }
+
+  // ── 도식 하나만 다시 뽑기 ──
+  //  ★[덱 전체 다시]는 슬라이드 문구까지 새로 만든다. 도식 하나 때문에 문구를 잃을 이유가 없다.
+  function regenDiagram(slot, btn){
+    if(busy || !state.lastDeck) return;
+    var S = DG_SLOTS[slot];
+    if(!S) return;
+    var prompt = [
+      '아래 IR에서 "' + S.label + '" 자리에 들어갈 도식 하나만 다시 뽑아라. 다른 자리는 만들지 마라.',
+      '이미 쓰인 내용에서만 뽑아라. 없는 숫자·연도·기관명·회사명을 지어내면 안 된다. 모르면 "[__]"로 비워라.',
+      '', DG_RULE, '',
+      '# IR 내용', contextBlock(null), '',
+      '# 이 자리의 후보', slotMenu(slot), '',
+      '# 출력 JSON — 이 키 하나만',
+      '{ "' + slot + '": { "type":"위 후보 중 하나", … , "why":"고른 이유(25자 이내)" } }', '',
+      'IR에 해당 내용이 아예 없으면 그 키를 null로 두어라. 억지로 만들지 마라.'
+    ].join('\n');
+
+    var label = btn.textContent;
+    busy = true; btn.disabled = true; btn.textContent = '뽑는 중…';
+    callLLM(SYSTEM, prompt)
+      .then(function(d){
+        state.lastDeck.diagrams = state.lastDeck.diagrams || {};
+        // ★슬라이드 문구(slides)는 건드리지 않는다. 이 도식 하나만 갈아끼운다.
+        state.lastDeck.diagrams[slot] = (d && d[slot]) || null;
+        render();
+      })
+      .catch(function(err){ alert('도식을 다시 뽑지 못했습니다 — ' + (err.message || '오류')); })
+      .then(function(){
+        busy = false;
+        if(btn && btn.isConnected){ btn.disabled = false; btn.textContent = label; }
+      });
+  }
+
+  // ══ 결과 화면 ═════════════════════════════════════════════════
+  function canScore(it){ return it.coverage !== 'none' || (llm.tipsMode && it.tipsFields); }
+  function scorable(){ return TIPS_RUBRIC.items.filter(canScore); }
+
+  function renderResultView(){
+    renderMeta();
+    renderResultLeft();
+    renderResultCenter();
+    renderResultRight();
+  }
+
+  function renderResultLeft(){
+    var h = '<h4>결과<em>' + (llm.tipsMode ? '9단계' : '6단계') + '</em></h4>' +
+            '<button class="pb-nav" id="rlIR">IR 본문</button>' +
+            '<button class="pb-nav" id="rlFig">도식</button>' +
+            '<button class="pb-nav" id="rlGate">TIPS 자격 요건</button>' +
+            '<div class="pb-hr"></div>' +
+            '<p class="fine">진단·채점표는 화면에서만 봅니다. 인쇄하면 IR 본문과 도식만 나갑니다 — ' +
+            '투자자에게 보내는 자료에 채점표가 실리면 안 되기 때문입니다.</p>' +
+            '<div class="sp"></div>' +
+            '<button class="pb-cta" id="rlPrint">PDF로 내보내기</button>' +
+            '<button class="pb-cta sub" style="margin-top:8px" id="rlDeck">피칭 덱 만들기</button>' +
+            '<button class="pb-cta sub" style="margin-top:8px" id="rlBack">← 작성으로 돌아가기</button>';
+    $('pbLeft').innerHTML = h;
+    var go = function(id){ var el = document.getElementById(id); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); };
+    $('rlIR').onclick   = function(){ go('secIR'); };
+    $('rlFig').onclick  = function(){ go('secFig'); };
+    $('rlGate').onclick = function(){ go('secGate'); };
+    $('rlPrint').onclick= function(){ window.print(); };
+    $('rlDeck').onclick = goDeck;
+    $('rlBack').onclick = goWrite;
+  }
+
+  function renderResultCenter(){
+    $('pbCenter').style.padding = '';
+    var fd = state.formData;
+    var name = (fd.companyName || '').trim() || '[회사명]';
+    var one  = (fd.oneLiner || '').trim();
+
+    var h = '<div class="pb-ir" id="secIR">' +
+              '<h1>' + esc(name) + '</h1>' +
+              (one ? '<p class="lead">' + esc(one) + '</p>' : '');
+
+    steps().forEach(function(s, i){
+      if(s.id === 'cover') return;                       // 표지는 위에서 이미 썼다
+      h += '<div class="pb-sec"><h3>' + stepNo(i) + ' · ' + esc(shortTitle(s)) + '</h3>';
+      s.inputs.forEach(function(f){
+        var v = (fd[f.key] || '').trim();
+        h += '<div class="fl"><b>' + esc(f.label) + '</b>' +
+             (v ? '<p>' + esc(v) + '</p>'
+                : '<p class="void">비어 있습니다 — 초안 자동생성은 제공하지 않습니다.</p>') +
+             '</div>';
+      });
+      h += '</div>';
+    });
+    h += '</div>';
+
+    // ── 도식 ──
+    h += '<div id="secFig" style="margin-top:18px">' +
+           '<div class="pb-card pb-noprint" style="display:flex;align-items:center;gap:12px">' +
+             '<div style="flex:1"><b style="font:600 15px var(--pb-font-serif)">도식</b>' +
+             '<p class="pb-note">작성하신 내용의 <b>관계</b>를 판정해 형태를 고릅니다. ' +
+             '순서면 흐름도, 순서 없이 나란하면 병렬 카드, 되돌아오면 순환입니다.</p></div>' +
+             '<button class="pb-cta" style="width:auto;padding:11px 18px" id="btnFig">도식 만들기</button>' +
+           '</div>' +
+           '<div id="figBox"></div>' +
+         '</div>';
+
+    // ── 자격 게이트 ──
+    h += '<div id="secGate" class="pb-card pb-noprint" style="margin-top:18px">' +
+           '<h3>TIPS 신청 자격</h3>' +
+           '<p class="pb-note" style="margin-bottom:14px">하나라도 미달이면 채점을 시작하지 않습니다. ' +
+           '자격이 없으면 점수가 아무 의미가 없기 때문입니다.</p>' +
+           '<div class="pb-gate" id="gateBox"></div>' +
+           '<button class="pb-cta" style="margin-top:18px" id="btnTips">TIPS 기준으로 채점하기</button>' +
+           '<div id="gateMsg"></div>' +
+         '</div>';
+
+    // ── 전체 감수 · 제출 ──
+    h += '<div class="pb-card pb-noprint" style="margin-top:18px">' +
+           '<h3>IR 전체 감수</h3>' +
+           '<p class="pb-note">단계별이 아니라 IR 전체를 하나의 논리로 보고 ' +
+           '<b>단계 사이의 모순</b>을 찾습니다 — 타겟 고객이 문제와 시장에서 다르다든지, ' +
+           '마일스톤이 GTM으로는 달성 불가능하다든지.</p>' +
+           '<button class="pb-cta sub" style="margin-top:14px;width:auto;padding:11px 18px" id="btnAudit">IR 전체 감수</button>' +
+           '<div id="auditBox"></div>' +
+         '</div>';
+
+    h += '<div class="pb-card pb-noprint" style="margin-top:18px">' +
+           '<h3>제출</h3>' +
+           '<p class="pb-note">' +
+           (state.status === '제출'
+             ? '이미 제출하셨습니다' + (state.submittedAt ? ' (' + esc(String(state.submittedAt).slice(0,16).replace('T',' ')) + ')' : '') +
+               '. 마감은 없으며 고치신 뒤 다시 제출하실 수 있습니다.'
+             : '마감은 없습니다. 제출한 뒤에도 계속 고치고 다시 제출하실 수 있습니다.') +
+           '</p>' +
+           '<button class="pb-cta" style="margin-top:14px;width:auto;padding:11px 22px" id="btnSubmit">' +
+             (state.status === '제출' ? '다시 제출하기' : '제출하기') + '</button>' +
+         '</div>';
+
+    $('pbCenter').innerHTML = h;
+    renderGate();
+    if(state.lastDiagrams) renderFigures(state.lastDiagrams);
+    if(state.lastAudit) renderAuditBox();
+    $('btnFig').onclick    = runDiagrams;
+    $('btnTips').onclick   = runTips;
+    $('btnAudit').onclick  = runAudit;
+    $('btnSubmit').onclick = doSubmit;
+  }
+
+  // ── 자격 게이트 ──
+  function renderGate(){
+    var saved = {};
+    try{ saved = JSON.parse(localStorage.getItem(tkey()) || '{}') || {}; }catch(e){}
+    var h = '';
+    TIPS_GATE.forEach(function(g){
+      var cur = saved[g.id] || '';
+      var isFail = cur === g.fail;
+      h += '<div class="g' + (isFail ? ' is-fail' : '') + '"><b>' + esc(g.q) + '</b>' +
+           '<select id="g-' + g.id + '" data-g="' + g.id + '">' +
+             '<option value="">선택하십시오</option>' +
+             g.opts.map(function(o){
+               return '<option value="' + esc(o.v) + '"' + (cur === o.v ? ' selected' : '') + '>' + esc(o.t) + '</option>';
+             }).join('') +
+           '</select>' +
+           (isFail ? '<div class="why">' + esc(g.why) + '</div>' : '') +
+         '</div>';
+    });
+    $('gateBox').innerHTML = h;
+    Array.prototype.forEach.call($('gateBox').querySelectorAll('select'), function(sel){
+      sel.onchange = function(){ readGate(); renderGate(); };
+    });
+  }
+  function readGate(){
+    var ans = {};
+    TIPS_GATE.forEach(function(g){
+      var s = document.getElementById('g-' + g.id);
+      ans[g.id] = s ? s.value : '';
+    });
+    try{ localStorage.setItem(tkey(), JSON.stringify(ans)); }catch(e){}
+    return ans;
+  }
+  function checkGate(ans){
+    var failed = [];
+    TIPS_GATE.forEach(function(g){ if(ans[g.id] === g.fail) failed.push({ q:g.q, why:g.why }); });
+    return failed;
+  }
+
+  // ── TIPS 채점 ──
+  function tipsPrompt(){
+    var items = scorable();
+    var lines = items.map(function(it){
+      return '### ' + it.id + ' — ' + it.name + ' (' + it.cat + ', 배점 ' + it.max + '점)\n' +
+             '평가지표: ' + it.criteria;
+    }).join('\n\n');
+    return [
+      '아래 창업팀의 IR을 **TIPS 선정평가표**로 채점하라. 너는 TIPS 평가위원이다.',
+      '',
+      '# 채점할 항목 (이것만 채점한다. 목록에 없는 항목은 건드리지 마라)',
+      lines,
+      '',
+      '# 창업팀의 IR',
+      contextBlock(null),
+      '',
+      '# 채점 규칙 (반드시 지켜라)',
+      '- 등급은 S / A / B / C / D 다섯 중 하나다. S=탁월, A=우수, B=보통, C=미흡, D=매우미흡.',
+      '- **점수(숫자)를 계산하지 마라.** 등급만 내라. 합산은 시스템이 한다.',
+      '- **evidence에는 IR 원문 문장을 그대로 인용하라.** 요약하거나 바꿔 쓰지 마라.',
+      '- ★**인용할 원문이 없으면 그 항목의 등급은 D이고 evidence는 빈 문자열이다.** 없는 근거를 지어내면 실패다.',
+      '- fix는 그 항목의 점수를 올리려면 **무엇을 추가로 써야 하는지** 구체적으로 적어라. "더 구체적으로"는 금지다.',
+      llm.reviewer ? '- (심사자 모드) risk에는 평가위원이 감점할 지점을, ask에는 발표 질의응답에서 던질 질문을 적어라.' : '',
+      '',
+      '# 출력 JSON',
+      '{ "scores": [{ "id":"' + items.map(function(i){ return i.id; }).join('" | "') + '",',
+      '               "grade":"S"|"A"|"B"|"C"|"D",',
+      '               "evidence":"IR 원문 인용 (없으면 \\"\\")",',
+      '               "reason":"그 등급을 준 이유 한 문장",',
+      '               "fix":"점수를 올리려면 무엇을 써야 하는가"' +
+                     (llm.reviewer ? ',\n               "risk":"평가위원이 감점할 지점",\n               "ask":"발표 질의응답에서 나올 질문"' : '') + ' }] }',
+      '',
+      'scores는 위 ' + items.length + '개 항목 전부에 대해 정확히 ' + items.length + '개를 내라.'
+    ].filter(Boolean).join('\n');
+  }
+
+  function runTips(){
+    if(busy) return;
+    var ans = readGate();
+    var failed = checkGate(ans);
+    if(failed.length){
+      // ★자격 미달이면 LLM을 부르지 않는다. 자격이 없으면 점수가 무의미하다.
+      $('gateMsg').innerHTML = '<div class="pb-warnbox" style="margin-top:14px"><b>신청 자격에 미달합니다 — 채점을 시작하지 않았습니다.</b><br>' +
+        failed.map(function(f){ return '· ' + esc(f.q) + ' — ' + esc(f.why); }).join('<br>') + '</div>';
+      state.lastGate = { ok:false, failed:failed, answers:ans };
+      syncToServer();                                  // 자격 미달도 이력에 남긴다(왜 떨어졌는지가 정보다)
+      return;
+    }
+    $('gateMsg').innerHTML = '';
+    state.lastGate = { ok:true, answers:ans };
+
+    var btn = $('btnTips');
+    busy = true; btn.disabled = true; btn.textContent = '채점 중…';
+    callLLM(SYSTEM, tipsPrompt())
+      .then(function(d){
+        state.lastTips = buildTips(d);
+        renderResultRight();
+        renderMeta();
+        syncToServer();
+      })
+      .catch(function(err){
+        $('gateMsg').innerHTML = '<div class="pb-warnbox" style="margin-top:14px">채점하지 못했습니다 — ' + esc(err.message || '오류') + '</div>';
+      })
+      .then(function(){
+        busy = false;
+        if($('btnTips')){ $('btnTips').disabled = false; $('btnTips').textContent = 'TIPS 기준으로 채점하기'; }
+      });
+  }
+
+  // ★점수 합산은 코드가 한다. LLM에 산수를 시키지 않는다.
+  function buildTips(d){
+    var byId = {};
+    arr(d && d.scores).forEach(function(s){ if(s && s.id) byId[s.id] = s; });
+
+    var got = 0, poss = 0, na = 0, unverified = 0, rows = [];
+    TIPS_RUBRIC.items.forEach(function(it){
+      var ok = canScore(it), s = byId[it.id];
+      if(!ok || !s){
+        na += it.max;
+        rows.push({ item:it, grade:'NA', pts:0, missed: ok && !s });
+        return;
+      }
+      var gi = TIPS_RUBRIC.gradePoints.indexOf(s.grade);
+      var pts = gi >= 0 ? it.pts[gi] : 0;
+      poss += it.max; got += pts;
+      var ev = s.evidence || '';
+      var verified = ev ? !!verifyEvidence(ev) : null;
+      if(ev && !verified) unverified++;
+      rows.push({ item:it, grade:(gi >= 0 ? s.grade : 'D'), pts:pts, evidence:ev,
+                  verified:verified, reason:s.reason || '', fix:s.fix || '',
+                  risk:s.risk || '', ask:s.ask || '' });
+    });
+    return { got:got, poss:poss, na:na, unverified:unverified, rows:rows,
+             rubric:TIPS_RUBRIC.name, source:TIPS_RUBRIC.source, passMark:TIPS_RUBRIC.passMark,
+             scoredAt:new Date().toISOString() };
+  }
+
+  function renderResultRight(){
+    var t = state.lastTips;
+    var h = '<div class="pb-panel">';
+    if(!t){
+      h += '<h5>TIPS 진단</h5><p>왼쪽에서 자격 요건을 고르신 뒤 <b>채점하기</b>를 누르십시오.</p>' +
+           '<p class="pb-note" style="margin-top:14px;color:var(--pb-on-ink-4)">' +
+           '배점과 등급점수는 공식 원문입니다. 다만 S~D 판정 기준선은 공식 문서에 없어 ' +
+           '이 도구의 자체 정의입니다 — 점수를 공식인 것처럼 쓰지 마십시오.</p>';
+    } else {
+      var pct = t.poss ? Math.round(t.got / t.poss * 100) : 0;
+      h += '<div class="pb-score"><b>' + t.got + '</b><span>/ ' + t.poss + '점 (' + pct + '%)</span></div>';
+      if(t.unverified){
+        h += '<div class="pb-sdet"><span class="bad">근거 미확인 ' + t.unverified + '건 — ' +
+             'AI가 IR에 없는 문장을 인용했습니다. 이 채점을 신뢰하지 마십시오.</span></div>';
+      }
+      t.rows.forEach(function(r){
+        var na = r.grade === 'NA';
+        h += '<div class="pb-srow' + (na ? ' na' : '') + '">' +
+               '<span class="nm">' + esc(r.item.name) + '</span>' +
+               '<span class="pt">' + r.item.max + '</span>' +
+               '<span class="gd">' + (na ? '—' : esc(r.grade)) + '</span>' +
+             '</div>';
+        if(na){
+          h += '<div class="pb-sdet">' + (r.item.gapHint || 'IR에 없는 정보입니다.') + '</div>';
+        } else {
+          h += '<div class="pb-sdet">';
+          if(r.evidence){
+            h += '<q>' + esc(r.evidence) + '</q>';
+            if(!r.verified) h += ' <span class="bad">⚠ 원문에서 확인되지 않았습니다</span>';
+          } else {
+            h += '<span class="bad">IR에서 근거를 찾지 못했습니다.</span>';
+          }
+          if(r.reason) h += '<br>' + esc(r.reason);
+          if(r.fix) h += '<span class="fix">→ ' + esc(r.fix) + '</span>';
+          if(llm.reviewer && (r.risk || r.ask)){
+            h += '<span class="fix" style="color:var(--pb-warn-txt-on-ink)">🔒 ' +
+                 esc(r.risk || '') + (r.ask ? ' / Q. ' + esc(r.ask) : '') + '</span>';
+          }
+          h += '</div>';
+        }
+      });
+      // ★가장 중요한 메시지 — 지금 그릇으로 60점에 닿을 수 있는가
+      h += '<div class="pb-sdet" style="margin-top:14px;border-top:1px solid var(--pb-on-ink-line);padding-top:14px">' +
+           '<b style="color:var(--pb-paper)">TIPS는 종합 ' + t.passMark + '점 미만이면 지원제외입니다.</b><br>';
+      if(!llm.tipsMode){
+        h += '채점하지 못한 <b>' + t.na + '점</b>은 IR이 아니라 <b>R&amp;D 사업계획서</b>에서 나옵니다. ' +
+             'IR 6단계를 아무리 잘 써도 ' + t.passMark + '점에 닿을 수 없습니다 — ' +
+             '<b>TIPS 준비 모드</b>를 켜면 90점까지 채점됩니다.';
+      } else {
+        var reach = t.got + 10;
+        h += '남은 <b>' + t.na + '점(운영사 지원계획)</b>은 추천 운영사가 작성합니다. ' +
+             (t.got >= t.passMark
+               ? '창업팀 몫만으로 이미 ' + t.passMark + '점을 넘겼습니다.'
+               : '창업팀 몫 + 운영사 최대 10점 = <b>최대 ' + reach + '점</b>입니다. ' +
+                 (reach >= t.passMark ? '운영사 점수에 기대야 하는 위태로운 상태입니다.'
+                                      : '<b>운영사가 만점을 받아도 미달합니다.</b>'));
+      }
+      h += '</div><p class="pb-note" style="margin-top:12px;color:var(--pb-on-ink-4)">' +
+           esc(t.source) + '</p>';
+    }
+    h += '</div>';
+    $('pbRight').innerHTML = h;
+  }
+
+  // ── 도식 ──
+  function runDiagrams(){
+    if(busy) return;
+    var btn = $('btnFig');
+    busy = true; btn.disabled = true; btn.textContent = '그리는 중…';
+    callLLM(SYSTEM, diagramPrompt())
+      .then(function(d){ state.lastDiagrams = d; renderFigures(d); })
+      .catch(function(err){
+        $('figBox').innerHTML = '<div class="pb-warnbox" style="margin-top:14px">도식을 만들지 못했습니다 — ' +
+                                esc(err.message || '오류') + '</div>';
+      })
+      .then(function(){
+        busy = false;
+        if($('btnFig')){ $('btnFig').disabled = false; $('btnFig').textContent = '도식 다시 만들기'; }
+      });
+  }
+  function renderFigures(spec){
+    var h = '';
+    DG_ORDER.forEach(function(k){
+      var svgStr = drawOne(k, spec);
+      if(!svgStr) return;                              // 구조가 없으면 그리지 않는다
+      var d = (spec || {})[k] || {};
+      var kind = DG_TYPE[String(d.type || '')];
+      h += '<div class="pb-fig"><h4>' + esc(DG_SLOTS[k].label) +
+           (kind ? '<em>' + esc(kind.name) + (d.why ? ' · ' + esc(d.why) : '') + '</em>' : '') +
+           '</h4>' + svgStr + '</div>';
+    });
+    $('figBox').innerHTML = h ||
+      '<div class="pb-card" style="margin-top:14px"><p class="pb-note">' +
+      '도식으로 그릴 구조를 찾지 못했습니다. 작동 원리·시장 산식·고객 확보 경로를 더 구체적으로 써 보십시오.</p></div>';
+  }
+
+  // ══ 통신 ══════════════════════════════════════════════════════
+  //  계약(엔드포인트·파라미터·에러 의미)은 구 실행본과 동일하다. 서버(Code.gs)는 무변경이다.
+  //  근거 패턴: [[패턴_GAS_토큰인증_역할별인가_백엔드]] · [[패턴_디자인핸드오프_기존시스템_이식]]
+
+  // ★검수 스위치 — ?local=1 이면 서버를 부르지 않는다.
+  //   빌드본을 서버에 붙이지 않고도 두 동선(관리자/기업)을 같은 파일로 검수할 수 있다.
+  var LOCAL = /[?&]local=1/.test(location.search);
+
+  // GAS 웹앱 URL. 주소를 아는 것만으로는 아무것도 못 한다 — 계정이 있어야 하고,
+  // 계정은 자기 기업에만 닿는다(서버가 강제).
+  var PROXY = 'https://script.google.com/macros/s/AKfycbxJfH8gIyeDDU4HPt1tsqRrmIdIgeQaXyQ_rf1BhkNiOysVkQRiHxKw-pD2I46C4LYZ/exec';
+
+  function serverOn(){ return !LOCAL && !!llm.proxy; }
+  function isAdmin(){ return llm.reviewer === true; }
+
+  // ★재시도 정책 — 서버가 '확정'한 응답은 재시도하지 않는다.
+  //   notfound·forbidden을 재시도 대상으로 두면 캐시가 영영 안 차고 영구 스피너가 된다.
+  //   재시도는 '아직 모르는 것'(혼잡·통신·시간초과)에만 건다.
+  var RETRYABLE = { busy:1, network:1, timeout:1, RATE:1, HTTP503:1 };
+  function retryable(code){ return !!RETRYABLE[String(code || '')]; }
+
+  // ── GAS 호출 ──
+  //  ★POST는 반드시 text/plain 으로 보낸다. application/json 이면 브라우저가
+  //    OPTIONS 프리플라이트를 보내는데 GAS는 그것을 처리하지 못한다.
+  function callProxy(payload){
+    return fetch(llm.proxy, {
+      method:'POST',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).then(function(res){
+      return res.json().catch(function(){
+        throw new Error('서버 응답을 해석하지 못했습니다. 프록시 주소를 확인하세요.');
+      });
+    }).then(function(d){
+      if(!d || !d.ok){
+        var err = new Error((d && d.error) || '서버 오류');
+        err.code = (d && d.code) || 'ERR';
+        throw err;
+      }
+      return d;
+    });
+  }
+  function apiGet(action, params){
+    var qs = ['action=' + encodeURIComponent(action),
+              'id=' + encodeURIComponent(llm.id),
+              'code=' + encodeURIComponent(llm.code)];
+    Object.keys(params || {}).forEach(function(k){
+      if(params[k] != null && params[k] !== '') qs.push(k + '=' + encodeURIComponent(params[k]));
+    });
+    var url = llm.proxy + (llm.proxy.indexOf('?') < 0 ? '?' : '&') + qs.join('&');
+    return fetch(url).then(function(r){ return r.json(); });
+  }
+
+  // ── Gemini ──
+  //  교체 지점은 이 함수 하나뿐이다.
+  var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
+  function callLLM(system, user){
+    if(LOCAL) return Promise.reject(new Error('로컬 검수 모드입니다 — AI를 부르지 않습니다.'));
+    if(llm.conn === 'proxy'){
+      return callProxy({ action:'llm', id:llm.id, code:llm.code,
+                         system:system, user:user, reviewer: !!llm.reviewer })
+             .then(function(d){ return parseJSON(d.text); });
+    }
+    var url = GEMINI_BASE + encodeURIComponent(llm.model) +
+              ':generateContent?key=' + encodeURIComponent(llm.key);
+    return fetch(url, {
+      method:'POST', headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        systemInstruction:{ parts:[{ text:system }] },
+        contents:[{ role:'user', parts:[{ text:user }] }],
+        // ★TIPS 채점은 8항목 × (근거·이유·보완·감점·질문)이라 응답이 길다.
+        //   2048로는 잘려 MAX_TOKENS가 난다 — JSON 파싱 실패의 진짜 원인이 이것이었다.
+        generationConfig:{ temperature:0.4, responseMimeType:'application/json', maxOutputTokens:8192 }
+      })
+    }).then(function(res){
+      return res.json().then(function(data){
+        if(!res.ok) throw new Error((data && data.error && data.error.message) || ('HTTP ' + res.status));
+        var cand = data && data.candidates && data.candidates[0];
+        if(!cand) throw new Error((data && data.promptFeedback && data.promptFeedback.blockReason)
+                                  ? '안전 필터에 걸렸습니다.' : '응답이 비었습니다.');
+        var text = '', parts = cand.content && cand.content.parts;
+        if(parts) parts.forEach(function(p){ if(p.text) text += p.text; });
+        if(cand.finishReason === 'MAX_TOKENS') throw new Error('응답이 너무 길어 잘렸습니다.');
+        return parseJSON(text);
+      });
+    });
+  }
+
+  // ── 서버 설정·상태 받아오기 ──
+  //  ★설정의 정본은 서버(APP_CONFIG)다. localStorage를 신뢰하지 않는다 —
+  //    팀이 개발자도구로 고쳐놨더라도 서버 값이 이긴다.
+  function pullConfig(){
+    if(!serverOn()) return Promise.resolve();
+    return apiGet('ping', {}).then(function(d){
+      if(!d || !d.ok) return;
+      llm.reviewer = !!d.reviewer;            // 심사자 권한도 서버 판정을 따른다
+      var c = d.config;
+      if(c){
+        if(c.model) llm.model = c.model;
+        if(typeof c.tipsMode === 'boolean') llm.tipsMode = c.tipsMode;
+      }
+      $('hdTips').classList.toggle('on', llm.tipsMode);
+    }).catch(function(){});                   // 실패해도 화면을 멈추지 않는다
+  }
+  function pullComments(){
+    if(!serverOn()) return Promise.resolve();
+    return apiGet('comments', { company: state.formData.companyName || '' }).then(function(d){
+      if(!d || !d.ok) return;
+      mentor.comments = d.comments || {};
+      mentor.overall  = d.overall || '';
+      mentor.who      = d.who || '';
+      mentor.loaded   = true;
+      renderRight();
+    }).catch(function(){});
+  }
+  function pullStatus(){
+    if(!serverOn()) return Promise.resolve();
+    return apiGet('list', {}).then(function(d){
+      if(!d || !d.ok) return;
+      var me = (d.companies || [])[0];        // 팀은 자기 기업 한 줄만 온다
+      if(!me) return;
+      state.status = me.status || '';
+      state.submittedAt = me.submittedAt || '';
+    }).catch(function(){});
+  }
+
+  // ── 스냅샷 ──
+  function snapshot(){
+    return {
+      schema: 'pitchbuilder.snapshot.v1',
+      exportedAt: new Date().toISOString(),
+      company: state.formData.companyName || '',
+      cid: state.cid || '',
+      mode: llm.tipsMode ? 'TIPS 9단계' : 'IR 6단계',
+      model: llm.model,
+      formData: state.formData,
+      gate: state.lastGate || null,
+      tips: state.lastTips || null,
+      audit: state.lastAudit || null
+    };
+  }
+  // ★빈 값은 보내지 않는다.
+  //   한 기업을 두 사람이 각자 PC에서 쓰면, 먼저 저장한 쪽의 빈 칸이 나중 사람 작업을 지운다.
+  //   대가: 팀이 칸을 일부러 비워도 서버에선 안 지워진다(지우는 것보다 남기는 쪽이 안전하다).
+  function filledOnly(fd){
+    var out = {};
+    Object.keys(fd || {}).forEach(function(k){
+      if(String(fd[k] || '').trim()) out[k] = fd[k];
+    });
+    return out;
+  }
+
+  // ── 서버 저장 (단계 이동마다 자동) ──
+  //  ★늦게 온 응답이 최신 상태를 되돌리지 못하게 시퀀스를 센다.
+  var syncSeq = 0, syncing = false;
+  function syncToServer(opts){
+    if(!serverOn() || syncing) return Promise.resolve();
+    var body = snapshot();
+    body.formData = filledOnly(body.formData);
+    if(!Object.keys(body.formData).length) return Promise.resolve();
+
+    var my = ++syncSeq;
+    syncing = true;
+    chip('saving');
+    return callProxy({ action:(opts && opts.submit) ? 'submit' : 'save',
+                       id:llm.id, code:llm.code, snapshot:body, submit:!!(opts && opts.submit) })
+      .then(function(d){
+        if(my !== syncSeq) return;            // 더 최신 저장이 이미 끝났다 — 무시한다
+        if(d.status) state.status = d.status;
+        if(d.submittedAt) state.submittedAt = d.submittedAt;
+        chip('ok');
+      })
+      .catch(function(err){
+        // ★실패를 조용히 넘기지 않는다. 저장 안 됐는데 됐다고 믿고 창을 닫는 게 최악이다.
+        chip('fail');
+        if(retryable(err.code)) setTimeout(function(){ syncToServer(opts); }, 4000);
+      })
+      .then(function(){ syncing = false; });
+  }
+
+  // ── 노션에서 불러오기 ──
+  function applySnapshot(s){
+    var fd = (s && s.formData) ? s.formData : s;      // 옛 형식(formData만)도 받아준다
+    if(!fd || typeof fd !== 'object') throw new Error('형식을 알 수 없습니다.');
+
+    state.formData = {};
+    Object.keys(PLACEHOLDER_RESULT).forEach(function(k){
+      if(typeof fd[k] === 'string') state.formData[k] = fd[k];
+    });
+    state.cid        = s.cid || '';
+    state.lastTips   = s.tips || null;
+    state.lastAudit  = s.audit || null;
+    state.lastGate   = s.gate || null;
+    state.status     = s.status || '';
+    state.submittedAt= s.submittedAt || '';
+
+    // ★R&D 항목이 있으면 TIPS 모드를 켠다 — 안 켜면 그 입력이 화면에서 사라진다
+    var hasRnd = ['devGoal','devPrior','devKpi','devVerify','globalPlan'].some(function(k){
+      return (state.formData[k] || '').trim();
+    });
+    if(hasRnd && !llm.tipsMode){
+      llm.tipsMode = true;
+      $('hdTips').classList.add('on');
+    }
+    state.stepIndex = 0;
+    saveLocal();
+    render();
+  }
+  function notionLoad(){
+    if(!serverOn()){ alert('서버에 연결돼 있지 않습니다. 로컬 저장분만 사용합니다.'); return; }
+    apiGet('load', { company: state.formData.companyName || '' }).then(function(d){
+      if(!d || !d.ok){
+        alert(d && d.error ? d.error : '불러오지 못했습니다.');
+        return;
+      }
+      if(!d.snapshot){ alert('서버에 저장된 자료가 없습니다.'); return; }
+      applySnapshot(d.snapshot);
+      alert('불러왔습니다.');
+    }).catch(function(err){ alert('불러오지 못했습니다 — ' + (err.message || '오류')); });
+  }
+
+  // ══ 로그인 ════════════════════════════════════════════════════
+  //  ★인증의 정본은 서버다. 로컬 검수 모드(?local=1)에서만 아이디로 역할을 흉내낸다.
+  function enter(){
+    var id = $('inId').value.trim(), code = $('inCode').value.trim();
+    var e = $('loginErr');
+    if(!id || !code){
+      e.textContent = '접수번호와 접속코드를 모두 입력하십시오.';
+      e.classList.remove('hidden');
+      return;
+    }
+    llm.id = id; llm.code = code;
+    llm.proxy = PROXY;
+    llm.conn = PROXY ? 'proxy' : 'byok';
+
+    if(!serverOn()){
+      // 로컬 검수 — 서버가 없으므로 아이디로 역할만 가른다(패턴 §8 검수 스위치)
+      llm.reviewer = (id === 'admin');
+      openApp('로컬 검수 모드');
+      return;
+    }
+    e.classList.add('hidden');
+    $('btnLogin').disabled = true; $('btnLogin').textContent = '확인 중…';
+    apiGet('ping', {}).then(function(d){
+      if(!d || !d.ok){
+        // ★"새 코드는 발급되지 않았다"는 서버 메시지와 무관하게 **항상** 붙인다.
+        //   접속코드가 LAGMP와 같은 것이라, 팀이 새 코드를 기다리며 멈추는 일이 실제로 생긴다.
+        e.innerHTML = esc((d && d.error) || '아이디 또는 접속코드가 올바르지 않습니다.') +
+          '<br><span style="display:inline-block;margin-top:6px;font-size:12px;color:var(--pb-text-mute)">' +
+          '성장관리플랫폼에서 쓰시던 코드와 같습니다 — 새 코드는 발급되지 않았습니다.</span>';
+        e.classList.remove('hidden');
+        return;
+      }
+      llm.reviewer = !!d.reviewer;
+      state.cid = d.cid || id;
+      if(d.company) state.formData.companyName = state.formData.companyName || d.company;
+      if(d.config){
+        if(d.config.model) llm.model = d.config.model;
+        if(typeof d.config.tipsMode === 'boolean') llm.tipsMode = d.config.tipsMode;
+      }
+      openApp(d.company || '');
+      pullComments(); pullStatus();
+    }).catch(function(){
+      e.textContent = '서버에 연결하지 못했습니다. 주소와 네트워크를 확인하십시오.';
+      e.classList.remove('hidden');
+    }).then(function(){
+      $('btnLogin').disabled = false; $('btnLogin').textContent = '들어가기';
+    });
+  }
+  function openApp(label){
+    loadLocal();
+    $('viewLogin').classList.add('hidden');
+    ['pbHead','pbMeta','pbShell'].forEach(function(k){ $(k).classList.remove('hidden'); });
+    $('hdTips').classList.toggle('on', llm.tipsMode);
+    $('hdWho').textContent = llm.id + (label ? '  ·  ' + label : '') +
+                             (isAdmin() ? '  ·  관리자' : '');
+    // 관리자 전환 버튼은 서버가 관리자로 판정한 경우에만 만든다
+    if(isAdmin() && !$('hdAdmin')){
+      var b = document.createElement('button');
+      b.className = 'pb-hbtn'; b.id = 'hdAdmin'; b.textContent = '관리자';
+      b.onclick = function(){ state.view === 'admin' ? goWrite() : goAdmin(); };
+      $('hdTips').parentNode.insertBefore(b, $('hdTips'));
+    }
+    if(isAdmin()) goAdmin(); else render();
+  }
+  $('btnLogin').onclick = enter;
+  $('inCode').onkeydown = function(e){ if(e.key === 'Enter') enter(); };
+  $('inId').onkeydown  = function(e){ if(e.key === 'Enter') $('inCode').focus(); };
+
+  // ══ 헤더 ══════════════════════════════════════════════════════
+  $('hdTips').onclick = function(){
+    llm.tipsMode = !llm.tipsMode;
+    this.classList.toggle('on', llm.tipsMode);
+    state.stepIndex = Math.min(state.stepIndex, steps().length - 1);
+    render();
+  };
+  $('hdExit').onclick = function(){
+    ['pbHead','pbMeta','pbShell'].forEach(function(k){ $(k).classList.add('hidden'); });
+    $('viewLogin').classList.remove('hidden');
+    $('loginErr').classList.add('hidden');
+    $('inCode').value = '';
+    state.formData = {};                      // 메모리도 비운다
+  };
+  $('hdSave').onclick = function(){ saveLocal(); syncToServer(); };
+  $('hdLoad').onclick = notionLoad;
+
+  // 창을 닫기 전 저장 — 자동저장이 아직 안 끝났을 수 있다
+  window.addEventListener('beforeunload', function(){
+    try{ localStorage.setItem(skey(), JSON.stringify({
+      stepIndex: state.stepIndex, formData: state.formData, completed: state.completed })); }catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
