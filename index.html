@@ -310,6 +310,34 @@ a{color:inherit}
   border-radius:var(--pb-radius);font-size:11px;font-weight:600;color:var(--pb-accent-soft);
 }
 
+/* 낡음 표시 ─ 판단은 그때의 원고에 대한 것이다.
+   원고가 바뀐 뒤에도 옛 판단을 최신인 양 두면 시스템이 거짓말을 하는 것이다.
+   지우지는 않는다 — 흐리고 이유를 적는다. 무엇을 보고 받은 판단인지가 정보이기 때문이다. */
+.pb-stalebar{
+  margin-top:14px;padding:11px 12px;border-radius:var(--pb-radius);
+  background:rgba(224,108,96,.12);
+  border:1px solid var(--pb-warn-on-ink);
+}
+.pb-stalebar b{color:var(--pb-paper);font-size:12.5px}
+.pb-stalebar p{margin-top:4px;font-size:12px;line-height:1.65;color:var(--pb-on-ink-2)}
+.pb-stale{opacity:.42;filter:grayscale(.6)}
+.pb-faded{opacity:.5}          /* 종이(원고) 쪽 — 흐리게만 한다. 지우지 않는다 */
+
+/* 내 배분 ─ 상장사 출현율과 단위가 다르므로 같은 줄에 놓지 않는다 */
+.pb-mine{
+  margin-top:18px;padding:13px 14px;
+  border:1px solid var(--pb-on-ink-line2);border-radius:var(--pb-radius);
+}
+.pb-mine h5{color:var(--pb-accent-soft)}
+.pb-mine .row{display:flex;justify-content:space-between;gap:10px;margin-top:8px;font-size:12.5px}
+.pb-mine .row span:first-child{color:var(--pb-on-ink-3)}
+.pb-mine .row span:last-child{color:var(--pb-paper);font-weight:600}
+.pb-mine .bar{margin-top:9px;height:5px;border-radius:3px;background:var(--pb-on-ink-line2);overflow:hidden}
+.pb-mine .bar i{display:block;height:100%;background:var(--pb-accent)}
+.pb-mine .bar.want i{background:var(--pb-on-ink-3)}
+.pb-mine .vd{margin-top:9px;font-size:12px;line-height:1.65;color:var(--pb-on-ink-2)}
+.pb-mine .unit{margin-top:9px;font-size:11.5px;line-height:1.6;color:var(--pb-on-ink-3)}
+
 /* ── 로그인 ─────────────────────────────────── */
 .pb-login{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
 .pb-login .l{
@@ -587,11 +615,21 @@ a{color:inherit}
   var state = { stepIndex:0, formData:{}, completed:false,
                 cid:'', lastTips:null, lastAudit:null, lastGate:null,
                 status:'', submittedAt:'', lastDeck:null, lastDiagrams:null,
-                tab:0, view:'write', diag:null };   // tab·view·diag = 화면 상태
+                tab:0, view:'write',
+                // ★판단은 그때의 원고에 대한 것이다 — 무엇을 보고 받은 판단인지를 함께 기억한다.
+                diags:{},        // {단계id: {data, hash, at}}  단계별 AI 진단 + 그때의 입력 해시
+                mentorBase:{},   // {단계id: {ch, ih}}          코멘트 본문 해시 + 코멘트를 본 시점의 입력 해시
+                tipsHash:'', auditHash:'',     // 채점·감수를 받은 시점의 IR 전체 해시
+                // B1 신청서 참고자료(P2) — 본문에 넣지 않고 코치 열에서만 보여준다
+                b1ref:null, b1At:'',
+                b2Base:null };   // {ch, ih} B2 의견 본문 해시 + 그 의견을 처음 본 시점의 IR 전체 해시
   var llm = { conn:'byok', key:'', proxy:'', id:'', code:'',
               model:'gemini-flash-latest', reviewer:false, tipsMode:false };
   var busy = false;
   var mentor = { comments:{}, overall:'', who:'', loaded:false };
+  // B2 성장관리(LAGMP) 종합의견 — 멘토 탭 안 2단으로 얹는다(P4).
+  //  ★확정본만 온다. 초안은 서버가 애초에 내려주지 않는다(전달 게이트).
+  var b2 = { synth:[], loaded:false, enabled:false, note:'' };
 
     /* ══════════════════════════════════════════════════════════════
      아래는 구 실행본(PitchBuilder_Pro.html)에서 **문자 그대로 옮긴** 로직이다.
@@ -627,7 +665,8 @@ a{color:inherit}
       ],
       corpusNote:'상장사 IR은 문제 정의를 <b>6%</b>만 씁니다. 이미 증명된 회사라 답할 필요가 없기 때문입니다. ' +
                  '하지만 당신은 아직 상장사가 아닙니다. <b>TIPS는 이 항목(개발 필요성)에 15점을 겁니다.</b> ' +
-                 '상장사 IR을 흉내 내면 이 15점이 통째로 빕니다.'
+                 '상장사 IR을 흉내 내면 이 15점이 통째로 빕니다.',
+      corpusShare:6            // ★출현율(%)이다. 분량 비중이 아니다 — 견줄 때 단위를 섞지 말 것
     },
     {
       id:'solution', icon:'bulb',
@@ -656,7 +695,8 @@ a{color:inherit}
       ],
       corpusNote:'상장사 IR에 시장 항목은 <b>20%</b>뿐입니다. 대신 재무 실적을 4.5페이지 씁니다 — ' +
                  '이미 번 돈이 시장을 증명하기 때문입니다. 당신에겐 그 실적이 없습니다. ' +
-                 '<b>TIPS 기대효과 15점은 실적이 아니라 시장 논리로만 받습니다.</b>'
+                 '<b>TIPS 기대효과 15점은 실적이 아니라 시장 논리로만 받습니다.</b>',
+      corpusShare:20
     },
     {
       id:'business', icon:'chart',
@@ -672,7 +712,8 @@ a{color:inherit}
       ],
       corpusNote:'상장사 IR에서 사업화 전략을 쓰는 덱은 <b>7%</b>에 불과합니다. ' +
                  '그런데 <b>TIPS 최대 배점이 바로 이 항목(사업화 전략 20점)입니다.</b> ' +
-                 '가장 안 쓰이는 항목에 가장 많은 점수가 걸려 있습니다 — 여기서 격차가 벌어집니다.'
+                 '가장 안 쓰이는 항목에 가장 많은 점수가 걸려 있습니다 — 여기서 격차가 벌어집니다.',
+      corpusShare:7
     },
     {
       id:'team_ask', icon:'users',
@@ -688,7 +729,8 @@ a{color:inherit}
       ],
       corpusNote:'상장사 IR은 팀을 <b>13%</b>만 소개합니다. 회사가 곧 신뢰이기 때문입니다. ' +
                  '초기기업은 반대입니다 — 회사가 아직 아무것도 아니므로 <b>사람이 유일한 담보</b>입니다. ' +
-                 'TIPS 창업기업 전문성 10점은 여기서 갈립니다.'
+                 'TIPS 창업기업 전문성 10점은 여기서 갈립니다.',
+      corpusShare:13
     }
   ];
 
@@ -779,6 +821,36 @@ a{color:inherit}
   function skey(){ return STORAGE_BASE + '::' + who(); }
 
   function tkey(){ return TIPS_BASE + '::' + who(); }
+
+  // ══ 낡음 판정 ═════════════════════════════════════════════════
+  //  이 연동의 심장이다 — *"기업이 자꾸 고치고 그때마다 피드백을 받는 구조"*(민부장님, 2026-07-30).
+  //  고쳤는데 피드백이 그대로면 시스템이 거짓말을 하는 것이다.
+  //  ★자동 재호출은 하지 않는다. 9단계를 오가는 것만으로 일일 상한(40회)이 녹는다.
+  //    낡았다는 사실만 알리고, 다시 부를지는 사람이 정한다.
+  //  정본: 설계정본_3자연동_v1.md §6
+  function hashOf(s){                                   // djb2 — 충돌 확률보다 '싼 값'이 중요하다
+    var h = 5381, t = String(s == null ? '' : s);
+    for(var i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0;
+    return (h >>> 0).toString(36);
+  }
+  // ★공백만 달라진 것을 '고쳤다'고 하면 경고가 잔소리가 되어 아무도 안 읽는다.
+  function normTxt(v){ return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
+  function stepHash(s){
+    if(!s || !s.inputs) return '';
+    return hashOf(s.inputs.map(function(f){
+      return f.key + '=' + normTxt(state.formData[f.key]);
+    }).join(''));
+  }
+  // ★단계 목록이 아니라 고정 필드 목록으로 센다 — TIPS 모드를 켜고 끄는 것만으로
+  //   전체 해시가 흔들리면 채점이 멀쩡한데도 낡았다고 말하게 된다.
+  function irHash(){
+    return hashOf(Object.keys(PLACEHOLDER_RESULT).sort().map(function(k){
+      return k + '=' + normTxt(state.formData[k]);
+    }).join(''));
+  }
+  // 해시를 모르는 상태(서버에서 원고만 받아온 경우)는 '낡음'이 아니라 '판정 불가'다.
+  // 모르는 것을 낡았다고 하면 매번 늑대가 나타난다.
+  function irStale(h){ return !!h && h !== irHash(); }
 
   var TIPS_RUBRIC = {
     name: 'TIPS 일반트랙 (2026)',
@@ -1777,6 +1849,7 @@ a{color:inherit}
         ta.parentNode.querySelector('.pb-cnt').textContent = ta.value.length + '자';
         saveLocal();
         renderMeta();
+        renderRightSoon();      // 코치 열도 따라와야 한다 — 안 그러면 탭을 옮길 때까지 낡은 판단이 최신인 양 보인다
       };
     });
     if($('btnPrev')) $('btnPrev').onclick = function(){ move(-1); };
@@ -1813,10 +1886,18 @@ a{color:inherit}
 
   // ── 우: 코치 4탭 ──
   //   순서를 바꾸지 말 것. 사람 의견이 기계 의견보다 먼저 읽혀야 한다.
-  var TABS = ['멘토', '상장사', '가이드', 'AI 진단'];
+  //  ★'신청서'는 맨 끝이다. 앞의 넷은 '의견'이고 신청서는 '내가 쓴 재료'다 —
+  //    성격이 다른 것을 사이에 끼우면 사람→기계 순서가 흐려진다.
+  //    자료가 없으면 탭 자체가 나타나지 않는다(빈 탭은 눌러보게 만들고 실망시킨다).
+  var TABS_BASE = ['멘토', '상장사', '가이드', 'AI 진단'];
+  function tabs(){ return hasB1Ref() ? TABS_BASE.concat(['신청서']) : TABS_BASE; }
+
   function renderRight(){
     var s = steps()[state.stepIndex];
     var hasMentor = !!(mentor.comments[s.id] || '').trim();
+    var TABS = tabs();
+    // 자료가 사라지면(계정 전환·초기화) 사라진 탭에 머물러 빈 화면이 남는다
+    if(state.tab >= TABS.length) state.tab = 0;
 
     var h = '<div class="pb-tabs">';
     TABS.forEach(function(t, i){
@@ -1826,26 +1907,49 @@ a{color:inherit}
     h += '</div><div class="pb-panel">';
 
     if(state.tab === 0){
-      h += hasMentor
-        ? '<div class="pb-mentor"><h5>멘토 코멘트</h5><p>' + esc(mentor.comments[s.id]) + '</p>' +
-          (mentor.who ? '<p class="by">' + esc(mentor.who) + '</p>' : '') + '</div>' +
-          '<p class="pb-note" style="color:var(--pb-on-ink-3)">사람이 남긴 의견입니다. 기계 의견보다 먼저 읽으십시오.</p>'
-        : '<h5>멘토 코멘트</h5><p>이 단계에 남겨진 코멘트가 없습니다.</p>';
+      h += b2Block();                          // 1단 — 성장관리 전체(LAGMP 확정 종합의견)
+      if(hasMentor){
+        // ★코멘트를 받은 뒤 고쳤는지는 서버가 알려주지 않는다(코멘트에 시각이 없다).
+        //   그래서 코멘트를 처음 본 시점의 원고를 기준선으로 잡아 둔다.
+        var mb = mentorBaseline(s, mentor.comments[s.id]);
+        var mStale = mb.ih !== stepHash(s);
+        h += '<div class="pb-mentor"><h5>멘토 코멘트</h5><p>' + esc(mentor.comments[s.id]) + '</p>' +
+             (mentor.who ? '<p class="by">' + esc(mentor.who) + '</p>' : '') + '</div>';
+        if(mStale){
+          // ★코멘트를 흐리지 않는다 — 사람 의견은 원고가 바뀌어도 유효할 수 있다.
+          //   바뀌었다는 사실만 알린다. 판단은 사람이 한다.
+          h += '<div class="pb-stalebar"><b>이 코멘트를 받은 뒤 이 단계를 고치셨습니다.</b>' +
+               '<p>지적이 반영됐는지 다시 확인하십시오. 멘토는 아직 고친 원고를 보지 못했습니다.</p></div>';
+        }
+        h += '<p class="pb-note" style="margin-top:14px;color:var(--pb-on-ink-3)">사람이 남긴 의견입니다. 기계 의견보다 먼저 읽으십시오.</p>';
+      } else {
+        h += '<h5>멘토 코멘트</h5><p>이 단계에 남겨진 코멘트가 없습니다.</p>';
+      }
     } else if(state.tab === 1){
       h += s.corpusNote
         ? '<div class="pb-corpus"><h5>상장사는 이렇게 안 씁니다</h5><p>' + s.corpusNote + '</p></div>' +
           '<p class="pb-note" style="margin-top:14px;color:var(--pb-on-ink-3)">KIND 상장사 IR 덱 1,344건 실측</p>'
         : '<h5>상장사 대조군</h5><p>이 단계는 상장사 IR과 견줄 실측 자료가 없습니다.</p>';
+      h += mineBlock(s);                       // 내 배분 — 고치면 이 숫자가 함께 움직인다
     } else if(state.tab === 2){
       h += '<h5>작성 가이드</h5><ul>';
       (s.coachTips || []).forEach(function(t){ h += '<li>' + esc(t) + '</li>'; });
       h += '</ul>';
+    } else if(state.tab === 4){
+      h += b1RefBlock(s);
     } else {
+      var dg = state.diags[s.id];
+      var dStale = !!dg && dg.hash !== stepHash(s);
       h += '<h5>AI 진단</h5>' +
            '<p>이 단계를 진단하면 심사역 관점의 지적과 개선 문장을 제안합니다. ' +
-           '근거가 필요한 자리는 <b>[__]</b>로 비워 둡니다 — 없는 수치를 만들어 넣지 않기 위해서입니다.</p>' +
-           '<button class="pb-inkbtn" id="btnAI">이 단계 진단받기</button>' +
-           '<div id="pbDiag" class="pb-diag"></div>';
+           '근거가 필요한 자리는 <b>[__]</b>로 비워 둡니다 — 없는 수치를 만들어 넣지 않기 위해서입니다.</p>';
+      if(dStale){
+        h += '<div class="pb-stalebar"><b>이 진단은 고치기 전 문장에 대한 것입니다.</b>' +
+             '<p>' + (dg.at ? esc(String(dg.at).slice(0,16).replace('T',' ')) + ' 진단 이후 ' : '') +
+             '이 단계를 고치셨습니다. 지금 원고에 대한 판단이 필요하면 다시 진단하십시오.</p></div>';
+      }
+      h += '<button class="pb-inkbtn" id="btnAI">' + (dg ? '다시 진단' : '이 단계 진단받기') + '</button>' +
+           '<div id="pbDiag" class="pb-diag' + (dStale ? ' pb-stale' : '') + '"></div>';
     }
     h += '</div>';
     $('pbRight').innerHTML = h;
@@ -1855,8 +1959,238 @@ a{color:inherit}
     });
     if($('btnAI')){
       $('btnAI').onclick = runDiag;
-      if(state.diag && state.diag.step === s.id) renderDiagInto(state.diag.data);
+      if(state.diags[s.id]) renderDiagInto(state.diags[s.id].data);
     }
+    if($('btnB1Ref')) $('btnB1Ref').onclick = reloadB1Ref;
+  }
+
+  // ★타자 한 자마다 오른쪽을 다시 그리면 깜박이고 무겁다. 손을 멈추면 따라온다.
+  //   코치 열은 #pbRight이고 입력란은 #pbCenter이므로 다시 그려도 포커스를 빼앗지 않는다.
+  var rightTimer = null;
+  function renderRightSoon(){
+    clearTimeout(rightTimer);
+    rightTimer = setTimeout(function(){ if(state.view === 'write') renderRight(); }, 600);
+  }
+
+  // ══ B2 성장관리 종합의견 (P4) ═════════════════════════════════
+  //  멘토 탭 **안** 2단이다. 탭을 늘리지 않는 이유 — 둘 다 사람 의견이고,
+  //  탭이 다섯이 되면 "사람 먼저 읽는다"는 순서가 흐려진다.
+  //  ★확정본만 온다. 초안은 LAGMP가 전달 게이트로 막는다(우리가 거르는 게 아니다).
+  var B2_STAGE = { 1:'멘토링 종합', 2:'IR 고도화 종합', 3:'IR 평가 종합' };
+
+  // 이 의견을 받은 뒤 원고를 고쳤는가.
+  //  ★LAGMP는 '확정 시점의 원고'를 모른다 — 그래서 확정일자로 판정하지 않는다.
+  //    멘토 코멘트와 같이 **처음 본 시점**을 기준선으로 잡는다.
+  //    단계별이 아니라 IR 전체에 대한 의견이므로 stepHash가 아니라 irHash를 쓴다.
+  function b2Baseline(){
+    var txt = b2.synth.map(function(s){ return s.stage + ':' + s.summary + '|' + s.action; }).join('\n');
+    var ch = hashOf(normTxt(txt)), b = state.b2Base;
+    if(!b || b.ch !== ch){
+      b = { ch:ch, ih:irHash() };
+      state.b2Base = b;
+      writeLocal();
+    }
+    return b;
+  }
+
+  function b2Block(){
+    if(!b2.enabled) return '';                       // 연동 자체가 꺼져 있으면 자리를 만들지 않는다
+    if(b2.note === 'unreachable'){
+      return '<div class="pb-corpus"><h5>성장관리 의견</h5>' +
+             '<p>지금은 성장관리 플랫폼에서 의견을 가져오지 못했습니다. ' +
+             '작성은 그대로 계속하십시오 — 잠시 뒤 다시 뜹니다.</p></div>';
+    }
+    if(!b2.synth.length){
+      return '<div class="pb-corpus"><h5>성장관리 의견</h5>' +
+             '<p>아직 전달된 종합의견이 없습니다. 단계가 확정되면 여기에 뜹니다.</p></div>';
+    }
+
+    var base = b2Baseline();
+    var stale = !!base.ih && base.ih !== irHash();
+
+    var h = '<div class="pb-corpus"><h5>성장관리 의견</h5>' +
+            '<p class="pb-note" style="color:var(--pb-on-ink-3)">' +
+            '성장관리 플랫폼에서 <b>확정</b>된 종합의견입니다. IR 전체에 대한 의견이며, ' +
+            '이 단계에만 해당하는 것이 아닙니다.</p>';
+    b2.synth.forEach(function(s){
+      h += '<div style="margin-top:12px">' +
+           '<div style="font:500 10px var(--pb-font-mono);letter-spacing:.12em;color:var(--pb-on-ink-3)">' +
+             esc(B2_STAGE[s.stage] || (s.stage + '단계 종합')) +
+             (s.at ? ' · ' + esc(s.at) + ' 확정' : '') + '</div>';
+      if(s.summary) h += '<p style="margin-top:5px">' + esc(s.summary) + '</p>';
+      if(s.action)  h += '<p style="margin-top:5px;color:var(--pb-on-ink-3)"><b>기업 대응</b> · ' +
+                         esc(s.action) + '</p>';
+      h += '</div>';
+    });
+    if(stale){
+      // ★흐리지 않는다. 사람 의견은 원고가 바뀌어도 유효할 수 있다 — 바뀌었다는 사실만 알린다.
+      // ★클래스로 구분한다 — 멘토 배너와 성장관리 배너가 한 탭에 함께 뜰 수 있다.
+      //   구분이 없으면 "어느 판단이 낡았는가"를 화면도 검증도 가려내지 못한다.
+      h += '<div class="pb-stalebar pb-b2stale" style="margin-top:12px">' +
+           '<b>이 의견을 받은 뒤 IR을 고치셨습니다.</b>' +
+           '<p>지적이 반영됐는지 확인하십시오. 성장관리 쪽은 아직 고친 원고를 보지 못했습니다.</p></div>';
+    }
+    return h + '</div>';
+  }
+
+  // ── 멘토 코멘트 기준선 ──
+  //  코멘트 본문이 바뀌면 새 코멘트다 — 기준선을 다시 잡는다(옛 수정이력을 물고 늘어지지 않는다).
+  function mentorBaseline(s, text){
+    var ch = hashOf(normTxt(text)), b = state.mentorBase[s.id];
+    if(!b || b.ch !== ch){
+      b = { ch:ch, ih:stepHash(s) };
+      state.mentorBase[s.id] = b;
+      writeLocal();                            // 조용히 남긴다 — 없으면 새로고침에 판정이 사라진다
+    }
+    return b;
+  }
+
+  // ── 내 배분 ──
+  //  🔴 상장사 실측 6·20·7·13%는 **출현율**(그 섹션이 등장한 덱의 비율)이다. 분량 비중이 아니다.
+  //     내 글자수 비중과 한 줄에 놓으면 단위가 다른 숫자를 견주는 것이 된다 —
+  //     시스템이 거짓말을 하게 되므로, 분량은 **TIPS 배점 비중**과만 견준다.
+  //     근거: D:\00_기타\22_IR_인텔리전스_허브\docs\IR_뼈대_단계별_비교.md §1
+  var STEP_RUBRIC = { problem:'need', market:'impact', business:'biz', team_ask:'team',
+                      rnd_goal:'fit', rnd_kpi:'exec', rnd_global:'global' };
+  function mineBlock(s){
+    var mine = stepChars(s), total = 0;          // stepChars = 이미 있는 글자수 함수를 그대로 쓴다
+    steps().forEach(function(x){ total += stepChars(x); });
+    if(!total) return '<div class="pb-mine"><h5>내 배분</h5>' +
+      '<p class="vd">아직 쓰신 글이 없습니다. 채우시면 이 단계에 들인 분량을 배점과 견줘 보여드립니다.</p></div>';
+
+    var minePct = Math.round(mine / total * 100);
+    var h = '<div class="pb-mine"><h5>내 배분</h5>' +
+            '<div class="row"><span>이 단계 분량</span><span>' + mine.toLocaleString() + '자 · 전체의 ' + minePct + '%</span></div>' +
+            '<div class="bar"><i style="width:' + Math.min(100, minePct) + '%"></i></div>';
+
+    var rid = STEP_RUBRIC[s.id];
+    var item = null;
+    scorable().forEach(function(it){ if(it.id === rid) item = it; });
+    if(item){
+      var poss = 0;
+      scorable().forEach(function(it){ poss += it.max; });
+      var wantPct = poss ? Math.round(item.max / poss * 100) : 0;
+      var d = minePct - wantPct;
+      h += '<div class="row"><span>TIPS 배점 비중</span><span>' + item.max + '점 · 채점가능 ' + poss + '점의 ' + wantPct + '%</span></div>' +
+           '<div class="bar want"><i style="width:' + Math.min(100, wantPct) + '%"></i></div>' +
+           '<p class="vd">' +
+           (Math.abs(d) <= 5
+              ? '분량과 배점이 대체로 맞습니다.'
+              : (d < 0
+                  ? '<b>배점이 큰데 분량은 얇습니다</b>(' + Math.abs(d) + '%p 차이). 여기서 점수가 새어 나갑니다.'
+                  : '배점보다 두껍게 쓰셨습니다(' + d + '%p 차이). 다른 단계가 얇지 않은지 보십시오.')) +
+           '</p>';
+    } else {
+      h += '<p class="vd">이 단계에 직접 대응하는 TIPS 채점항목은 없습니다' +
+           (s.id === 'solution' ? ' — 기술의 <b>적정성·실현성</b>은 IR이 아니라 R&amp;D 사업계획서가 묻습니다.' : '.') +
+           '</p>';
+    }
+    // ★출현율은 '썼는가/안 썼는가'와만 견준다. 같은 단위끼리 견주는 것이다.
+    if(s.corpusShare != null){
+      h += '<p class="unit">상장사 1,344건 중 <b>' + s.corpusShare + '%</b>만 이 항목을 <b>씁니다</b> — ' +
+           '출현율이지 분량 비중이 아닙니다. 당신은 ' +
+           (mine ? '이 항목을 쓰셨습니다.' : '<b>아직 비워 두셨습니다.</b>') + '</p>';
+    }
+    return h + '</div>';
+  }
+
+  // ══ 신청서 참고자료 (P2) ═══════════════════════════════════════
+  //  이노테크 접수(B1)에 이미 쓰신 것 중 **IR 본문으로 옮기지 않는 것**을 여기서만 보여준다.
+  //  🔴 숫자로 문장을 조립하지 않는다. "연 480만원 × 3,200곳 = 153억"을 시스템이 만들면
+  //     그것은 기업이 쓴 문장이 아니라 시스템의 해석이고, 투자자가 근거를 물으면 팀이 답하지 못한다.
+  //     그래서 값만 나란히 놓고, 문장은 사람이 쓴다.
+  //  🔴 ③ 18단계 아이템분석은 여기에 싣지 않는다(미결 1 판단). 심사 배점·비판적 진단이 섞여 있어
+  //     피심사자 본인에게 보이면 변별력이 깨진다 — LAGMP가 applicantdetail에서 막는 것과 같은 이유다.
+  var B1_REF_STEPS = {
+    cover:    { extra:['사업아이템명'] },
+    solution: { extra:['LC3.고유가치제안(필수)'] },
+    market:   { numbers:['1년차 목표 판매량', '단가', '3년차 목표매출'] },
+    business: { numbers:['단가', '단위원가', '재구매율', 'CAC', 'LTV/CAC', '단위경제성'],
+                extra:['LC7.비용구조', 'LC8.핵심지표'] }
+  };
+  function hasB1Ref(){
+    var r = state.b1ref;
+    if(!r) return false;
+    var n = r.numbers && Object.keys(r.numbers).some(function(k){
+      return r.numbers[k] !== null && r.numbers[k] !== '' && r.numbers[k] !== undefined;
+    });
+    return !!((r.files && r.files.length) || n || (r.extra && Object.keys(r.extra).length));
+  }
+  function numTxt(v){
+    if(v === null || v === undefined || v === '') return '';
+    return (typeof v === 'number') ? v.toLocaleString() : String(v);
+  }
+  function b1RefBlock(s){
+    var r = state.b1ref;
+    if(!r) return '<h5>신청서</h5><p>불러온 신청 자료가 없습니다.</p>';
+
+    var h = '<h5>신청서에 이렇게 쓰셨습니다</h5>' +
+            '<p class="pb-note" style="color:var(--pb-on-ink-3)">' +
+            '이노테크 접수 자료입니다' +
+            (state.b1At ? ' · ' + esc(String(state.b1At).slice(0,16).replace('T',' ')) + ' 기준' : '') +
+            '. <b>IR 본문에 자동으로 들어가지 않습니다</b> — 보고 판단하신 뒤 직접 쓰십시오.</p>';
+
+    var map = B1_REF_STEPS[s.id] || {};
+    var body = '';
+
+    // 숫자 — 나란히 놓기만 한다. 곱하지도 더하지도 않는다.
+    (map.numbers || []).forEach(function(k){
+      var v = numTxt(r.numbers && r.numbers[k]);
+      if(v) body += '<div class="row"><span>' + esc(k) + '</span><span>' + esc(v) + '</span></div>';
+    });
+    if(body){
+      body = '<div class="pb-mine" style="margin-top:12px"><h5>재무 트윈에 적으신 숫자</h5>' + body +
+             '<p class="vd">🔴 <b>이 값들로 문장을 만들어 드리지 않습니다.</b> 단위와 근거를 아는 사람은 여러분입니다. ' +
+             '지금도 같은 값인지 확인하고, 시장·수익 문장은 직접 쓰십시오.</p></div>';
+    }
+
+    // 린캔버스 서술 — 본문 8칸에 안 들어가는 것들
+    var ex = '';
+    (map.extra || []).forEach(function(k){
+      var v = (r.extra && r.extra[k]) || '';
+      if(v) ex += '<div class="pb-mentor" style="margin-top:10px"><h5>' + esc(k) + '</h5><p>' + esc(v) + '</p></div>';
+    });
+
+    var out = body + ex;
+    if(!out) out = '<p style="margin-top:12px">이 단계에 해당하는 신청서 참고자료는 없습니다.</p>';
+    h += out;
+
+    // 제출 파일 — 노션 첨부 URL은 시간이 지나면 만료된다.
+    // ★[신청서 불러오기]로 다시 받게 하면 원고가 통째로 대체된다(그게 그 버튼의 정의다).
+    //   자료만 다시 받는 경로를 따로 둔다 — 파일 하나 보려다 원고를 잃는 일이 없어야 한다.
+    if(r.files && r.files.length){
+      h += '<div class="pb-corpus" style="margin-top:14px"><h5>제출하신 파일</h5>';
+      r.files.forEach(function(f){
+        h += '<p style="margin:4px 0"><a href="' + esc(f.url) + '" target="_blank" rel="noopener">' +
+             esc(f.name || f.label) + '</a> <span style="color:var(--pb-on-ink-3)">· ' + esc(f.label) + '</span></p>';
+      });
+      h += '<p class="pb-note" style="color:var(--pb-on-ink-3)">링크는 시간이 지나면 만료됩니다. ' +
+           '열리지 않으면 아래 [참고자료만 새로 받기]를 누르십시오 — <b>원고는 건드리지 않습니다.</b></p></div>';
+    }
+    h += '<button class="pb-inkbtn" id="btnB1Ref" style="margin-top:14px">참고자료만 새로 받기</button>';
+    return h;
+  }
+
+  // 원고를 그대로 두고 참고자료(ref)만 갱신한다 — [신청서 불러오기]와 다른 버튼인 이유.
+  function reloadB1Ref(){
+    if(!serverOn()){ alert('서버에 연결돼 있지 않습니다.'); return; }
+    if(busy) return;
+    var btn = $('btnB1Ref');
+    busy = true; if(btn){ btn.disabled = true; btn.textContent = '받는 중…'; }
+    apiGet('b1ref', {})
+      .then(function(d){
+        if(!d || !d.ok) throw new Error((d && d.error) || '받지 못했습니다.');
+        if(!d.found){ alert('접수 시스템에서 귀사의 신청 자료를 찾지 못했습니다.'); return; }
+        state.b1ref = d.ref || null;
+        state.b1At = new Date().toISOString();
+        writeLocal();
+        renderRight();
+      })
+      .catch(function(err){ alert('받지 못했습니다 — ' + (err.message || '오류')); })
+      .then(function(){
+        busy = false;
+        if($('btnB1Ref')){ $('btnB1Ref').disabled = false; $('btnB1Ref').textContent = '참고자료만 새로 받기'; }
+      });
   }
 
   // ── AI 진단 ──
@@ -1872,15 +2206,21 @@ a{color:inherit}
     busy = true; btn.disabled = true; btn.textContent = '진단 중…';
     callLLM(SYSTEM, stepPrompt())
       .then(function(d){
-        state.diag = { step:s.id, data:d };
-        renderDiagInto(d);
+        // ★무엇을 보고 받은 진단인지를 함께 남긴다 — 이 해시가 낡음 판정의 근거다.
+        state.diags[s.id] = { data:d, hash:stepHash(s), at:new Date().toISOString() };
+        writeLocal();
+        renderRight();                             // 버튼 라벨·낡음 배너까지 다시 그린다
       })
       .catch(function(err){
         renderDiagInto({ verdict:'진단하지 못했습니다 — ' + (err.message || '오류') });
       })
       .then(function(){
         busy = false;
-        if($('btnAI')){ $('btnAI').disabled = false; $('btnAI').textContent = '이 단계 진단받기'; }
+        // ★라벨을 고정 문구로 되돌리면 안 된다 — 이미 진단을 받은 뒤에는 [다시 진단]이어야 한다.
+        if($('btnAI')){
+          $('btnAI').disabled = false;
+          $('btnAI').textContent = state.diags[s.id] ? '다시 진단' : '이 단계 진단받기';
+        }
       });
   }
   function renderDiagInto(d){
@@ -1935,23 +2275,40 @@ a{color:inherit}
   //  ★키를 계정별로 가르지 않으면, 같은 PC에서 A기업이 쓰고 나간 뒤
   //    B기업이 들어왔을 때 A의 IR이 그대로 떠 있는다.
   var saveTimer = null;
+  // ★칩을 띄우지 않고 조용히 쓰는 경로. 화면을 그리다가 기준선을 잡을 때 쓴다 —
+  //   코멘트를 열어보기만 했는데 '저장중…'이 뜨면 사용자는 자기가 뭘 고쳤나 의심한다.
+  function writeLocal(){
+    try{
+      localStorage.setItem(skey(), JSON.stringify({
+        stepIndex: state.stepIndex, formData: state.formData, completed: state.completed,
+        // ★판단과 그 근거 해시도 같이 남긴다. 이것이 없으면 새로고침 한 번에
+        //   "고치기 전 진단"이라는 사실이 사라지고, 낡은 진단이 최신인 양 다시 뜬다.
+        diags: state.diags, mentorBase: state.mentorBase,
+        tipsHash: state.tipsHash, auditHash: state.auditHash,
+        // ★신청서 참고자료도 남긴다. 없으면 새로고침 한 번에 참고 열이 통째로 비고,
+        //   기업은 "아까는 있었는데"라며 불러오기를 다시 눌러 원고를 통째로 잃는다.
+        b1ref: state.b1ref || null, b1At: state.b1At || '',
+        b2Base: state.b2Base || null
+      }));
+      return true;
+    }catch(e){ return false; }
+  }
   function saveLocal(){
     chip('saving');
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(function(){
-      try{
-        localStorage.setItem(skey(), JSON.stringify({
-          stepIndex: state.stepIndex, formData: state.formData, completed: state.completed
-        }));
-        chip('ok');
-      }catch(e){ chip('fail'); }
-    }, 400);
+    saveTimer = setTimeout(function(){ chip(writeLocal() ? 'ok' : 'fail'); }, 400);
   }
   function loadLocal(){
     // ★먼저 비운다 — 로그아웃해도 스크립트가 메모리에 남아 앞 기업 내용이 새어 나온다
     state.formData = {}; state.stepIndex = 0; state.completed = false;
     state.lastTips = null; state.lastAudit = null; state.lastGate = null; state.lastDeck = null;
+    // ★진단·기준선도 반드시 비운다. 칸만 갈라두면 A기업이 받은 진단이 B기업 화면에 남는다.
+    state.diags = {}; state.mentorBase = {}; state.tipsHash = ''; state.auditHash = '';
+    // ★신청서 참고자료는 그 기업의 신청 내용이다 — 계정을 갈면 반드시 비운다.
+    //   칸(localStorage 키)만 갈라두면 A기업의 신청서가 B기업 코치 열에 그대로 남는다.
+    state.b1ref = null; state.b1At = ''; state.b2Base = null;
     mentor = { comments:{}, overall:'', who:'', loaded:false };
+    b2 = { synth:[], loaded:false, enabled:false, note:'' };
     try{
       var raw = localStorage.getItem(skey());
       if(!raw) return;
@@ -1960,6 +2317,13 @@ a{color:inherit}
         state.formData  = s.formData || {};
         state.stepIndex = Math.min(+s.stepIndex || 0, steps().length - 1);
         state.completed = !!s.completed;
+        state.diags      = (s.diags && typeof s.diags === 'object') ? s.diags : {};
+        state.mentorBase = (s.mentorBase && typeof s.mentorBase === 'object') ? s.mentorBase : {};
+        state.tipsHash   = s.tipsHash || '';
+        state.auditHash  = s.auditHash || '';
+        state.b1ref      = (s.b1ref && typeof s.b1ref === 'object') ? s.b1ref : null;
+        state.b1At       = s.b1At || '';
+        state.b2Base     = (s.b2Base && typeof s.b2Base === 'object') ? s.b2Base : null;
       }
     }catch(e){}
   }
@@ -2382,20 +2746,35 @@ a{color:inherit}
     var btn = $('btnAudit');
     busy = true; btn.disabled = true; btn.textContent = '감수 중…';
     callLLM(SYSTEM, auditPrompt())
-      .then(function(d){ state.lastAudit = d; renderAuditBox(); renderMeta(); syncToServer(); })
+      .then(function(d){
+        state.lastAudit = d;
+        state.auditHash = irHash();               // 무엇을 보고 한 감수인지 기억한다
+        writeLocal();
+        renderAuditBox(); renderMeta(); syncToServer();
+      })
       .catch(function(err){
         $('auditBox').innerHTML = '<div class="pb-warnbox" style="margin-top:14px">감수하지 못했습니다 — ' +
                                   esc(err.message || '오류') + '</div>';
       })
       .then(function(){
         busy = false;
-        if($('btnAudit')){ $('btnAudit').disabled = false; $('btnAudit').textContent = 'IR 전체 감수'; }
+        if($('btnAudit')){
+          $('btnAudit').disabled = false;
+          $('btnAudit').textContent = state.lastAudit ? 'IR 전체 다시 감수' : 'IR 전체 감수';
+        }
       });
   }
   function renderAuditBox(){
     var a = state.lastAudit, box = $('auditBox');
     if(!box || !a) return;
-    var h = '<div class="pb-card" style="margin-top:14px">';
+    var stale = irStale(state.auditHash);
+    var h = '';
+    if(stale){
+      h += '<div class="pb-warnbox" style="margin-top:14px">' +
+           '<b>이 감수는 고치기 전 IR에 대한 것입니다.</b> 감수를 받은 뒤 원고를 고치셨습니다 — ' +
+           '모순이 이미 해소됐을 수도, 새로 생겼을 수도 있습니다. 지금 원고로 다시 감수하십시오.</div>';
+    }
+    h += '<div class="pb-card' + (stale ? ' pb-faded' : '') + '" style="margin-top:14px">';
     if(a.verdict) h += '<p style="font-size:14px;color:var(--pb-text-body)">' + esc(a.verdict) + '</p>';
 
     var inc = arr(a.inconsistencies);
@@ -2422,6 +2801,15 @@ a{color:inherit}
   //  ①(단계별 원고)은 덮어쓰지만 ④는 만들 때마다 쌓인다 — 지난 덱을 되찾을 수 있어야 한다.
   function saveOutput(kind, btn){
     if(!serverOn()){ alert('서버에 연결돼 있지 않아 보관할 수 없습니다.'); return; }
+    // ★낡은 채점·감수가 한 벌로 묶여 ④에 쌓이면, 나중에 되찾을 때 그것이 '그때의 점수'로 읽힌다.
+    //   보관을 막지는 않는다 — 원고만 보관하려는 경우도 있다. 다만 모르고 넘어가게 두지 않는다.
+    var st = [];
+    if(irStale(state.tipsHash))  st.push('TIPS 채점');
+    if(irStale(state.auditHash)) st.push('전체 감수');
+    if(st.length && !confirm(
+        st.join('·') + '은 지금 원고보다 낡았습니다(고치신 뒤 다시 하지 않았습니다).\n\n' +
+        '이대로 보관하면 낡은 결과가 이 원고의 것으로 함께 쌓입니다.\n\n계속 보관할까요?')) return;
+
     var fd = state.formData, tot = 0, n = 0;
     steps().forEach(function(s){ s.inputs.forEach(function(i){
       tot++; if((fd[i.key] || '').trim()) n++; }); });
@@ -2584,7 +2972,8 @@ a{color:inherit}
            '<p class="pb-note" style="margin-bottom:14px">하나라도 미달이면 채점을 시작하지 않습니다. ' +
            '자격이 없으면 점수가 아무 의미가 없기 때문입니다.</p>' +
            '<div class="pb-gate" id="gateBox"></div>' +
-           '<button class="pb-cta" style="margin-top:18px" id="btnTips">TIPS 기준으로 채점하기</button>' +
+           '<button class="pb-cta" style="margin-top:18px" id="btnTips">' +
+             (state.lastTips ? 'TIPS 기준으로 다시 채점하기' : 'TIPS 기준으로 채점하기') + '</button>' +
            '<div id="gateMsg"></div>' +
          '</div>';
 
@@ -2594,7 +2983,8 @@ a{color:inherit}
            '<p class="pb-note">단계별이 아니라 IR 전체를 하나의 논리로 보고 ' +
            '<b>단계 사이의 모순</b>을 찾습니다 — 타겟 고객이 문제와 시장에서 다르다든지, ' +
            '마일스톤이 GTM으로는 달성 불가능하다든지.</p>' +
-           '<button class="pb-cta sub" style="margin-top:14px;width:auto;padding:11px 18px" id="btnAudit">IR 전체 감수</button>' +
+           '<button class="pb-cta sub" style="margin-top:14px;width:auto;padding:11px 18px" id="btnAudit">' +
+             (state.lastAudit ? 'IR 전체 다시 감수' : 'IR 전체 감수') + '</button>' +
            '<div id="auditBox"></div>' +
          '</div>';
 
@@ -2719,6 +3109,8 @@ a{color:inherit}
     callLLM(SYSTEM, tipsPrompt())
       .then(function(d){
         state.lastTips = buildTips(d);
+        state.tipsHash = irHash();                // 무엇을 보고 낸 점수인지 기억한다
+        writeLocal();
         renderResultRight();
         renderMeta();
         syncToServer();
@@ -2728,7 +3120,10 @@ a{color:inherit}
       })
       .then(function(){
         busy = false;
-        if($('btnTips')){ $('btnTips').disabled = false; $('btnTips').textContent = 'TIPS 기준으로 채점하기'; }
+        if($('btnTips')){
+          $('btnTips').disabled = false;
+          $('btnTips').textContent = state.lastTips ? 'TIPS 기준으로 다시 채점하기' : 'TIPS 기준으로 채점하기';
+        }
       });
   }
 
@@ -2770,7 +3165,14 @@ a{color:inherit}
            '이 도구의 자체 정의입니다 — 점수를 공식인 것처럼 쓰지 마십시오.</p>';
     } else {
       var pct = t.poss ? Math.round(t.got / t.poss * 100) : 0;
-      h += '<div class="pb-score"><b>' + t.got + '</b><span>/ ' + t.poss + '점 (' + pct + '%)</span></div>';
+      var tStale = irStale(state.tipsHash);
+      if(tStale){
+        // ★점수는 지우지 않는다. 다만 지금 원고의 점수가 아니라는 것을 분명히 한다 —
+        //   낡은 점수를 최신인 양 보관·제출하면 그것이 곧 잘못된 판단의 근거가 된다.
+        h += '<div class="pb-stalebar"><b>이 점수는 고치기 전 IR의 점수입니다.</b>' +
+             '<p>채점 이후 원고를 고치셨습니다. 지금 점수를 알려면 다시 채점하십시오.</p></div>';
+      }
+      h += '<div class="pb-score' + (tStale ? ' pb-stale' : '') + '"><b>' + t.got + '</b><span>/ ' + t.poss + '점 (' + pct + '%)</span></div>';
       if(t.unverified){
         h += '<div class="pb-sdet"><span class="bad">근거 미확인 ' + t.unverified + '건 — ' +
              'AI가 IR에 없는 문장을 인용했습니다. 이 채점을 신뢰하지 마십시오.</span></div>';
@@ -2971,6 +3373,22 @@ a{color:inherit}
       renderRight();
     }).catch(function(){});
   }
+  // 성장관리 플랫폼(LAGMP) 확정 종합의견 — 멘토 탭 2단 위쪽에 얹는다.
+  //  ★확정 전이면 아무것도 오지 않는다(LAGMP가 전달 게이트를 건다). 그때 "검토 중"이라 적지 않는다 —
+  //    아직 시작도 안 한 것인지 검토가 진행 중인지 이쪽은 알 수 없다. 모르는 것을 아는 척하지 않는다.
+  function pullB2(){
+    if(!serverOn()) return Promise.resolve();
+    return apiGet('b2', {}).then(function(d){
+      if(!d || !d.ok) return;
+      b2.enabled = !!d.enabled;
+      b2.synth   = arr(d.synth);
+      b2.loaded  = true;
+      // LAGMP가 응답하지 않은 경우 — 의견만 접고 작성은 계속된다
+      b2.note = (d.enabled && d.available === false) ? 'unreachable' : '';
+      if(state.view === 'write') renderRight();
+    }).catch(function(){});                   // 조용히 접는다
+  }
+
   function pullStatus(){
     if(!serverOn()) return Promise.resolve();
     return apiGet('list', {}).then(function(d){
@@ -2994,7 +3412,12 @@ a{color:inherit}
       formData: state.formData,
       gate: state.lastGate || null,
       tips: state.lastTips || null,
-      audit: state.lastAudit || null
+      audit: state.lastAudit || null,
+      // ★"이 점수는 어느 원고의 것인가"를 서버에도 넘긴다.
+      //   지금까지 낡음 판정은 이 브라우저만 알았다 — 노션을 보는 사람은 점수만 보고
+      //   그것이 이미 고친 원고 이전의 것인지 알 수 없었다(설계정본 미결 6).
+      irHash: irHash(),
+      tipsHash: state.tipsHash || ''
     };
   }
   // ★빈 값은 보내지 않는다.
@@ -3051,6 +3474,11 @@ a{color:inherit}
     state.lastGate   = s.gate || null;
     state.status     = s.status || '';
     state.submittedAt= s.submittedAt || '';
+    // ★단계별 진단은 이 원고에 대한 것이 아니다 — 다른 PC에서 쓴 원고를 받아왔을 수도 있다.
+    state.diags = {}; state.mentorBase = {};
+    // ★채점·감수는 받아 쓰지만 '무엇을 보고 낸 것인지'는 모른다.
+    //   모르는 것을 낡았다고 하지도, 최신이라고 하지도 않는다 → 빈 해시 = 판정 불가.
+    state.tipsHash = ''; state.auditHash = '';
 
     // ★R&D 항목이 있으면 TIPS 모드를 켠다 — 안 켜면 그 입력이 화면에서 사라진다
     var hasRnd = ['devGoal','devPrior','devKpi','devVerify','globalPlan'].some(function(k){
@@ -3113,8 +3541,13 @@ a{color:inherit}
           }
         });
         // 내용이 통째로 바뀌었으므로 그 위에서 나온 판단은 전부 버린다
-        state.diag = null; state.lastTips = null; state.lastAudit = null;
+        state.diags = {}; state.lastTips = null; state.lastAudit = null;
         state.lastDiagrams = null; state.lastDeck = null;
+        state.tipsHash = ''; state.auditHash = '';
+        // ★멘토 기준선도 버린다 — 원고가 통째로 갈렸으므로 옛 기준선은 아무것도 뜻하지 않는다.
+        //   다음 렌더에서 새 기준선을 잡는다.
+        state.mentorBase = {};
+        state.b2Base = null;                   // 성장관리 의견 기준선도 같은 이유로 버린다
         state.b1ref = d.ref || null;
         state.b1At = new Date().toISOString();
         state.stepIndex = 0;
@@ -3172,7 +3605,7 @@ a{color:inherit}
         if(typeof d.config.tipsMode === 'boolean') llm.tipsMode = d.config.tipsMode;
       }
       openApp(d.company || '');
-      pullComments(); pullStatus();
+      pullComments(); pullStatus(); pullB2();
     }).catch(function(){
       e.textContent = '서버에 연결하지 못했습니다. 주소와 네트워크를 확인하십시오.';
       e.classList.remove('hidden');
@@ -3213,6 +3646,11 @@ a{color:inherit}
     $('loginErr').classList.add('hidden');
     $('inCode').value = '';
     state.formData = {};                      // 메모리도 비운다
+    // ★판단도 함께 비운다 — 칸만 갈라두면 메모리 경로로 샌다(로그인 시 loadLocal이 또 비운다: 두 겹)
+    state.diags = {}; state.mentorBase = {};
+    state.tipsHash = ''; state.auditHash = '';
+    state.lastTips = null; state.lastAudit = null;
+    mentor = { comments:{}, overall:'', who:'', loaded:false };
   };
   $('hdB1').onclick   = loadB1;
   $('hdSave').onclick = function(){ saveLocal(); syncToServer(); };
