@@ -1889,8 +1889,12 @@ a{color:inherit}
   //  ★'신청서'는 맨 끝이다. 앞의 넷은 '의견'이고 신청서는 '내가 쓴 재료'다 —
   //    성격이 다른 것을 사이에 끼우면 사람→기계 순서가 흐려진다.
   //    자료가 없으면 탭 자체가 나타나지 않는다(빈 탭은 눌러보게 만들고 실망시킨다).
+  //  🔴 자료가 아직 없어도 **서버에 붙어 있으면** 탭을 낸다.
+  //     자료가 있을 때만 냈더니, [참고자료만 받기] 버튼이 그 탭 안에 있어서
+  //     **처음 한 번은 원고를 대체하는 [신청서 불러오기]를 누를 수밖에 없었다.**
+  //     "원고는 두고 자료만 본다"는 경로가 닫혀 있었다 — 그러라고 만든 버튼인데.
   var TABS_BASE = ['멘토', '상장사', '가이드', 'AI 진단'];
-  function tabs(){ return hasB1Ref() ? TABS_BASE.concat(['신청서']) : TABS_BASE; }
+  function tabs(){ return (hasB1Ref() || serverOn()) ? TABS_BASE.concat(['신청서']) : TABS_BASE; }
 
   function renderRight(){
     var s = steps()[state.stepIndex];
@@ -2122,7 +2126,16 @@ a{color:inherit}
   }
   function b1RefBlock(s){
     var r = state.b1ref;
-    if(!r) return '<h5>신청서</h5><p>불러온 신청 자료가 없습니다.</p>';
+    if(!r){
+      // ★여기가 '원고를 지키면서 자료만 받는' 유일한 입구다. 버튼이 반드시 있어야 한다.
+      return '<h5>신청서에 이렇게 쓰셨습니다</h5>' +
+             '<p>이노테크 접수 자료 중 <b>IR 본문으로 옮기지 않는 것</b>(재무 트윈 숫자 · 고유가치제안 · ' +
+             '비용구조 · 핵심지표 · 제출 파일)을 여기서 보실 수 있습니다.</p>' +
+             '<p class="pb-note" style="margin-top:10px;color:var(--pb-on-ink-3)">' +
+             '아래 버튼은 <b>작성하신 원고를 건드리지 않습니다.</b> ' +
+             '원고까지 신청서 내용으로 되돌리시려면 상단 [신청서 불러오기]를 쓰십시오.</p>' +
+             '<button class="pb-inkbtn" id="btnB1Ref" style="margin-top:14px">참고자료 받기</button>';
+    }
 
     var h = '<h5>신청서에 이렇게 쓰셨습니다</h5>' +
             '<p class="pb-note" style="color:var(--pb-on-ink-3)">' +
