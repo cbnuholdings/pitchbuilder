@@ -2137,9 +2137,9 @@ a{color:inherit}
   //
   //   가이드 = D5 IR 학습자료 지식체계 문항(①) + B6 전문 관점(②·다음 단계)
   //            + B1 신청서 재료(③) + 내 배분(④)
-  //   멘토   = 관리자 단계 코멘트(노션③). ~~LAGMP 멘토링 종합·IR 고도화 탭~~은 2026-08-19 민부장 지시로 뺐다.
+  //   ~~멘토~~ = 2026-08-19 민부장 지시로 탭 삭제(LAGMP 의견 연동과 함께). 관리자 코멘트(노션③)는 서버에 남지만 화면에 안 그린다.
   //   ~~상장사 대조군~~ = 삭제(민부장 지시). '내 배분'만 가이드로 옮겨 살렸다.
-  var TABS_BASE = ['가이드', '멘토', 'AI 진단'];
+  var TABS_BASE = ['가이드', 'AI 진단'];   // ~~멘토 탭~~ 2026-08-19 민부장 지시로 삭제(관리자 코멘트는 화면에서 내렸다)
   function tabs(){ return TABS_BASE; }   // ~~IR 고도화 탭(LAGMP stage2·3)~~ 2026-08-19 제거
 
   //  🔴 어느 탭이든 "여기 내용은 의견일 뿐"임을 밝힌다(민부장 지시).
@@ -2150,7 +2150,6 @@ a{color:inherit}
 
   function renderRight(){
     var s = steps()[state.stepIndex];
-    var hasMentor = !!(mentor.comments[s.id] || '').trim();
     var TABS = tabs();
     // 탭이 사라지면(의견 소멸·계정 전환) 사라진 탭에 머물러 빈 화면이 남는다
     if(state.tab >= TABS.length) state.tab = 0;
@@ -2158,7 +2157,7 @@ a{color:inherit}
     var h = '<div class="pb-tabs">';
     TABS.forEach(function(t, i){
       h += '<button class="pb-tab' + (i === state.tab ? ' is-on' : '') + '" data-t="' + i + '">' +
-           esc(t) + (i === 1 && hasMentor ? '<span class="badge"></span>' : '') + '</button>';
+           esc(t) + '</button>';
     });
     h += '</div><div class="pb-panel">';
 
@@ -2168,24 +2167,6 @@ a{color:inherit}
       h += b1RefBlock(s);
       h += mineBlock(s);
     } else if(state.tab === 1){
-      // ── 멘토 ── 이 단계 코멘트(관리자·멘토가 노션에 남긴 것)
-      if(hasMentor){
-        // ★코멘트를 받은 뒤 고쳤는지는 서버가 알려주지 않는다(코멘트에 시각이 없다).
-        //   그래서 코멘트를 처음 본 시점의 원고를 기준선으로 잡아 둔다.
-        var mb = mentorBaseline(s, mentor.comments[s.id]);
-        var mStale = mb.ih !== stepHash(s);
-        h += '<div class="pb-mentor"><h5>이 단계 코멘트</h5><p>' + esc(mentor.comments[s.id]) + '</p>' +
-             (mentor.who ? '<p class="by">' + esc(mentor.who) + '</p>' : '') + '</div>';
-        if(mStale){
-          // ★코멘트를 흐리지 않는다 — 사람 의견은 원고가 바뀌어도 유효할 수 있다.
-          //   바뀌었다는 사실만 알린다. 판단은 사람이 한다.
-          h += '<div class="pb-stalebar"><b>이 코멘트를 받은 뒤 이 단계를 고치셨습니다.</b>' +
-               '<p>지적이 반영됐는지 다시 확인하십시오. 멘토는 아직 고친 원고를 보지 못했습니다.</p></div>';
-        }
-      } else {
-        h += '<h5>이 단계 코멘트</h5><p>이 단계에 남겨진 코멘트가 없습니다.</p>';
-      }
-    } else if(state.tab === 2){
       var dg = state.diags[s.id];
       var dStale = !!dg && dg.hash !== stepHash(s);
       h += '<h5>AI 진단</h5>' +
@@ -2395,7 +2376,7 @@ a{color:inherit}
              '<p class="pb-note" style="margin-top:10px;color:var(--pb-on-ink-3)">' +
              '아래 버튼은 <b>작성하신 원고를 건드리지 않습니다.</b> ' +
              '원고까지 신청서 내용으로 되돌리시려면 상단 [신청서 내용 가져오기]를 쓰십시오.</p>' +
-             '<button class="pb-inkbtn" id="btnB1Ref" style="margin-top:14px">참고자료 받기</button>';
+             '<button class="pb-inkbtn" id="btnB1Ref" style="margin-top:14px">제출한 파일 확인</button>';
     }
 
     var h = '<h5>신청서에 이렇게 쓰셨습니다</h5>' +
@@ -2439,9 +2420,9 @@ a{color:inherit}
              esc(f.name || f.label) + '</a> <span style="color:var(--pb-on-ink-3)">· ' + esc(f.label) + '</span></p>';
       });
       h += '<p class="pb-note" style="color:var(--pb-on-ink-3)">링크는 시간이 지나면 만료됩니다. ' +
-           '열리지 않으면 아래 [참고자료만 새로 받기]를 누르십시오 — <b>원고는 건드리지 않습니다.</b></p></div>';
+           '열리지 않으면 아래 [제출한 파일 확인]을 누르십시오 — <b>원고는 건드리지 않습니다.</b></p></div>';
     }
-    h += '<button class="pb-inkbtn" id="btnB1Ref" style="margin-top:14px">참고자료만 새로 받기</button>';
+    h += '<button class="pb-inkbtn" id="btnB1Ref" style="margin-top:14px">제출한 파일 확인</button>';
     return h;
   }
 
@@ -2464,7 +2445,7 @@ a{color:inherit}
       .catch(function(err){ alert('받지 못했습니다 — ' + (err.message || '오류')); })
       .then(function(){
         busy = false;
-        if($('btnB1Ref')){ $('btnB1Ref').disabled = false; $('btnB1Ref').textContent = '참고자료만 새로 받기'; }
+        if($('btnB1Ref')){ $('btnB1Ref').disabled = false; $('btnB1Ref').textContent = '제출한 파일 확인'; }
       });
   }
 
@@ -3222,7 +3203,7 @@ a{color:inherit}
       h += '<button class="pb-aprow" data-nm="' + esc(x.company) + '" data-cid="' + esc(x.cid || '') + '">' +
              '<b>' + esc(x.company || '(이름 없음)') + '</b>' +
              '<span>' + esc(x.cid || '') + '</span>' +
-             '<em>' + (w ? '작성 ' + (w.filled != null ? w.filled + '/17' : '있음') : '미작성') + '</em>' +
+             '<em>' + (w ? '작성 ' + (w.filled != null ? w.filled + '/17' : '있음') + (w.status === '제출' ? ' · 제출' : '') : '미작성') + '</em>' +
            '</button>';
     });
     if(list.length > 200) h += '<p class="pb-note">' + (list.length - 200) + '곳 더 있습니다 — 검색어를 좁히십시오.</p>';
@@ -3271,10 +3252,10 @@ a{color:inherit}
 
     // ── 신청기업 불러오기 ── B1(이노테크 접수) 명부에서 고른다
     h += '<div class="pb-card" style="margin-top:16px">' +
-           '<h3>작업할 기업 고르기</h3>' +
+           '<h3>참여기업 리스트</h3>' +
            '<p class="pb-note" style="margin-bottom:12px">이노테크 접수 명부입니다. ' +
-           '이름을 치거나 목록에서 고르시면 <b>그 기업의 IR 원고가 열립니다.</b> ' +
-           '(주)·주식회사는 빼고 검색해도 찾습니다.<br>' +
+           '이름을 치거나 목록에서 고르시면 <b>그 기업의 IR 원고가 열립니다</b>(관리자 권한으로 직접 고치는 대리 편집). ' +
+           '(주)·주식회사는 빼고 검색해도 찾습니다. 오른쪽에 작성 진행(작성 n/17 · 제출)이 함께 보입니다.<br>' +
            '<span style="color:var(--pb-ink-3)">※ 여기는 <b>누구를</b> 작업할지 고르는 곳입니다. ' +
            '기업을 연 뒤 상단 [신청서 내용 가져오기]를 누르면 <b>그 기업이 낸 린캔버스로 작성칸이 채워집니다.</b></span></p>' +
            '<input id="apQ" class="pb-apq" placeholder="기업명 또는 접수번호 — 예: 엑스업 · ITC2026-002" ' +
@@ -3282,38 +3263,7 @@ a{color:inherit}
            '<div id="apList" class="pb-aplist">' + apRowsHtml() + '</div>' +
          '</div>';
 
-    if(admin.loading){
-      h += '<div class="pb-card"><p class="pb-note">불러오는 중…</p></div>';
-    } else if(!rows.length){
-      h += '<div class="pb-card"><p class="pb-note">' +
-           (serverOn() ? '표시할 기업이 없습니다.'
-                       : '서버에 연결돼 있지 않습니다. 배포 후 <b>PROXY</b> 주소를 넣으면 실제 기업 목록이 뜹니다.') +
-           '</p></div>';
-    } else {
-      h += '<h3 style="margin-top:22px">작성 현황</h3>' +
-           '<p class="pb-note" style="margin-bottom:10px">이미 IR을 쓰기 시작한 기업입니다. ' +
-           '행을 누르면 <b>멘토 코멘트</b>를 남기고, [열어 수정]을 누르면 <b>원고를 직접 고칩니다.</b></p>' +
-           '<table class="pb-atbl"><thead><tr>' +
-             '<th>기업</th><th>작성</th><th>최근 점수</th><th>제출</th><th>코멘트</th><th>원고</th>' +
-           '</tr></thead><tbody>';
-      rows.forEach(function(r, i){
-        var on = admin.sel === i;
-        h += '<tr data-i="' + i + '"' + (on ? ' class="is-on"' : '') + '>' +
-               '<td><b>' + esc(r.company || '—') + '</b><span class="sub">' + esc(r.cid || '') + '</span></td>' +
-               '<td>' + (r.filled != null ? r.filled + ' / 17' : '—') + '</td>' +
-               '<td>' + (r.score != null ? esc(String(r.score)) : '—') + '</td>' +
-               '<td>' + (r.status === '제출'
-                          ? '<span class="pb-pill on">제출</span>'
-                          : '<span class="pb-pill off">미제출</span>') + '</td>' +
-               '<td>' + (r.comments ? r.comments + '칸' : '—') + '</td>' +
-               '<td><button class="pb-hbtn" data-open="' + i + '">열어 수정</button></td>' +
-             '</tr>';
-      });
-      h += '</tbody></table>' +
-           '<p class="pb-note" style="margin-top:12px;color:var(--pb-on-ink-3)">' +
-           '<b>[열어 수정]</b>은 그 기업의 원고를 <b>관리자 권한으로 직접 고치는</b> 기능입니다. ' +
-           '저장하면 그 기업 자리에 저장되며, 팀이 다음에 열 때 고쳐진 원고를 봅니다.</p>';
-    }
+    // ~~작성 현황 표~~ 2026-08-19 민부장 지시로 삭제 — 참여기업 리스트와 중복. 진행 상태는 리스트 행에 병기한다.
     $('pbCenter').innerHTML = h;
     bindApRows();
     if($('apQ')){
@@ -3324,15 +3274,6 @@ a{color:inherit}
         if(box){ box.innerHTML = apRowsHtml(); bindApRows(); }
       };
     }
-    Array.prototype.forEach.call($('pbCenter').querySelectorAll('tr[data-i]'), function(tr){
-      tr.onclick = function(e){
-        if(e.target && e.target.dataset && e.target.dataset.open != null) return;  // 버튼은 따로 처리
-        selectCompany(+tr.dataset.i);
-      };
-    });
-    Array.prototype.forEach.call($('pbCenter').querySelectorAll('button[data-open]'), function(b){
-      b.onclick = function(e){ e.stopPropagation(); adminOpenIR(+b.dataset.open); };
-    });
   }
 
   // ══ 관리자 대리 편집 ═══════════════════════════════════════════
@@ -4547,7 +4488,7 @@ a{color:inherit}
         (target ? '「' + target + '」의 ' : '') + '작성 원고를 초기화합니다.\n\n' +
         '· 화면과 이 브라우저의 ' + n + '개 칸이 비워집니다\n' +
         '· AI 진단·TIPS 채점·피칭 덱·신청서 참고자료도 지워집니다\n' +
-        '· <작성 현황> 목록에서도 사라집니다\n\n' +
+        '· 참여기업 리스트에서 「미작성」으로 돌아갑니다\n\n' +
         '채점 이력과 멘토 코멘트는 그대로 남고,\n' +
         '원고는 노션 휴지통에 30일간 보관돼 복구할 수 있습니다.\n\n계속할까요?')) return;
 
