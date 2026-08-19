@@ -462,6 +462,43 @@ a{color:inherit}
   background:rgba(158,43,37,.06);
 }
 
+/* ── 투자논리 진단(7축) — 주장 원장·연결고리·질문 (2026-08-20) ── */
+.pb-ax .pb-axsec{margin-top:20px;padding-top:16px;border-top:1px solid var(--pb-line-soft)}
+.pb-ax .pb-axsec h4{font:600 16px var(--pb-font-sans);color:var(--pb-text);margin-bottom:10px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.pb-ax .pb-axsec .lbl{font:600 13.5px var(--pb-font-sans);color:var(--pb-ok);margin-top:10px}
+.pb-ax .pb-axsec .lbl.is-fail{color:var(--pb-warn-deep)}
+.pb-ax .pb-axsec ul{margin-top:6px;padding-left:18px}
+.pb-ax .pb-axsec li{font-size:14.5px;line-height:1.7;color:var(--pb-text-body)}
+.pb-axclaim{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;padding:9px 0;border-bottom:1px dashed var(--pb-line-soft)}
+.pb-axclaim:last-of-type{border-bottom:none}
+.pb-axclaim .t{font-size:14.5px;line-height:1.65;color:var(--pb-text-body)}
+.pb-axclaim .q,.pb-axclaim .n{grid-column:2;font-size:12.5px;line-height:1.6;color:var(--pb-text-faint)}
+.pb-axclaim .q.is-bad{color:var(--pb-warn-deep)}
+.pb-axclaim.is-conflict{background:var(--pb-warn-bg);margin:0 -8px;padding:9px 8px;border-radius:var(--pb-radius)}
+.pb-axpill{display:inline-block;align-self:start;margin-top:2px;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap;
+  background:var(--pb-line-soft);color:var(--pb-text-mute)}
+.pb-axpill.is-plan{background:var(--pb-accent-soft);color:var(--pb-accent-ink)}
+.pb-axpill.is-conflict{background:var(--pb-warn);color:#fff}
+.pb-axmissing{margin-top:8px;padding:9px 12px;border-left:3px solid var(--pb-line);font-size:13.5px;color:var(--pb-text-mute)}
+.pb-axmissing b{font-size:12px;letter-spacing:.08em;color:var(--pb-text-faint)}
+.pb-axmissing ul{margin-top:4px;padding-left:16px}
+.pb-axedges td{font-size:13.5px;padding:8px 8px}
+.pb-axedges td.id{font:500 12px var(--pb-font-mono);color:var(--pb-text-faint);white-space:nowrap}
+.pb-axedges td.nm{white-space:nowrap;color:var(--pb-text-body)}
+.pb-axedges td.st{font-weight:600;white-space:nowrap}
+.pb-axedges tr.is-connected td.st{color:var(--pb-ok)}
+.pb-axedges tr.is-partial td.st{color:var(--pb-accent-ink)}
+.pb-axedges tr.is-broken td.st{color:var(--pb-warn-deep)}
+.pb-axedges tr.is-unknown td.st{color:var(--pb-text-faint)}
+.pb-axedges td.why{color:var(--pb-text-mute);line-height:1.6}
+.pb-axq{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--pb-line-soft)}
+.pb-axq:last-of-type{border-bottom:none}
+.pb-axq .p{flex:none;font:700 12px var(--pb-font-mono);padding:3px 8px;border-radius:var(--pb-radius);background:var(--pb-line-soft);color:var(--pb-text-mute)}
+.pb-axq.is-p0 .p{background:var(--pb-warn);color:#fff}
+.pb-axq.is-p1 .p{background:var(--pb-accent-soft);color:var(--pb-accent-ink)}
+.pb-axq .qq{font-size:14.5px;line-height:1.65;color:var(--pb-text-body)}
+.pb-axq .ev{font-size:12.5px;color:var(--pb-text-faint);margin-top:2px}
+
 /* ── 결과 화면 ─────────────────────────────── */
 .pb-ir{background:var(--pb-surface);border:1px solid var(--pb-line);border-top:6px solid var(--pb-accent-ink);
   border-radius:var(--pb-radius-card);padding:40px 46px}
@@ -1206,26 +1243,130 @@ a{color:inherit}
     ].join('\n');
   }
 
-  function auditPrompt(){
+  // ══ 투자논리 진단(7축) — 「IR 전체 감수」의 후속 (2026-08-20 · 7축 정본 v1.1 Phase 1 축소 도입) ══
+  //  ★점수·등급·T레벨은 내지 않는다 — PitchBuilder는 채점기가 아니다(정본 §1.2). 주장 원장·상태·공백·연결·질문만.
+  //  ★FACT는 만들지 않는다 — 첨부 없는 텍스트 입력으로는 '확인된 사실'이 있을 수 없다. 원문에 적힌 것은
+  //    전부 「기재·미확인(CLAIM)」 또는 「계획(PLAN)」이고, 칸끼리 어긋나면 「충돌(CONFLICT)」이다.
+  //    LLM이 FACT라 우겨도 코드가 CLAIM으로 내린다(axisNormalize).
+  //  ★LLM 호출 1회. 일일 40회 안에서 감수 자리를 그대로 쓴다.
+  var AX_AXES = [
+    { id:'opportunity',   name:'Opportunity · 기회',      ask:'해결할 가치가 있는 문제·고객·비용과 지금인 이유' },
+    { id:'insight',       name:'Insight · 통찰',          ask:'문제·고객·기술을 다르게 해석하는 근거 있는 관점' },
+    { id:'evidence',      name:'Evidence · 증거',         ask:'핵심 주장을 지지하는 시험·사용·거래 근거' },
+    { id:'scalability',   name:'Scalability · 확장성',    ask:'작은 출발이 반복·확장되는 경로(시장 산정·채널·단위경제)' },
+    { id:'defensibility', name:'Defensibility · 방어력',  ask:'성과가 나면 경쟁자가 쉽게 복제하지 못하는 구조' },
+    { id:'team_fit',      name:'Team Fit · 팀 적합성',    ask:'이 문제를 풀고 사업화할 팀과 자금의 위험제거 용도' }
+  ];
+  var AX_EDGES = [
+    ['E01','Opportunity → Insight','관찰된 문제의 원인이 기업의 통찰로 이어지는가'],
+    ['E02','Opportunity → Solution','문제의 비용·위험이 제품의 핵심효용과 맞는가'],
+    ['E03','Insight → Solution','통찰이 제품 설계 선택을 설명하는가'],
+    ['E04','Solution → Evidence','핵심 효용이 시험·사용·거래로 확인되는가'],
+    ['E05','Opportunity → Market','문제 고객과 시장 산정 대상이 동일한가'],
+    ['E06','Market → BM·GTM','초기 수익시장이 실제 채널·구매자와 일치하는가'],
+    ['E07','Solution → BM·GTM','제품효용이 지불자·가격·구매방식으로 이어지는가'],
+    ['E08','BM·GTM → Evidence','가격·채널 가정이 유료전환·판매자료로 확인되는가'],
+    ['E09','Evidence → Scalability','초기 검증이 반복 가능한 획득·납품 구조로 이어지는가'],
+    ['E10','Solution → Scalability','제조·납품·온보딩 비용이 반복 확장을 허용하는가'],
+    ['E11','BM·GTM → Scalability','가격·채널·판매주기가 성장 산식과 연결되는가'],
+    ['E12','Insight → Defensibility','통찰이 데이터·IP·통합·노하우로 누적되는가'],
+    ['E13','Evidence → Defensibility','실제 사용이 방어력을 강화하는가'],
+    ['E14','Team Fit → Milestone','팀 경험·역할이 다음 18~24개월 이정표 수행에 맞는가'],
+    ['E15','Funding → Milestone','조달금액과 사용처가 정량 이정표에 연결되는가'],
+    ['E16','Milestone → Risk Reduction','이정표 달성이 기술·고객·시장 위험을 실제로 줄이는가'],
+    ['E17','Risk Reduction → Value Inflection','위험제거가 다음 매출·확장·후속투자 판단 변화로 이어지는가'],
+    ['E18','Value Inflection → Investment Thesis','예상 가치변화가 지금 투자 시점의 비대칭 상승 가능성을 설명하는가']
+  ];
+  var AX_STATUS = { CLAIM:'기재·미확인', PLAN:'계획', CONFLICT:'충돌' };
+  var AX_EDGE_STATUS = { CONNECTED:'연결됨', PARTIAL:'부분', BROKEN:'끊김', UNKNOWN:'판단 불가' };
+
+  function axisPrompt(){
+    var fields = [];
+    steps().forEach(function(s){ s.inputs.forEach(function(i){ fields.push(i.key + '=' + i.label); }); });
     return [
-      '다음은 창업팀이 완성한 IR 스토리 전문이다. 단계별이 아니라 IR 전체를 하나의 논리로 보고 감수하라.',
-      '특히 단계 사이의 모순을 찾아라. 예: 타겟 고객이 Problem과 Market에서 다르다, 객단가가 수익 모델과 어긋난다, 마일스톤이 GTM으로는 달성 불가능하다.',
+      '다음은 창업팀이 완성한 IR 전문이다. 단계별 문장 품질이 아니라, 투자자 관점의 6개 논리축으로 원문을 재분해하고 축 사이의 연결고리가 원문 안에서 이어지는지 진단하라.',
       '',
-      '# IR 전문',
+      '# IR 전문 (field=항목명: 내용)',
       contextBlock(null),
       '',
-      '# 출력 JSON 스키마',
+      '# 6개 축',
+      AX_AXES.map(function(a){ return '- ' + a.id + ' (' + a.name + '): ' + a.ask; }).join('\n'),
+      '',
+      '# 연결고리 18개 (id: 묻는 것)',
+      AX_EDGES.map(function(e){ return '- ' + e[0] + ' ' + e[1] + ': ' + e[2]; }).join('\n'),
+      '',
+      '# 규칙 (어기면 실패다)',
+      '- 원문에 없는 사실·수치·고객명·기관·날짜를 만들지 마라. 없는 것은 missing에 "무엇이 없는지"만 적어라.',
+      '- 상태는 셋뿐이다. CLAIM=기업이 기재했으나 확인자료는 없는 주장(성능·매출·고객·경력 등 전부 여기) / PLAN=계획·목표·미래 시제 / CONFLICT=다른 칸과 수치·대상·정의가 어긋남. "FACT"는 쓰지 마라 — 원문에 적혀 있다는 것과 사실로 확인됐다는 것은 다르다.',
+      '- 계획을 성과로, 출원을 등록으로, 인터뷰를 구매로, MOU를 매출로 올려 적지 마라.',
+      '- 모든 claim에는 field(아래 목록의 키)와 quote(그 칸의 원문을 그대로 발췌, 40자 이내)를 붙여라. 발췌가 없으면 그 claim을 만들지 마라.',
+      '- 연결고리는 원문이 그 연결을 직접 설명하면 CONNECTED, 일부만 설명하면 PARTIAL, 양쪽 다 있는데 이어지지 않으면 BROKEN, 한쪽이 비어 판단할 수 없으면 UNKNOWN.',
+      '- thesis는 점수가 아니다. 지금 자료로 성립하는 조건부 논리(holds)와 성립하지 않는 범위와 그 이유(fails)를 문장으로 가른다. 앞 축에 없는 우위를 여기서 새로 만들지 마라.',
+      '- 질문은 최대 7개, P0 최대 3개·P1 최대 3개·P2 최대 1개. 같은 사실을 묻는 질문은 합치고, 답 하나로 여러 연결고리를 살리는 질문을 앞에 둔다. P0 = E15~E18(자금→이정표→위험제거→가치변화) 또는 E04(증거)를 끊는 공백.',
+      '',
+      '# field 키 목록',
+      fields.join(' · '),
+      '',
+      '# 출력 JSON 스키마 (이 구조 그대로, 키 추가 금지)',
       '{',
-      '  "score": 0~100 정수 (이 IR로 투자 검토 미팅을 잡을 만한가),',
-      '  "verdict": "한두 문장 총평",',
-      '  "strengths": ["이 IR에서 실제로 강한 지점"],',
-      '  "inconsistencies": [{ "problem": "어느 항목과 어느 항목이 어떻게 어긋나는지", "why": "왜 문제인지" }],',
-      '  "questions": [{ "q": "심사위원이 던질 질문", "intent": "이 질문으로 무엇을 검증하려는지" }]',
+      '  "verdict": "한두 문장 — 지금 자료로 투자논리가 성립하는 범위와 성립하지 않는 범위",',
+      '  "axes": [ { "id": "opportunity|insight|evidence|scalability|defensibility|team_fit",',
+      '              "claims": [ { "text": "원문을 주장 단위로 다듬은 한 문장", "status": "CLAIM|PLAN|CONFLICT", "field": "field 키", "quote": "원문 발췌", "note": "상태 근거 한 줄(CONFLICT면 어느 칸과 어긋나는지)" } ],',
+      '              "missing": [ "이 축을 판단하려면 있어야 하는데 원문에 없는 것" ] } ],',
+      '  "edges": [ { "id": "E01"…"E18", "status": "CONNECTED|PARTIAL|BROKEN|UNKNOWN", "why": "한 문장" } ],',
+      '  "thesis": { "holds": ["성립하는 조건부 논리"], "fails": ["성립하지 않는 범위 — 어느 축·연결이 비어서"] },',
+      '  "questions": [ { "priority": "P0|P1|P2", "axis": "축 id", "q": "창업자에게 묻는 질문", "evidence": "답에 필요한 증거의 종류", "edges": ["살아나는 연결고리 id"] } ]',
       '}',
       '',
-      'strengths 최대 3개, inconsistencies 최대 4개, questions는 5개.',
-      '모순이 없으면 inconsistencies를 빈 배열로 두되, 억지로 만들지는 마라.'
+      'axes는 6개 전부, edges는 18개 전부 한 번씩. claims는 축당 최대 5개. missing은 축당 최대 3개. 비어 있는 축은 claims를 빈 배열로 두고 missing에 적어라.'
     ].join('\n');
+  }
+
+  // 코드가 LLM을 검증한다 — 상태 enum·축/연결 고정 목록·인용 원문 대조·질문 상한. 통과 못 한 것은 내리거나 버린다.
+  function axisNormalize(d){
+    d = (d && typeof d === 'object') ? d : {};
+    var out = { verdict: String(d.verdict || '').trim(), axes:[], edges:[], thesis:{ holds:[], fails:[] }, questions:[], dropped:0, unverified:0 };
+    var byId = {};
+    arr(d.axes).forEach(function(a){ if(a && a.id) byId[String(a.id)] = a; });
+    AX_AXES.forEach(function(ax){
+      var a = byId[ax.id] || {};
+      var claims = [];
+      arr(a.claims).slice(0, 5).forEach(function(c){
+        if(!c || !String(c.text || '').trim()) return;
+        var st = String(c.status || '').toUpperCase();
+        var note = String(c.note || '').trim();
+        if(st === 'FACT' || st === 'INFERENCE'){ st = 'CLAIM'; note = (note ? note + ' · ' : '') + '확인자료 없음 → 기재·미확인으로 내림'; }
+        if(!AX_STATUS[st]) st = 'CLAIM';
+        var q = String(c.quote || '').trim();
+        var ver = q ? verifyEvidence(q) : false;            // 인용이 원문에 없으면 근거로 인정하지 않는다
+        if(!q || ver === false){ out.unverified++; }
+        claims.push({ text:String(c.text).trim(), status:st, field:String(c.field || ''), quote:q, note:note, unverified: (!q || ver === false) });
+      });
+      out.axes.push({ id:ax.id, name:ax.name, claims:claims,
+                      missing: arr(a.missing).slice(0, 3).map(function(m){ return String(typeof m === 'string' ? m : (m && (m.what || m.required_element)) || '').trim(); }).filter(Boolean) });
+    });
+    var eById = {};
+    arr(d.edges).forEach(function(e){ if(e && e.id) eById[String(e.id).toUpperCase()] = e; });
+    AX_EDGES.forEach(function(def){
+      var e = eById[def[0]] || {};
+      var st = String(e.status || '').toUpperCase();
+      if(!AX_EDGE_STATUS[st]) st = 'UNKNOWN';
+      out.edges.push({ id:def[0], name:def[1], status:st, why:String(e.why || '').trim() });
+    });
+    var th = (d.thesis && typeof d.thesis === 'object') ? d.thesis : {};
+    out.thesis.holds = arr(th.holds).map(String).filter(Boolean).slice(0, 4);
+    out.thesis.fails = arr(th.fails).map(String).filter(Boolean).slice(0, 4);
+    var cap = { P0:3, P1:3, P2:1 }, cnt = { P0:0, P1:0, P2:0 };
+    arr(d.questions).forEach(function(q){
+      if(!q || !String(q.q || '').trim()) return;
+      var p = String(q.priority || 'P1').toUpperCase(); if(!cap[p]) p = 'P1';
+      if(cnt[p] >= cap[p] || out.questions.length >= 7){ out.dropped++; return; }
+      cnt[p]++;
+      out.questions.push({ priority:p, axis:String(q.axis || ''), q:String(q.q).trim(), evidence:String(q.evidence || '').trim(),
+                           edges: arr(q.edges).map(String).filter(function(x){ return /^E(0[1-9]|1[0-8])$/.test(x); }) });
+    });
+    out.questions.sort(function(a, b){ return a.priority < b.priority ? -1 : a.priority > b.priority ? 1 : 0; });
+    return out;
   }
 
   function diagramPrompt(){
@@ -1975,7 +2116,7 @@ a{color:inherit}
     $('pbMeta').innerHTML = edit +
       '<div class="m">작성 필드<b>' + n + ' / ' + tot + '</b></div>' +
       '<div class="m">분량<b>' + ch.toLocaleString() + '자</b></div>' +
-      '<div class="m">직전 감수<b>' + (state.lastAudit ? '완료' : '—') + '</b></div>' +
+      '<div class="m">투자논리 진단<b>' + (state.lastAudit ? '완료' : '—') + '</b></div>' +
       '<div class="m' + (bad ? ' warn' : '') + '">근거 미확인<b>' + bad + '건</b></div>' +
       '<div class="sp"></div>' +
       '<div class="note">자동저장 켜짐 · 단계 이동마다</div>';
@@ -3270,30 +3411,34 @@ a{color:inherit}
     $('pbRight').innerHTML = h;
   }
 
-  // ══ IR 전체 감수 · 제출 ═══════════════════════════════════════
+  // ══ 투자논리 진단(7축) · 제출 ═══════════════════════════════════
+  //  옛 「IR 전체 감수」(score·inconsistencies·questions 5)의 자리. state.lastAudit·auditHash·#btnAudit·#auditBox 이름은
+  //  그대로 둔다 — 서버 ②「총평」(snap.audit.verdict)·낡음 판정·보관 경고가 이 이름에 걸려 있다.
   function runAudit(){
     if(busy) return;
     var btn = $('btnAudit');
-    busy = true; btn.disabled = true; btn.textContent = '감수 중…';
-    callLLM(SYSTEM, auditPrompt())
+    busy = true; btn.disabled = true; btn.textContent = '진단 중…';
+    callLLM(SYSTEM, axisPrompt())
       .then(function(d){
-        state.lastAudit = d;
-        state.auditHash = irHash();               // 무엇을 보고 한 감수인지 기억한다
+        state.lastAudit = axisNormalize(d);        // 코드가 검증한 것만 남는다
+        state.lastAudit.kind = 'axis';
+        state.auditHash = irHash();               // 무엇을 보고 한 진단인지 기억한다
         writeLocal();
         renderAuditBox(); renderMeta(); syncToServer();
       })
       .catch(function(err){
-        $('auditBox').innerHTML = '<div class="pb-warnbox" style="margin-top:14px">감수하지 못했습니다 — ' +
+        $('auditBox').innerHTML = '<div class="pb-warnbox" style="margin-top:14px">진단하지 못했습니다 — ' +
                                   esc(err.message || '오류') + '</div>';
       })
       .then(function(){
         busy = false;
         if($('btnAudit')){
           $('btnAudit').disabled = false;
-          $('btnAudit').textContent = state.lastAudit ? 'IR 전체 다시 감수' : 'IR 전체 감수';
+          $('btnAudit').textContent = state.lastAudit ? '투자논리 다시 진단' : '투자논리 진단';
         }
       });
   }
+  function axPill(st){ return '<span class="pb-axpill is-' + st.toLowerCase() + '">' + esc(AX_STATUS[st] || st) + '</span>'; }
   function renderAuditBox(){
     var a = state.lastAudit, box = $('auditBox');
     if(!box || !a) return;
@@ -3301,27 +3446,78 @@ a{color:inherit}
     var h = '';
     if(stale){
       h += '<div class="pb-warnbox" style="margin-top:14px">' +
-           '<b>이 감수는 고치기 전 IR에 대한 것입니다.</b> 감수를 받은 뒤 원고를 고치셨습니다 — ' +
-           '모순이 이미 해소됐을 수도, 새로 생겼을 수도 있습니다. 지금 원고로 다시 감수하십시오.</div>';
+           '<b>이 진단은 고치기 전 IR에 대한 것입니다.</b> 진단을 받은 뒤 원고를 고치셨습니다 — ' +
+           '끊겼던 연결이 이어졌을 수도, 새로 끊겼을 수도 있습니다. 지금 원고로 다시 진단하십시오.</div>';
     }
-    h += '<div class="pb-card' + (stale ? ' pb-faded' : '') + '" style="margin-top:14px">';
+    h += '<div class="pb-card pb-ax' + (stale ? ' pb-faded' : '') + '" style="margin-top:14px">';
+    if(a.kind !== 'axis'){
+      // 옛 감수 결과(로컬에 남은 것) — 형식이 달라 새로 받으라고만 한다
+      h += '<p class="pb-note">이전 형식(전체 감수)의 결과입니다. 7축 진단으로 바뀌었으니 [투자논리 진단]을 다시 눌러 주십시오.</p>';
+      if(a.verdict) h += '<p style="margin-top:8px;font-size:15px;color:var(--pb-text-body)">' + esc(a.verdict) + '</p>';
+      h += '</div>'; box.innerHTML = h; return;
+    }
     if(a.verdict) h += '<p style="font-size:15px;color:var(--pb-text-body)">' + esc(a.verdict) + '</p>';
+    h += '<p class="pb-note" style="margin-top:8px">점수는 없습니다. 아래는 <b>기업 기재사항·미확인 주장</b>을 축별로 다시 배열한 것이며, ' +
+         '원문에 적혀 있다는 것과 사실로 확인됐다는 것은 다릅니다. 자료를 더 내기 전까지 모든 주장은 기재·미확인입니다.' +
+         (a.unverified ? ' <span style="color:var(--pb-warn-deep)">원문에서 찾지 못한 인용 ' + a.unverified + '건은 근거로 치지 않았습니다.</span>' : '') + '</p>';
 
-    var inc = arr(a.inconsistencies);
-    if(inc.length){
-      h += '<h3 style="margin-top:18px;font-size:16px">단계 사이의 모순</h3>';
-      inc.forEach(function(it){
-        h += '<div class="pb-warnbox" style="margin-top:9px">' +
-             esc(typeof it === 'string' ? it : (it.problem || it.text || '')) + '</div>';
+    // ── 6축 주장 원장 ──
+    a.axes.forEach(function(ax){
+      h += '<div class="pb-axsec"><h4>' + esc(ax.name) + '</h4>';
+      if(!ax.claims.length) h += '<p class="pb-note">이 축에 해당하는 기재가 없습니다.</p>';
+      ax.claims.forEach(function(c){
+        h += '<div class="pb-axclaim' + (c.status === 'CONFLICT' ? ' is-conflict' : '') + '">' +
+               axPill(c.status) + '<span class="t">' + esc(c.text) + '</span>' +
+               (c.quote ? '<span class="q' + (c.unverified ? ' is-bad' : '') + '" title="' + esc(FIELD_LABEL[c.field] || c.field) + '">「' + esc(c.quote) + '」' +
+                          (c.unverified ? ' <b>원문 불일치</b>' : '') + '</span>' : '') +
+               (c.note ? '<span class="n">' + esc(c.note) + '</span>' : '') +
+             '</div>';
       });
+      if(ax.missing.length){
+        h += '<div class="pb-axmissing"><b>없는 것</b><ul>';
+        ax.missing.forEach(function(m){ h += '<li>' + esc(m) + '</li>'; });
+        h += '</ul></div>';
+      }
+      h += '</div>';
+    });
+
+    // ── 연결고리 18 ──
+    var cnt = { CONNECTED:0, PARTIAL:0, BROKEN:0, UNKNOWN:0 };
+    a.edges.forEach(function(e){ cnt[e.status]++; });
+    h += '<div class="pb-axsec"><h4>축 사이의 연결고리 <span class="pb-note">연결됨 ' + cnt.CONNECTED + ' · 부분 ' + cnt.PARTIAL +
+         ' · 끊김 ' + cnt.BROKEN + ' · 판단 불가 ' + cnt.UNKNOWN + '</span></h4>';
+    h += '<table class="pb-tbl pb-axedges"><tbody>';
+    a.edges.forEach(function(e){
+      h += '<tr class="is-' + e.status.toLowerCase() + '"><td class="id">' + e.id + '</td><td class="nm">' + esc(e.name) + '</td>' +
+           '<td class="st">' + esc(AX_EDGE_STATUS[e.status]) + '</td><td class="why">' + esc(e.why) + '</td></tr>';
+    });
+    h += '</tbody></table></div>';
+
+    // ── 투자논리가 성립하는 범위 / 않는 범위 ──
+    if(a.thesis.holds.length || a.thesis.fails.length){
+      h += '<div class="pb-axsec"><h4>Investment Thesis — 지금 자료로</h4>';
+      if(a.thesis.holds.length){
+        h += '<p class="lbl">성립하는 범위(조건부)</p><ul>';
+        a.thesis.holds.forEach(function(t){ h += '<li>' + esc(t) + '</li>'; }); h += '</ul>';
+      }
+      if(a.thesis.fails.length){
+        h += '<p class="lbl is-fail">성립하지 않는 범위</p><ul>';
+        a.thesis.fails.forEach(function(t){ h += '<li>' + esc(t) + '</li>'; }); h += '</ul>';
+      }
+      h += '<p class="pb-note" style="margin-top:8px">앞의 축에서 확인한 범위 안에서만 가른 것입니다. 여기서 우위를 새로 인정하지 않습니다.</p></div>';
     }
-    var qs = arr(a.questions);
-    if(qs.length){
-      h += '<h3 style="margin-top:18px;font-size:16px">실사에서 나올 질문</h3><ul style="margin-top:8px;padding-left:18px">';
-      qs.forEach(function(q){
-        h += '<li style="font-size:15px;line-height:1.7">' + esc(typeof q === 'string' ? q : (q && q.q) || '') + '</li>';
+
+    // ── 보강 질문 ──
+    if(a.questions.length){
+      h += '<div class="pb-axsec"><h4>다음에 답해야 할 질문 <span class="pb-note">P0 = 자금→이정표→위험제거 또는 증거를 끊는 공백</span></h4>';
+      a.questions.forEach(function(q){
+        h += '<div class="pb-axq is-' + q.priority.toLowerCase() + '"><span class="p">' + q.priority + '</span>' +
+             '<div><p class="qq">' + esc(q.q) + '</p>' +
+             (q.evidence ? '<p class="ev">필요한 증거 · ' + esc(q.evidence) + '</p>' : '') +
+             (q.edges.length ? '<p class="ev">살아나는 연결 · ' + esc(q.edges.join(' · ')) + '</p>' : '') + '</div></div>';
       });
-      h += '</ul>';
+      if(a.dropped) h += '<p class="pb-note">상한(7개·P0 3·P1 3·P2 1)을 넘긴 질문 ' + a.dropped + '개는 버렸습니다.</p>';
+      h += '</div>';
     }
     h += '</div>';
     box.innerHTML = h;
@@ -3335,7 +3531,7 @@ a{color:inherit}
     //   보관을 막지는 않는다 — 원고만 보관하려는 경우도 있다. 다만 모르고 넘어가게 두지 않는다.
     var st = [];
     if(irStale(state.tipsHash))  st.push('TIPS 채점');
-    if(irStale(state.auditHash)) st.push('전체 감수');
+    if(irStale(state.auditHash)) st.push('투자논리 진단');
     if(st.length && !confirm(
         st.join('·') + '은 지금 원고보다 낡았습니다(고치신 뒤 다시 하지 않았습니다).\n\n' +
         '이대로 보관하면 낡은 결과가 이 원고의 것으로 함께 쌓입니다.\n\n계속 보관할까요?')) return;
@@ -3511,14 +3707,15 @@ a{color:inherit}
            '</div>';
     }
 
-    // ── 전체 감수 · 제출 ──
+    // ── 투자논리 진단(7축) · 제출 ──
     h += '<div class="pb-card pb-noprint" style="margin-top:18px">' +
-           '<h3>IR 전체 감수</h3>' +
-           '<p class="pb-note">단계별이 아니라 IR 전체를 하나의 논리로 보고 ' +
-           '<b>단계 사이의 모순</b>을 찾습니다 — 타겟 고객이 문제와 시장에서 다르다든지, ' +
-           '마일스톤이 GTM으로는 달성 불가능하다든지.</p>' +
+           '<h3>투자논리 진단 <span class="pb-note" style="font:inherit;font-size:13px">7축 · 점수 없음</span></h3>' +
+           '<p class="pb-note">IR 전문을 투자자가 읽는 6개 논리축(기회·통찰·증거·확장성·방어력·팀)으로 다시 배열하고, ' +
+           '축 사이의 <b>연결고리 18개</b>가 원문 안에서 이어지는지 봅니다. 점수를 매기지 않습니다 — ' +
+           '지금 자료로 투자논리가 <b>성립하는 범위와 성립하지 않는 범위</b>를 가르고, 다음에 답해야 할 질문을 우선순위로 냅니다. ' +
+           '원문에 없는 사실은 만들지 않고 「없는 것」으로만 적습니다.</p>' +
            '<button class="pb-cta sub" style="margin-top:14px;width:auto;padding:11px 18px" id="btnAudit">' +
-             (state.lastAudit ? 'IR 전체 다시 감수' : 'IR 전체 감수') + '</button>' +
+             (state.lastAudit ? '투자논리 다시 진단' : '투자논리 진단') + '</button>' +
            '<div id="auditBox"></div>' +
          '</div>';
 
