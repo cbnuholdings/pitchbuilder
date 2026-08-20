@@ -716,6 +716,36 @@ a{color:inherit}
 .pb-lstats div{display:flex;flex-direction:column;gap:2px}
 .pb-lstats b{font:800 28px/1 var(--pb-font-serif);color:var(--pb-accent)}
 .pb-lstats span{font-size:12.5px;color:var(--pb-on-ink-3)}
+/* AI 작성모드 (2026-08-20 2단) — 묻고 답한 재료만 문장으로 */
+.pb-awbar{display:flex;gap:8px;align-items:center;margin-top:16px}
+.pb-awbtn{padding:7px 14px;border:1px solid var(--pb-line);border-radius:999px;font-size:13px;font-weight:500;color:var(--pb-text-mute);background:var(--pb-surface)}
+.pb-awbtn:hover{color:var(--pb-text)}
+.pb-awbtn.is-on{background:var(--pb-accent-ink);border-color:var(--pb-accent-ink);color:#fff}
+.pb-awcnt{margin-left:auto;font-size:12px;color:var(--pb-text-ghost)}
+.pb-aw{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:16px;align-items:start}
+@media (max-width:1100px){.pb-aw{grid-template-columns:1fr}}
+.pb-awchat{background:var(--pb-ink);border-radius:var(--pb-radius);padding:16px;display:flex;flex-direction:column;gap:10px;color:var(--pb-on-ink-1)}
+.pb-awchat h6{font:500 11px var(--pb-font-mono);letter-spacing:.14em;color:var(--pb-on-ink-3)}
+.pb-awmsgs{display:flex;flex-direction:column;gap:8px;max-height:430px;overflow-y:auto;padding-right:4px}
+.pb-awmsg{max-width:90%;padding:9px 12px;border-radius:10px;font-size:14px;line-height:1.65;white-space:pre-wrap;word-break:keep-all}
+.pb-awmsg.ai{background:rgba(244,243,239,.09);align-self:flex-start;border-bottom-left-radius:3px}
+.pb-awmsg.me{background:var(--pb-accent-ink);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.pb-awin{display:flex;gap:8px;margin-top:4px}
+.pb-awin textarea{flex:1;min-height:52px;resize:vertical;padding:10px 12px;border-radius:var(--pb-radius);
+  background:rgba(244,243,239,.07);border:1px solid var(--pb-on-ink-line2);font-size:14px;line-height:1.6;color:#fff}
+.pb-awin textarea:focus{outline:none;border-color:var(--pb-accent)}
+.pb-awsend{flex:none;padding:0 18px;background:var(--pb-accent-ink);color:#fff;border-radius:var(--pb-radius);font-size:14px;font-weight:600}
+.pb-awsend:disabled{opacity:.5}
+.pb-awhint{font-size:12px;color:var(--pb-on-ink-4)}
+.pb-awdraft h6{font:500 11px var(--pb-font-mono);letter-spacing:.14em;color:var(--pb-text-faint);margin-bottom:4px}
+.pb-awdraft .lead{font-size:13px;color:var(--pb-text-mute);margin-bottom:10px}
+.pb-awf{border:1px solid var(--pb-line);border-radius:var(--pb-radius);padding:12px 14px;background:var(--pb-surface);margin-top:10px}
+.pb-awf label{display:block;font:500 11px var(--pb-font-mono);letter-spacing:.1em;color:var(--pb-text-faint);margin-bottom:6px}
+.pb-awf p{font-size:14.5px;line-height:1.7;color:var(--pb-text-body);white-space:pre-wrap;word-break:keep-all}
+.pb-awf p .gap{background:var(--pb-warn-bg);color:var(--pb-warn-deep);font-weight:700;padding:0 4px;border-radius:3px}
+.pb-awf .empty{color:var(--pb-text-ghost);font-style:italic}
+.pb-awf .warnnum{margin-top:6px;font-size:12.5px;color:var(--pb-warn-deep)}
+.pb-awact{display:flex;gap:8px;margin-top:14px}
 </style>
 </head>
 <body>
@@ -2078,6 +2108,7 @@ a{color:inherit}
       b.onclick = function(){ state.tab = +b.dataset.ct; render(); };
     });
     if(state.tab !== 0) bindCoach(steps()[state.stepIndex]);
+    if(state.tab === 0) bindAw(steps()[state.stepIndex]);
     Array.prototype.forEach.call($('pbCenter').querySelectorAll('textarea'), function(ta){
       ta.oninput = function(){
         state.formData[ta.dataset.k] = ta.value;
@@ -2089,6 +2120,200 @@ a{color:inherit}
     if($('btnPrev')) $('btnPrev').onclick = function(){ move(-1); };
     if($('btnNext')) $('btnNext').onclick = function(){ move(1); };
   }
+  // ══ AI 작성모드 (2026-08-20 2단 · grilling Q5 확정) ═══════════════
+  //  묻고 답한 재료만 문장으로 정리한다. 없는 수치는 [__] — 빈칸 자동 생성 금지 원칙(§2-3)은 여기서도 산다.
+  //  ★답변 1회 = LLM 1회. 응답 하나에 [다음 질문 + 지금까지 재료로 정리한 원고]를 같이 받아 왕복을 아낀다.
+  //  ★첫 질문은 로컬 템플릿(LLM 0회). [이대로 원고에 넣기]·모드 전환도 0회.
+  //  ★문답 이력은 계정(who())별 localStorage — 계정을 갈면 다른 키라 새어 나가지 않는다.
+  var AW_BASE = 'pitchbuilder.aw.v1';
+  var aw = { on:false, data:{} };
+  function awKey(){ return AW_BASE + '::' + who(); }
+  function readAw(){ aw.data = {}; try{ aw.data = JSON.parse(localStorage.getItem(awKey()) || '{}') || {}; }catch(e){} }
+  function writeAw(){ try{ localStorage.setItem(awKey(), JSON.stringify(aw.data)); }catch(e){} }
+  function awOf(s){ if(!aw.data[s.id]) aw.data[s.id] = { msgs:[], draft:{} }; return aw.data[s.id]; }
+
+  // 오늘 이 계정이 부른 LLM 횟수 — 안내용(강제는 서버 DAILY_LIMIT가 한다)
+  var LLMCNT_BASE = 'pitchbuilder.llmcnt.v1';
+  function llmCntKey(){ return LLMCNT_BASE + '::' + ((llm.id || '').trim() || 'anon') + '::' + localYMD(); }
+  function llmToday(){ try{ return +(localStorage.getItem(llmCntKey()) || 0) || 0; }catch(e){ return 0; } }
+  function llmBump(){ try{ localStorage.setItem(llmCntKey(), String(llmToday() + 1)); }catch(e){} }
+
+  function awOpening(s){
+    return '「' + shortTitle(s) + '」 칸을 문답으로 채워 봅시다. 먼저 — ' + s.inputs[0].label + '부터 말씀해 주십시오.\n' +
+           '수치를 말씀하실 때는 산정 근거(출처·방식)도 함께 주시면 원고에 그대로 싣습니다. ' +
+           '모르는 항목은 "모릅니다"라고 하셔도 됩니다 — 비운 채로 넘어갑니다.';
+  }
+
+  //  기업이 말하지 않은 숫자를 잡는다 — 대조 원문 = 문답에서 기업이 말한 것 + 이미 쓴 원고.
+  //  (badNumbers는 IR 원문 기준이라 여기 못 쓴다 — 문답 원고의 근거는 문답이다.)
+  function awHay(s, entry){
+    var t = entry.msgs.filter(function(m){ return m.role === 'me'; }).map(function(m){ return m.text; }).join(' ');
+    s.inputs.forEach(function(f){ t += ' ' + (state.formData[f.key] || ''); });
+    return t.replace(/[,\s]/g, '');
+  }
+  function awBadNums(text, hay){
+    var out = [];
+    var toks = String(text || '').match(/\d[\d,.]*/g) || [];
+    toks.forEach(function(t){
+      var d = t.replace(/[,\s]/g, '');
+      if(d.replace(/\D/g, '').length < 2) return;                 // 한 자리 맨숫자는 통과
+      if(hay.indexOf(d) < 0 && out.indexOf(t) < 0) out.push(t);
+    });
+    return out;
+  }
+
+  function awPrompt(s, entry){
+    var keys = s.inputs.map(function(f){ return f.key; });
+    var cur = s.inputs.map(function(f){
+      return '- ' + f.key + ' (' + f.label + '): ' + ((state.formData[f.key] || '').trim() || '(비어 있음)');
+    }).join('\n');
+    var qa = entry.msgs.map(function(m){ return (m.role === 'ai' ? 'AI: ' : '기업: ') + m.text; }).join('\n');
+    return [
+      '너는 IR 문답 편집자다. 창업기업과 문답으로 "' + shortTitle(s) + '" 단계의 작성칸을 채우는 중이다.',
+      '기업이 말한 재료만으로 원고를 정리하고, 다음에 물을 것을 하나만 정하라.',
+      '',
+      '# 이 단계의 작성칸 (key와 뜻)',
+      cur,
+      '',
+      '# 지금까지의 문답 (마지막 줄이 방금 받은 답이다)',
+      qa || '(아직 없음)',
+      '',
+      '# 규칙 (어기면 실패다)',
+      '- 기업이 말하지 않은 수치·고객명·기관·비율·연도를 절대 만들지 마라. 근거가 필요한 자리는 [__]로 비워라.',
+      '- 근거 없는 비율·수치가 나오면 출처를 한 번만 되물어라. "모릅니다"라고 하면 [__]로 두고 다음 항목으로 넘어가라.',
+      '- 질문은 한 번에 하나. 이미 답한 것을 다시 묻지 마라.',
+      '- draft는 위 작성칸 key에 대해서만 쓴다. 아직 재료가 없는 칸은 빈 문자열 "".',
+      '- draft 문장은 투자자가 읽는 IR 문장으로 다듬는다 — 단 내용은 기업이 말한 범위를 넘지 마라.',
+      '- 모든 칸에 재료가 모였으면 done=true, ask는 빈 문자열.',
+      '',
+      '# 출력 JSON 스키마',
+      '{',
+      '  "note": "방금 답에 대한 한 줄 반응(받았습니다/짚을 점). 없으면 빈 문자열",',
+      '  "ask": "다음 질문 하나. 더 물을 것이 없으면 빈 문자열",',
+      '  "draft": { "' + keys.join('" | "') + '": "정리된 원고(재료 없으면 빈 문자열)" },',
+      '  "done": true 또는 false',
+      '}'
+    ].join('\n');
+  }
+
+  //  코드가 LLM을 검증한다 — 이 단계의 key만 남기고, 말하지 않은 숫자를 센다.
+  function awNormalize(s, d, entry){
+    d = (d && typeof d === 'object') ? d : {};
+    var keys = s.inputs.map(function(f){ return f.key; });
+    var draft = {}, hay = awHay(s, entry), warn = {};
+    var src = (d.draft && typeof d.draft === 'object') ? d.draft : {};
+    keys.forEach(function(k){
+      var v = String(src[k] || '').trim();
+      draft[k] = v;
+      if(v){ var bad = awBadNums(v, hay); if(bad.length) warn[k] = bad; }
+    });
+    return { note: String(d.note || '').trim(), ask: String(d.ask || '').trim(),
+             draft: draft, warn: warn, done: d.done === true };
+  }
+
+  function awPanel(s){
+    var e = awOf(s);
+    if(!e.msgs.length){ e.msgs.push({ role:'ai', text: awOpening(s) }); writeAw(); }   // 첫 질문 = 로컬(LLM 0회)
+
+    var h = '<div class="pb-aw"><div class="pb-awchat"><h6>문답</h6><div class="pb-awmsgs" id="awMsgs">';
+    e.msgs.forEach(function(m){
+      h += '<div class="pb-awmsg ' + (m.role === 'me' ? 'me' : 'ai') + '">' + esc(m.text) + '</div>';
+    });
+    h += '</div>' +
+         '<div class="pb-awin"><textarea id="awIn" placeholder="답을 적으십시오"></textarea>' +
+         '<button class="pb-awsend" id="awSend">보내기</button></div>' +
+         '<p class="pb-awhint">질문에 말로 답하면 오른쪽 원고가 채워집니다. 말하지 않은 수치는 만들지 않습니다. ' +
+         '모르는 항목은 "모릅니다"라고 답하셔도 됩니다 — [__]로 비운 채 남깁니다.</p></div>';
+
+    h += '<div class="pb-awdraft"><h6>정리된 원고</h6>' +
+         '<p class="lead">그대로 두거나 [이대로 원고에 넣기] 뒤 직접 고치십시오. <b>[__]</b>는 말씀하지 않은 근거 자리입니다 — 심사에서 질문으로 돌아옵니다.</p>';
+    var any = false;
+    s.inputs.forEach(function(f){
+      var v = (e.draft[f.key] || '').trim();
+      if(v) any = true;
+      var body = v
+        ? '<p>' + esc(v).replace(/\[__\]/g, '<span class="gap">[__]</span>') + '</p>'
+        : '<p class="empty">아직 재료가 없습니다</p>';
+      var warn = (e.warn && e.warn[f.key] && e.warn[f.key].length)
+        ? '<p class="warnnum">⚠ 말씀하지 않은 숫자 ' + e.warn[f.key].length + '개(' +
+          esc(e.warn[f.key].slice(0, 3).join(' · ')) + ') — 문답에 없는 값입니다. 확인하십시오.</p>'
+        : '';
+      h += '<div class="pb-awf"><label>' + esc(f.label) + '</label>' + body + warn + '</div>';
+    });
+    h += '<div class="pb-awact">' +
+           '<button class="pb-cta" style="width:auto;padding:11px 18px" id="awApply"' + (any ? '' : ' disabled') + '>이대로 원고에 넣기</button>' +
+           '<button class="pb-cta sub" style="width:auto;padding:11px 18px" id="awRegen"' + (e.msgs.length > 1 ? '' : ' disabled') + '>다시 정리</button>' +
+         '</div>' + DISCLAIMER + '</div></div>';
+    return h;
+  }
+
+  var awBusy = false;
+  function awCall(s, e, btn){
+    awBusy = true;
+    if(btn){ btn.disabled = true; btn.textContent = '정리 중…'; }
+    callLLM(SYSTEM, awPrompt(s, e))
+      .then(function(d){
+        var r = awNormalize(s, d, e);
+        e.draft = r.draft; e.warn = r.warn;
+        var say = (r.note ? r.note + '\n' : '') +
+                  (r.ask || (r.done ? '더 물을 것이 없습니다. 오른쪽 원고를 확인하시고 [이대로 원고에 넣기]를 누르십시오.'
+                                    : '이어서 말씀해 주십시오.'));
+        e.msgs.push({ role:'ai', text: say });
+        writeAw();
+      })
+      .catch(function(err){
+        e.msgs.push({ role:'ai', text: '답을 정리하지 못했습니다 — ' + (err.message || '오류') + '\n다시 보내 주십시오.' });
+        writeAw();
+      })
+      .then(function(){ awBusy = false; render(); });
+  }
+  function bindAw(s){
+    Array.prototype.forEach.call($('pbCenter').querySelectorAll('.pb-awbtn'), function(b){
+      b.onclick = function(){ aw.on = b.dataset.aw === '1'; render(); };
+    });
+    var box = $('awMsgs');
+    if(box) box.scrollTop = box.scrollHeight;
+    if($('awSend')){
+      var send = function(){
+        if(awBusy) return;
+        var ta = $('awIn'), v = (ta.value || '').trim();
+        if(!v) return;
+        var e = awOf(s);
+        e.msgs.push({ role:'me', text: v });
+        writeAw();
+        render();                                            // 내 답을 먼저 보인다
+        awCall(s, e, $('awSend'));
+      };
+      $('awSend').onclick = send;
+      $('awIn').onkeydown = function(ev){ if(ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)){ ev.preventDefault(); send(); } };
+    }
+    if($('awRegen')) $('awRegen').onclick = function(){
+      if(awBusy) return;
+      awCall(s, awOf(s), $('awRegen'));                       // 같은 문답으로 원고만 다시 조립(LLM 1회)
+    };
+    if($('awApply')) $('awApply').onclick = function(){
+      var e = awOf(s), n = 0, clash = 0;
+      s.inputs.forEach(function(f){
+        var v = (e.draft[f.key] || '').trim();
+        if(!v) return;
+        n++;
+        var cur = (state.formData[f.key] || '').trim();
+        if(cur && normTxt(cur) !== normTxt(v)) clash++;
+      });
+      if(!n) return;
+      // ★원고 소유권은 기업이다 — 이미 쓴 칸을 덮을 때는 반드시 먼저 묻는다.
+      if(clash && !confirm('이미 쓰신 칸 ' + clash + '개가 문답 원고로 바뀝니다.\n' +
+                           '지금 쓰신 내용은 이 화면에서는 되돌릴 수 없습니다(서버 저장분은 [저장분 불러오기]로).\n\n계속할까요?')) return;
+      s.inputs.forEach(function(f){
+        var v = (e.draft[f.key] || '').trim();
+        if(v) state.formData[f.key] = v;
+      });
+      saveLocal();
+      aw.on = false;                                          // 넣었으면 직접 작성으로 돌아가 다듬는다
+      render();
+    };
+  }
+
   function openStep(s, i, total){
     var h = '<div class="pb-open">' +
       '<div class="step-no">STEP ' + stepNo(i) + ' / ' + total + '</div>' +
@@ -2107,6 +2332,17 @@ a{color:inherit}
 
     if(state.tab !== 0){
       h += coachPanel(s) + '</div>';
+      return h;
+    }
+
+    // ── 작성 방식 [직접 작성 | AI 작성모드] — 기본은 직접 작성(2026-08-20 2단) ──
+    h += '<div class="pb-awbar">' +
+           '<button class="pb-awbtn' + (!aw.on ? ' is-on' : '') + '" data-aw="0">직접 작성</button>' +
+           '<button class="pb-awbtn' + (aw.on ? ' is-on' : '') + '" data-aw="1">AI 작성모드</button>' +
+           '<span class="pb-awcnt">오늘 AI 호출 ' + llmToday() + '회 사용</span>' +
+         '</div>';
+    if(aw.on){
+      h += awPanel(s) + '</div>';
       return h;
     }
 
@@ -2133,7 +2369,7 @@ a{color:inherit}
     var n = steps().length;
     // ★마지막 단계에서 [다음]은 '결과 보기'다.
     //   전에는 인덱스를 잘라내기만 해 **눌러도 아무 일이 없었다** — 고장으로 보인다.
-    //   마지막이 어디인지는 모드가 정한다: R&D 꺼짐 = 6 팀·Ask / 켜짐 = 8 성로벌.
+    //   마지막이 어디인지는 모드가 정한다: R&D 꺼짐 = 6 팀·Ask / 켜짐 = 8 성능지표.
     if(d > 0 && state.stepIndex >= n - 1){
       syncToServer();
       goResult();
@@ -2503,6 +2739,7 @@ a{color:inherit}
     state.b1ref = null; state.b1At = '';
     // ★지식 번들은 기업 자료가 아니라 공용 지식이다 — 비우지 않고 그대로 쓴다.
     readBrain();
+    readAw(); aw.on = false;                     // 문답 이력은 계정(who) 키로 갈린다 — 켜짐 상태는 넘기지 않는다
     try{
       var raw = localStorage.getItem(skey());
       if(!raw) return;
@@ -3759,7 +3996,7 @@ a{color:inherit}
     if(llm.conn === 'proxy'){
       return callProxy({ action:'llm', id:llm.id, code:llm.code,
                          system:system, user:user, reviewer: !!llm.reviewer })
-             .then(function(d){ return parseJSON(d.text); });
+             .then(function(d){ llmBump(); return parseJSON(d.text); });
     }
     var url = GEMINI_BASE + encodeURIComponent(llm.model) +
               ':generateContent?key=' + encodeURIComponent(llm.key);
@@ -3781,6 +4018,7 @@ a{color:inherit}
         var text = '', parts = cand.content && cand.content.parts;
         if(parts) parts.forEach(function(p){ if(p.text) text += p.text; });
         if(cand.finishReason === 'MAX_TOKENS') throw new Error('응답이 너무 길어 잘렸습니다.');
+        llmBump();
         return parseJSON(text);
       });
     });
