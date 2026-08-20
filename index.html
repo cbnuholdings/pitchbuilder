@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <title>PitchBuilder — 2026 이노테크 창업 IR 작성 도구</title>
 <style>
 /* ══════════════════════════════════════════════════════════════
@@ -19,51 +21,51 @@
    3. 경고는 지우지 않고 문장 위에 남긴다 — 자동 삭제 없음.
    ══════════════════════════════════════════════════════════════ */
 :root{
-  /* 색 — 3색 + 상태색만. 그라디언트 없음. 2026-08-19 민부장 지시로 밝은 청색 톤(잉크=밝은 파랑·종이=푸른 흰색). */
-  --pb-ink:        #1E5AA8;
-  --pb-navy:       #16407A;
-  --pb-accent:     #9CCBF6;
-  --pb-accent-ink: #1E5AA8;
-  --pb-accent-soft:#CFE2F8;
-  --pb-paper:      #F3F7FC;
-  --pb-paper-deep: #E3ECF7;
-  --pb-surface:    #FFFFFF;
-  --pb-line:       #CBD8E8;
-  --pb-line-soft:  #DCE6F2;
-  --pb-line-input: #B4C7DE;
-  --pb-text:       #13233A;
-  --pb-text-body:  #2C3B52;
-  --pb-text-mute:  #5A6A82;
-  --pb-text-faint: #7D8CA3;
-  --pb-text-ghost: #A2AFC2;
-  --pb-ok:         #2F5F55;
-  --pb-ok-on-ink:  #8FBFA8;
-  --pb-warn:       #9E2B25;
-  --pb-warn-deep:  #8B2822;
-  --pb-warn-bg:    #FBF1F0;
-  --pb-warn-line:  #E8C8C4;
-  --pb-warn-on-ink:#E06C60;
-  --pb-warn-txt-on-ink:#F2C4BE;
+  /* 재디자인 2026-08-20 — 다크 사이드바 · 코발트 · 크림 (정본 = PitchBuilder 재디자인.dc.html 턴2) */
+  --pb-ink:        #0E1116;
+  --pb-navy:       #1B4BF0;
+  --pb-accent:     #6C8CFF;
+  --pb-accent-ink: #1B4BF0;
+  --pb-accent-soft:#DFE6FD;
+  --pb-paper:      #E9E7E1;
+  --pb-paper-deep: #DEDBD3;
+  --pb-surface:    #F4F3EF;
+  --pb-line:       #D6D2C9;
+  --pb-line-soft:  #E2DFD8;
+  --pb-line-input: #C3BFB4;
+  --pb-text:       #0E1116;
+  --pb-text-body:  #23272E;
+  --pb-text-mute:  #565B64;
+  --pb-text-faint: #7A7F88;
+  --pb-text-ghost: #9BA0A8;
+  --pb-ok:         #1E6B4F;
+  --pb-ok-on-ink:  #7FC9A4;
+  --pb-warn:       #B3261E;
+  --pb-warn-deep:  #932019;
+  --pb-warn-bg:    #FAEEEC;
+  --pb-warn-line:  #E9C7C2;
+  --pb-warn-on-ink:#FF8A80;
+  --pb-warn-txt-on-ink:#F5C1BB;
 
-  --pb-on-ink-1: rgba(243,247,252,.90);
-  --pb-on-ink-2: rgba(243,247,252,.78);
-  --pb-on-ink-3: rgba(243,247,252,.60);
-  --pb-on-ink-4: rgba(243,247,252,.50);
-  --pb-on-ink-line:  rgba(243,247,252,.16);
-  --pb-on-ink-line2: rgba(243,247,252,.30);
+  --pb-on-ink-1: rgba(244,243,239,.92);
+  --pb-on-ink-2: rgba(244,243,239,.78);
+  --pb-on-ink-3: rgba(244,243,239,.58);
+  --pb-on-ink-4: rgba(244,243,239,.46);
+  --pb-on-ink-line:  rgba(244,243,239,.14);
+  --pb-on-ink-line2: rgba(244,243,239,.30);
 
-  /* 글자체 = 지주회사 홈페이지(www.cbnuholdings.com)와 동일 계열 — Pretendard (2026-08-18 민부장 지시·색은 유지) */
-  --pb-font-serif: 'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,'Segoe UI','Malgun Gothic',sans-serif;
-  --pb-font-sans:  'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,'Segoe UI','Malgun Gothic',sans-serif;
-  --pb-font-mono:  ui-monospace,SFMono-Regular,Menlo,Consolas,'D2Coding',monospace;
+  /* 글꼴 — 디자인 파일 그대로(Q2 확정): 본문 Noto Sans KR · 표제/숫자 Archivo · 라벨 IBM Plex Mono */
+  --pb-font-serif: 'Archivo','Noto Sans KR',system-ui,'Malgun Gothic',sans-serif;
+  --pb-font-sans:  'Noto Sans KR','Archivo',system-ui,'Malgun Gothic',sans-serif;
+  --pb-font-mono:  'IBM Plex Mono',ui-monospace,Consolas,'D2Coding',monospace;
 
-  --pb-radius: 2px;
-  --pb-radius-card: 3px;
-  --pb-col-left: 276px;
+  --pb-radius: 8px;
+  --pb-radius-card: 12px;
+  --pb-col-left: 264px;
   --pb-col-right: 352px;
   --pb-col-right-collapsed: 48px;
-  --pb-shadow-card: 0 2px 8px rgba(30,90,168,.10);
-  --pb-shadow-slide: 0 2px 6px rgba(30,90,168,.12);
+  --pb-shadow-card: 0 6px 24px rgba(14,17,22,.08);
+  --pb-shadow-slide: 0 10px 30px rgba(14,17,22,.10);
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
@@ -109,7 +111,7 @@ a{color:inherit}
   content:'';position:absolute;left:2px;top:2px;width:12px;height:12px;
   background:var(--pb-paper);border-radius:50%;transition:transform .15s,background .15s;
 }
-/* ★TIPS 모드는 켜졌을 때 붉게 — 지금이 '9단계·자격검토·TIPS 채점'이 도는 상태임을
+/* R&D 대응 토글 — 켜졌을 때 강조. 지금이 8단계 상태임을
    한눈에 알아야 한다. 꺼진 모습은 기존 그대로 둔다(평상 상태를 요란하게 만들지 않는다). */
 /* 신청기업 명부 — 검색 + 목록에서 고르기 */
 .pb-apq{
@@ -170,8 +172,8 @@ a{color:inherit}
 }
 .pb-rx p + p{margin-top:7px}
 
-.pb-toggle.on{border-color:#D9756A;color:#F2C4BE}
-.pb-toggle.on .sw{background:#D9756A}
+.pb-toggle.on{border-color:var(--pb-accent);color:var(--pb-accent)}
+.pb-toggle.on .sw{background:var(--pb-accent-ink)}
 .pb-toggle.on .sw::after{transform:translateX(14px);background:var(--pb-paper)}
 
 /* 저장 상태칩 — 실패는 자동으로 사라지지 않는다 */
@@ -194,7 +196,7 @@ a{color:inherit}
 /* ── 메타 스트립 (네이비) ───────────────────── */
 .pb-meta{
   display:flex;align-items:center;padding:0 26px;
-  background:var(--pb-navy);border-bottom:1px solid var(--pb-on-ink-line);
+  background:#171B22;border-bottom:1px solid var(--pb-on-ink-line);
 }
 .pb-meta .m{
   display:flex;align-items:baseline;gap:7px;padding:9px 16px;
@@ -238,8 +240,6 @@ a{color:inherit}
 .pb-nav.is-on .pt{font:500 12px var(--pb-font-mono);color:var(--pb-accent)}
 .pb-nav.is-todo{color:var(--pb-text-ghost)}
 .pb-nav .ok{color:var(--pb-ok)}
-.pb-nav.is-risk{border-left:2px solid var(--pb-warn);background:var(--pb-warn-bg);color:var(--pb-warn-deep)}
-.pb-nav.is-risk .pt{font-size:12px;color:var(--pb-warn-deep)}
 .pb-hr{height:1px;background:var(--pb-line);margin:16px 0}
 .pb-left .fine{font-size:13px;line-height:1.6;color:var(--pb-text-faint)}
 .pb-left .sp{flex:1}
@@ -341,7 +341,7 @@ a{color:inherit}
 .pb-corpus b{color:var(--pb-paper)}
 .pb-mentor{
   margin:-18px -20px 18px;padding:16px 20px;
-  background:var(--pb-navy);border-bottom:1px solid var(--pb-on-ink-line);
+  background:#171B22;border-bottom:1px solid var(--pb-on-ink-line);
 }
 .pb-mentor h5{color:var(--pb-accent-soft)}
 .pb-mentor p{font-size:14px;color:var(--pb-on-ink-1)}
@@ -388,20 +388,6 @@ a{color:inherit}
 .pb-stale{opacity:.42;filter:grayscale(.6)}
 .pb-faded{opacity:.5}          /* 종이(원고) 쪽 — 흐리게만 한다. 지우지 않는다 */
 
-/* 내 배분 ─ 상장사 출현율과 단위가 다르므로 같은 줄에 놓지 않는다 */
-.pb-mine{
-  margin-top:18px;padding:13px 14px;
-  border:1px solid var(--pb-on-ink-line2);border-radius:var(--pb-radius);
-}
-.pb-mine h5{color:var(--pb-accent-soft)}
-.pb-mine .row{display:flex;justify-content:space-between;gap:10px;margin-top:8px;font-size:13.5px}
-.pb-mine .row span:first-child{color:var(--pb-on-ink-3)}
-.pb-mine .row span:last-child{color:var(--pb-paper);font-weight:600}
-.pb-mine .bar{margin-top:9px;height:5px;border-radius:3px;background:var(--pb-on-ink-line2);overflow:hidden}
-.pb-mine .bar i{display:block;height:100%;background:var(--pb-accent)}
-.pb-mine .bar.want i{background:var(--pb-on-ink-3)}
-.pb-mine .vd{margin-top:9px;font-size:13px;line-height:1.65;color:var(--pb-on-ink-2)}
-.pb-mine .unit{margin-top:9px;font-size:12.5px;line-height:1.6;color:var(--pb-on-ink-3)}
 
 /* ── 로그인 ─────────────────────────────────── */
 .pb-login{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
@@ -521,23 +507,6 @@ a{color:inherit}
 .pb-fig h4 em{font:400 12px var(--pb-font-sans);font-style:normal;color:var(--pb-text-faint)}
 .pb-fig svg{width:100%;height:auto;display:block;overflow:visible}
 
-/* TIPS 점수표 (우측 잉크 열) */
-.pb-score{display:flex;align-items:baseline;gap:10px;padding:14px 0 16px;
-  border-bottom:1px solid var(--pb-on-ink-line)}
-.pb-score b{font:600 34px/1 var(--pb-font-mono);color:var(--pb-paper)}
-.pb-score span{font-size:13px;color:var(--pb-on-ink-3)}
-.pb-srow{display:grid;grid-template-columns:1fr 34px 26px;gap:8px;align-items:center;
-  padding:9px 0;border-bottom:1px solid var(--pb-on-ink-line);font-size:13.5px}
-.pb-srow .nm{color:var(--pb-on-ink-2)}
-.pb-srow .pt{font:500 12px var(--pb-font-mono);color:var(--pb-on-ink-3);text-align:right}
-.pb-srow .gd{font:600 13px var(--pb-font-mono);text-align:center;color:var(--pb-accent-soft)}
-.pb-srow.na .nm,.pb-srow.na .pt{color:var(--pb-on-ink-4)}
-.pb-srow.na .gd{color:var(--pb-on-ink-4)}
-.pb-sdet{padding:10px 0 14px;font-size:13px;line-height:1.7;color:var(--pb-on-ink-3)}
-.pb-sdet q{color:var(--pb-on-ink-2)}
-.pb-sdet .bad{color:var(--pb-warn-txt-on-ink);font-weight:600}
-.pb-sdet .fix{color:var(--pb-accent-soft);margin-top:5px;display:block}
-
 /* 자격 게이트 */
 .pb-gate{display:flex;flex-direction:column;gap:2px}
 .pb-gate .g{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:center;
@@ -551,20 +520,20 @@ a{color:inherit}
 /* ── 피칭 덱 ───────────────────────────────── */
 /*  2026-08-19 민부장 지시로 전면 재설계 — 「프로그램용 도식 디자인 제작\exports」 도식 라이브러리 v2 규격을 따른다.
     공통 규격: 960×540 · 좌우 여백 56 · 콘텐츠 폭 848 · 킥커 15 / 제목 32 / 소제목 17 / 본문·도형 15 / 캡션 14(하한)
-    컬러(청색 톤 치환): 포인트 #2F6FD8 · 딥 #1F4FA3 · 틴트 #6C9BE6 #A9C6F0 #CFE0F8 #EAF2FC · 구조색 #1F2637 · 본문 #1F2537 · 캡션 #667087 · 중성 박스 #F7F9FC · 라인 #D8DDE8
+    컬러(코발트 치환 2026-08-20): 포인트 #1B4BF0 · 딥 #10309E · 틴트 #6C8CFF #A9BCFA #D4DEFC #EDF1FE · 구조색 #1F2637 · 본문 #1F2537 · 캡션 #667087 · 중성 박스 #F7F9FC · 라인 #D8DDE8
     깊이 규칙(v2 입체): 일반 카드 0 4px 10px rgba(31,38,55,.10) · 강조 카드 0 5px 14px rgba(47,111,216,.16) — 그라데이션·베벨 없음
     화면에서는 폭에 맞춰 transform:scale(--k) 로 줄여 보이고(레이아웃은 항상 960×540), PDF는 960×540 그대로 찍는다. */
 :root{
-  --dk-point:#2F6FD8; --dk-deep:#1F4FA3; --dk-t1:#6C9BE6; --dk-t2:#A9C6F0; --dk-t3:#CFE0F8; --dk-t4:#EAF2FC;
+  --dk-point:#1B4BF0; --dk-deep:#10309E; --dk-t1:#6C8CFF; --dk-t2:#A9BCFA; --dk-t3:#D4DEFC; --dk-t4:#EDF1FE;
   --dk-struct:#1F2637; --dk-text:#1F2537; --dk-cap:#667087; --dk-box:#F7F9FC; --dk-gray:#9AA4B5; --dk-line:#D8DDE8;
   --dk-sh-card:0 4px 10px rgba(31,38,55,.10),0 1px 3px rgba(31,38,55,.07);
-  --dk-sh-accent:0 5px 14px rgba(47,111,216,.16),0 1px 3px rgba(47,111,216,.10);
+  --dk-sh-accent:0 5px 14px rgba(27,75,240,.16),0 1px 3px rgba(27,75,240,.10);
 }
 .pb-deck{background:var(--pb-paper-deep);padding:22px 24px;display:flex;flex-direction:column;gap:22px}
 .pb-slidebox{position:relative;width:100%;height:540px;--k:1}
 .pb-slide{
   position:absolute;left:0;top:0;width:960px;height:540px;transform-origin:0 0;transform:scale(var(--k));
-  background:#fff;color:var(--dk-text);font-family:'Pretendard','Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  background:#fff;color:var(--dk-text);font-family:'Noto Sans KR','Archivo','Malgun Gothic',sans-serif;
   box-shadow:var(--dk-sh-card);padding:36px 56px 30px;display:flex;flex-direction:column;box-sizing:border-box;
 }
 .pb-slide .sno{
@@ -679,7 +648,7 @@ a{color:inherit}
       원문의 단락을 없애면 읽는 사람이 원문을 잘못 읽는다.
    ══════════════════════════════════════════════════════════════ */
 
-/* 코치 열 — 신청서 참고자료(린캔버스 서술 .pb-mentor · 내 배분 .pb-corpus) */
+/* 코치 패널 — 신청서 참고자료(린캔버스 서술 .pb-mentor) */
 .pb-mentor p,
 .pb-corpus p,
 .pb-panel .pb-mentor p,
@@ -708,6 +677,45 @@ a{color:inherit}
 @media print{
   .pb-sec .fl p{ white-space:pre-wrap; max-width:none; }
 }
+
+/* ══ 재디자인 스킨 2026-08-20 — 다크 사이드바 · 링 진행 · 카드 탭 (디자인 정본 dc.html 턴2) ══ */
+.pb-shell.no-right{grid-template-columns:var(--pb-col-left) 1fr}
+.pb-left{background:var(--pb-ink);border-right:none;color:var(--pb-on-ink-1);padding:24px 18px}
+.pb-left h4{color:var(--pb-on-ink-3)}
+.pb-left h4 em{color:var(--pb-on-ink-4)}
+.pb-left .pb-nav{color:var(--pb-on-ink-2)}
+.pb-left .pb-nav:hover{background:rgba(244,243,239,.07)}
+.pb-left .pb-nav.is-on{background:var(--pb-accent-ink);color:#fff;font-weight:500}
+.pb-left .pb-nav.is-todo{color:var(--pb-on-ink-4)}
+.pb-left .pb-nav .ok{color:var(--pb-ok-on-ink)}
+.pb-left .pb-hr{background:var(--pb-on-ink-line)}
+.pb-left .fine{color:var(--pb-on-ink-3)}
+.pb-left .pb-cta{background:var(--pb-accent-ink);color:#fff}
+.pb-left .pb-cta:hover{background:#1440CC}
+.pb-left .pb-cta.sub{background:transparent;color:var(--pb-on-ink-2);border:1px solid var(--pb-on-ink-line2)}
+.pb-left .pb-cta.sub:hover{background:rgba(244,243,239,.07);color:#fff}
+.pb-left label{color:var(--pb-on-ink-2)}
+/* 링 진행 (좌측 사이드바 상단) */
+.pb-ringwrap{display:flex;align-items:center;gap:14px;margin:2px 0 20px}
+.pb-ring{width:64px;height:64px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.pb-ring i{width:50px;height:50px;border-radius:50%;background:var(--pb-ink);display:flex;align-items:center;justify-content:center;font:700 13px var(--pb-font-serif);font-style:normal;color:#fff}
+.pb-ringtxt b{display:block;font:700 15px var(--pb-font-serif);color:#fff}
+.pb-ringtxt span{font-size:12px;color:var(--pb-on-ink-3)}
+/* 카드 탭 — 작성 카드 안 [작성|가이드|AI 진단]. 탭을 넘겨도 원고는 그대로 남는다 */
+.pb-cardtabs{display:flex;gap:2px;border-bottom:1px solid var(--pb-line);margin-top:14px}
+.pb-cardtab{padding:10px 14px;font-size:13.5px;font-weight:500;color:var(--pb-text-faint);border-bottom:2px solid transparent;margin-bottom:-1px}
+.pb-cardtab:hover{color:var(--pb-text)}
+.pb-cardtab.is-on{color:var(--pb-accent-ink);border-bottom-color:var(--pb-accent-ink)}
+.pb-cardtab .n{font:500 11px var(--pb-font-mono);margin-left:5px;color:var(--pb-text-ghost)}
+.pb-cardhint{margin-top:10px;font-size:12px;color:var(--pb-text-ghost)}
+/* 코치 패널 — 카드 안 다크 인셋(기존 on-ink 스타일을 그대로 쓴다) */
+.pb-coach{margin-top:16px;background:var(--pb-ink);border-radius:var(--pb-radius);color:var(--pb-on-ink-1)}
+.pb-coach .pb-panel{padding:18px 20px}
+/* 로그인 통계 3종 */
+.pb-lstats{display:flex;gap:34px;margin-top:26px}
+.pb-lstats div{display:flex;flex-direction:column;gap:2px}
+.pb-lstats b{font:800 28px/1 var(--pb-font-serif);color:var(--pb-accent)}
+.pb-lstats span{font-size:12.5px;color:var(--pb-on-ink-3)}
 </style>
 </head>
 <body>
@@ -715,10 +723,10 @@ a{color:inherit}
 <!-- ══ 로그인 ══════════════════════════════════ -->
 <div id="viewLogin" class="pb-login">
   <div class="l">
-    <h1>IR PitchBuilder<br>System</h1>
-    <p>6단계 + 3단계(TIPS용) 작성 프로세스. 여섯 단계를 채우면 IR 한 벌이 되고, TIPS 준비 모드를 켜면 R&amp;D 세 단계가 더해집니다.</p>
+    <h1>투자자가 읽는 순서대로<br>IR을 세웁니다.</h1>
+    <p>여덟 단계를 한 칸씩 채우면 IR 본문과 도식, 피칭 덱이 함께 나옵니다. 점수를 매기지 않습니다 — 무엇을 아직 말하지 않았는지만 짚어 드립니다.</p>
+    <div class="pb-lstats"><div><b>16</b><span>작성 칸</span></div><div><b>5</b><span>장 피칭 덱</span></div><div><b>12</b><span>종 도식 자동 생성</span></div></div>
     <p class="fine">
-      이 도구는 채점기가 아닙니다. 점수는 어디를 고쳐야 하는지 가리키는 표시일 뿐입니다.<br>
       빈칸 자동 생성은 제공하지 않습니다 — 없는 근거를 만들어 넣지 않기 위해서입니다.
     </p>
   </div>
@@ -740,10 +748,10 @@ a{color:inherit}
 
 <!-- ══ 헤더 (로그인 후) ════════════════════════ -->
 <header id="pbHead" class="pb-head hidden">
-  <div class="pb-brand" id="hdHome" role="button" tabindex="0" title="처음 화면으로"><b>PitchBuilder</b><span>IR / TIPS</span></div>
+  <div class="pb-brand" id="hdHome" role="button" tabindex="0" title="처음 화면으로"><b>PitchBuilder</b><span>IR DRAFTING</span></div>
   <div class="pb-who" id="hdWho"></div>
   <div class="sp"></div>
-  <button class="pb-toggle" id="hdTips">TIPS 준비 모드<span class="sw"></span></button>
+  <button class="pb-toggle" id="hdTips">R&amp;D 대응<span class="sw"></span></button>
   <div class="pb-chip" id="hdChip"><span class="dot"></span><span id="hdChipTxt">저장 대기</span></div>
   <button class="pb-hbtn" id="hdB1">신청서 내용 가져오기</button>
   <button class="pb-hbtn" id="hdSave">저장</button>
@@ -771,12 +779,12 @@ a{color:inherit}
   // ══ 상태 ══════════════════════════════════════════════════════
   //  아래 이식 로직의 steps()·who()·contextBlock()·stepPrompt()가 이 두 객체를 본다.
   var state = { stepIndex:0, formData:{}, completed:false,
-                cid:'', lastTips:null, lastAudit:null, lastGate:null,
+                cid:'', lastAudit:null,
                 status:'', submittedAt:'', lastDeck:null, lastDiagrams:null,
                 tab:0, view:'write',
                 // ★판단은 그때의 원고에 대한 것이다 — 무엇을 보고 받은 판단인지를 함께 기억한다.
                 diags:{},        // {단계id: {data, hash, at}}  단계별 AI 진단 + 그때의 입력 해시
-                tipsHash:'', auditHash:'',     // 채점·감수를 받은 시점의 IR 전체 해시
+                auditHash:'',                  // 투자논리 진단을 받은 시점의 IR 전체 해시
                 // B1 신청서 참고자료(P2) — 본문에 넣지 않고 코치 열에서만 보여준다
                 b1ref:null, b1At:'' };
   var llm = { conn:'byok', key:'', proxy:'', id:'', code:'',
@@ -845,7 +853,7 @@ a{color:inherit}
         brain.rx = d.bundle.rx || {};
         brain.loaded = true;
         writeBrain();
-        if(state.view === 'write') renderRight();
+        if(state.view === 'write' && state.tab !== 0) render();   // 가이드 탭이 열려 있으면 갱신
       })
       .catch(function(){});                                 // 조용히 접는다 — 가이드만 빈다
   }
@@ -889,7 +897,7 @@ a{color:inherit}
       subtitle:'우리의 제품이 그 문제를 어떻게 해결하는지 직관적으로 설명합니다.',
       inputs:[
         {key:'solutionCore', label:'해결책의 핵심 작동 원리 (3단계)', placeholder:'예: 1. 사진 촬영 -> 2. AI 자동 텍스트 변환 -> 3. ERP 자동 연동'},
-        {key:'moat', label:'기술적 방어 해자 (Moat) / TIPS 기술성 어필', placeholder:'예: 10만 건의 물류 특화 데이터셋 파인튜닝, OCR 관련 원천 특허 2건 보유'}
+        {key:'moat', label:'기술적 방어 해자 (Moat)', placeholder:'예: 10만 건의 물류 특화 데이터셋 파인튜닝, OCR 관련 원천 특허 2건 보유'}
       ],
       coachTips:[
         "복잡한 백엔드 기술 스펙을 나열하지 말고, '고객이 얻는 가치' 중심으로 번역하세요.",
@@ -938,17 +946,16 @@ a{color:inherit}
   ];
 
   // ══════════════════════════════════════════════════════════════
-  //  TIPS 준비 모드 — 추가 3단계
-  //  IR 6단계로는 TIPS 100점 중 40점(개발적정성15·실현성10·글로벌5·운영사10)을
-  //  담을 그릇이 없다. IR과 R&D 사업계획서는 서로 다른 문서이기 때문이다.
-  //  이 3단계를 채우면 채점 가능 범위가 60점 → 90점이 된다.
-  //  (운영사 지원계획 10점은 창업팀이 아니라 추천 운영사가 쓰므로 영영 제외다.)
+  //  R&D 대응 — 추가 2단계 (선택)
+  //  IR과 R&D 사업계획서는 서로 다른 문서다. R&D 과제를 준비하는 기업만 켠다.
+  //  ~~TIPS 채점·자격 게이트·배점~~ = 2026-08-20 민부장 지시로 전면 삭제(점수를 매기지 않는다).
+  //  ~~9단계 글로벌 진출~~ = 같은 날 삭제 → 8단계 16칸.
   // ══════════════════════════════════════════════════════════════
   var TIPS_STEPS = [
     {
       id:'rnd_goal', icon:'flask',
       title:'7. 개발 목표 및 내용 (R&D)',
-      subtitle:'TIPS 기술성 15점 — 무엇을, 어디까지 개발할 것인가.',
+      subtitle:'R&D 과제를 준비한다면 — 무엇을, 어디까지 개발할 것인가.',
       inputs:[
         {key:'devGoal',  label:'개발 최종 목표와 산출물',
          placeholder:'예: 2년 내 물류 송장 OCR 엔진 v2.0 개발. 최종 산출물 = 상용 API + ERP 연동 모듈. 1차년도 인식엔진, 2차년도 현장 실증'},
@@ -964,7 +971,7 @@ a{color:inherit}
     {
       id:'rnd_kpi', icon:'gauge',
       title:'8. 성능지표 및 검증방법 (R&D)',
-      subtitle:'TIPS 기술성 10점 — 여기서 탈락하는 팀이 가장 많습니다.',
+      subtitle:'성능을 숫자로 — R&D 심사에서 가장 많이 걸리는 자리입니다.',
       inputs:[
         {key:'devKpi',    label:'정량적 성능지표 (KPI)',
          placeholder:'예: 송장 인식 정확도 95% 이상(현재 87%), 처리속도 건당 2초 이내, 오인식률 3% 이하'},
@@ -975,20 +982,6 @@ a{color:inherit}
         '★가장 중요한 단계입니다. "성능 향상"이 아니라 숫자여야 합니다 — 무엇을, 얼마에서 얼마로.',
         '"자체 테스트로 검증"은 인정받기 어렵습니다. 공인시험기관·실증 현장·제3자 검증을 명시하세요.',
         '목표치만 있고 현재값이 없으면 개선폭을 알 수 없습니다. 현재 → 목표를 함께 쓰세요.'
-      ]
-    },
-    {
-      id:'rnd_global', icon:'globe',
-      title:'9. 글로벌 진출 전략',
-      subtitle:'TIPS 사업성 5점 — 작지만, 안 쓰면 0점입니다.',
-      inputs:[
-        {key:'globalPlan', label:'해외 목표시장과 진출 전략',
-         placeholder:'예: 3년 내 일본 물류시장 진출. 현지 3PL 사업자와 파트너십 협의 중. 일본어 OCR 데이터셋 확보가 선결과제'}
-      ],
-      coachTips:[
-        '"글로벌 진출을 추진하겠다"는 0점입니다. 어느 나라, 왜 그 나라, 누구와, 언제인지 적으세요.',
-        '아직 계획뿐이라면 계획이라고 쓰되, 그 나라를 고른 근거(시장 규모·규제·파트너)를 대세요.',
-        '국내에 집중할 계획이면 솔직히 쓰고 그 이유를 대는 편이 억지 글로벌보다 낫습니다.'
       ]
     }
   ];
@@ -1006,7 +999,7 @@ a{color:inherit}
     revenueModel:'[과금 방식]', gtmStrategy:'[GTM 전략]',
     teamStrength:'[팀 역량]', fundingAsk:'[투자 유치 계획]',
     devGoal:'[개발 목표]', devPrior:'[선행 R&D 이력]',
-    devKpi:'[성능지표]', devVerify:'[검증 방법]', globalPlan:'[글로벌 전략]'
+    devKpi:'[성능지표]', devVerify:'[검증 방법]'
   };
 
   // ★작성 데이터는 계정별로 나눠 담는다.
@@ -1015,7 +1008,6 @@ a{color:inherit}
   //   접수번호를 키에 박아 칸을 갈라두면 그 사고가 구조적으로 불가능해진다.
   var STORAGE_BASE = 'pitchbuilder.pro.v1';
 
-  var TIPS_BASE = 'pitchbuilder.tips.v1';
 
   var LLM_KEY = 'pitchbuilder.llm.v1';
 
@@ -1031,9 +1023,8 @@ a{color:inherit}
 
   function skey(){ return STORAGE_BASE + '::' + who(); }
 
-  function tkey(){ return TIPS_BASE + '::' + who(); }
 
-  // ══ TIPS 준비 여부 — 기업이 처음 들어올 때 한 번 묻는다 ═══════
+  // ══ R&D 대응 여부 — 기업이 처음 들어올 때 한 번 묻는다 ═══════
   //  ★서버 APP_CONFIG의 tipsMode는 **기본값**일 뿐이다. 기업이 한 번 정하면 그 선택이 이긴다.
   //    관리자가 전체 적용한 값이 매 접속마다 기업 선택을 덮으면, 기업은 껐는데 다시 켜져 있다.
   //  ★계정별로 남긴다 — 같은 PC를 두 기업이 쓰면 서로의 선택이 섞이면 안 된다.
@@ -1061,8 +1052,8 @@ a{color:inherit}
       return f.key + '=' + normTxt(state.formData[f.key]);
     }).join(''));
   }
-  // ★단계 목록이 아니라 고정 필드 목록으로 센다 — TIPS 모드를 켜고 끄는 것만으로
-  //   전체 해시가 흔들리면 채점이 멀쩡한데도 낡았다고 말하게 된다.
+  // ★단계 목록이 아니라 고정 필드 목록으로 센다 — R&D 대응을 켜고 끄는 것만으로
+  //   전체 해시가 흔들리면 진단이 멀쩡한데도 낡았다고 말하게 된다.
   function irHash(){
     return hashOf(Object.keys(PLACEHOLDER_RESULT).sort().map(function(k){
       return k + '=' + normTxt(state.formData[k]);
@@ -1072,89 +1063,6 @@ a{color:inherit}
   // 모르는 것을 낡았다고 하면 매번 늑대가 나타난다.
   function irStale(h){ return !!h && h !== irHash(); }
 
-  var TIPS_RUBRIC = {
-    name: 'TIPS 일반트랙 (2026)',
-    source: '2026년 팁스 총괄 운영지침(2차 개정) 별지 제4-③호 선정평가표',
-    passMark: 60,          // 종합평점 60점 미만 = 지원제외 (운영지침 9.라.13)
-    gradePoints: ['S','A','B','C','D'],
-    items: [
-      { id:'need',    cat:'기술성',       name:'개발 필요성',      max:15, pts:[15,12,9,6,3],
-        criteria:'기술아이템 개발의 차별성·필요성, 기술적 난이도와 도전성',
-        coverage:'partial', fields:['problemDescription','moat','solutionCore'],
-        gapHint:'경쟁기술 대비 무엇이 다른지, 기술적으로 무엇이 어려운지가 IR에는 대개 빠져 있습니다.' },
-
-      { id:'fit',     cat:'기술성',       name:'개발 적정성',      max:15, pts:[15,12,9,6,3],
-        criteria:'개발목표·개발내용의 수준과 구체성, 선행 R&D 이력과 활용',
-        coverage:'none', tipsFields:['devGoal','devPrior'],
-        gapHint:'R&D 사업계획서 항목입니다. 설정에서 <b>TIPS 준비 모드</b>를 켜면 7단계에서 작성할 수 있습니다.' },
-
-      { id:'exec',    cat:'기술성',       name:'개발 실현성',      max:10, pts:[10,8,6,4,2],
-        criteria:'개발방법·계획의 적정성, 성능지표와 검증방법의 타당성, 기술적 파급효과',
-        coverage:'none', tipsFields:['devKpi','devVerify'],
-        gapHint:'정량 성능지표(KPI)와 검증방법이 필요합니다. <b>여기서 탈락하는 팀이 가장 많습니다.</b> TIPS 준비 모드 8단계에서 작성할 수 있습니다.' },
-
-      { id:'biz',     cat:'사업성',       name:'사업화 전략',      max:20, pts:[20,16,12,8,4],
-        criteria:'목표시장의 적절성, 사업화 추진계획의 실현가능성, 지원예산 대비 경제성',
-        coverage:'full', fields:['somTarget','somValue','revenueModel','gtmStrategy'] },
-
-      { id:'global',  cat:'사업성',       name:'글로벌 성장가능성', max:5,  pts:[5,4,3,2,1],
-        criteria:'글로벌 진출 성공가능성과 전략의 구체성',
-        coverage:'none', tipsFields:['globalPlan'],
-        gapHint:'해외 진출 전략이 IR에 없습니다. TIPS 준비 모드 9단계에서 작성할 수 있습니다.' },
-
-      { id:'impact',  cat:'사업성',       name:'기대효과',         max:15, pts:[15,12,9,6,3],
-        criteria:'일자리 창출·유지 계획, R&D의 경제적 파급효과',
-        coverage:'partial', fields:['fundingAsk','somValue'],
-        gapHint:'고용 계획(몇 명을 언제 뽑을지)이 대개 빠져 있습니다.' },
-
-      { id:'team',    cat:'사업수행역량', name:'창업기업 전문성',  max:10, pts:[10,8,6,4,2],
-        criteria:'구성원의 역량과 역할, 특허·논문 등 기술기반, 창업자의 사업의지와 사전준비',
-        coverage:'full', fields:['teamStrength','moat'] },
-
-      { id:'oper',    cat:'사업수행역량', name:'운영사 지원계획',  max:10, pts:[10,8,6,4,2],
-        criteria:'운영사의 추천사유와 투자지원 의지, 보육계획·수행관리의 구체성',
-        coverage:'none',
-        gapHint:'이 항목은 창업팀이 아니라 추천 운영사가 작성합니다. 채점 대상에서 제외합니다.' }
-    ]
-  };
-
-  // 자격 게이트 — 미달이면 채점하지 않는다 (itc_rules.py의 ELIG_CAP과 같은 사상)
-  // 출처: 2026년 팁스 창업기업 지원계획 공고(중기부 제2026-40호) 신청자격
-  var TIPS_GATE = [
-    { id:'age',   q:'창업 후 업력',                 opts:[
-        {v:'ok',   t:'7년 이내'},
-        {v:'ok10', t:'7~10년 (신산업 분야)'},
-        {v:'no',   t:'초과'}],
-      fail:'no', why:'업력 7년 초과(신산업 분야는 10년)는 신청 자격이 없습니다.' },
-
-    { id:'team',  q:'창업팀 구성',                  opts:[
-        {v:'ok', t:'대표 포함 2인 이상'},
-        {v:'no', t:'1인'}],
-      fail:'no', why:'(예비)창업기업은 2인 이상으로 구성되어야 합니다.' },
-
-    { id:'inv',   q:'TIPS 운영사 투자(확약)',        opts:[
-        {v:'ok',   t:'수도권 2억원 이상'},
-        {v:'ok2',  t:'비수도권 1억원 이상'},
-        {v:'no',   t:'미달 또는 아직 없음'}],
-      fail:'no', why:'운영사 투자(확약)와 추천이 없으면 TIPS는 신청 자체가 불가능합니다. 이것이 첫 번째 관문입니다.' },
-
-    { id:'share', q:'지분 구조',                     opts:[
-        {v:'ok',   t:'창업기업 60% 이상 · 운영사 30% 이하'},
-        {v:'no',   t:'요건 미달'},
-        {v:'unk',  t:'아직 모름'}],
-      fail:'no', why:'창업기업이 60% 이상(2인 이상 분산 보유), 운영사는 30% 이하여야 합니다. 협약체결일까지 유지해야 합니다.' },
-
-    { id:'rev',   q:'직전연도 매출액',               opts:[
-        {v:'ok', t:'20억원 미만'},
-        {v:'no', t:'20억원 이상'}],
-      fail:'no', why:'일반트랙은 직전연도 매출 20억원 미만이어야 합니다.' },
-
-    { id:'again', q:'TIPS R&D 기선정 이력',          opts:[
-        {v:'ok', t:'없음'},
-        {v:'no', t:'있음 (일반·딥테크·글로벌·스케일업 중)'}],
-      fail:'no', why:'TIPS R&D를 이미 수행한 기업은 재참여할 수 없습니다.' }
-  ];
-
   // ── 진단 결과 렌더링 ────────────────────
   function esc(s){
     return String(s == null ? '' : s)
@@ -1163,8 +1071,6 @@ a{color:inherit}
   }
 
   function arr(v){ return Array.isArray(v) ? v : []; }
-
-  function scoreClass(n){ return n >= 75 ? 'sc-high' : (n >= 50 ? 'sc-mid' : 'sc-low'); }
 
   // 모델이 코드펜스를 씌우거나 앞뒤에 말을 붙여도 살려낸다.
   function parseJSON(text){
@@ -1181,7 +1087,7 @@ a{color:inherit}
   // ── 프롬프트 ────────────────────────────
   // 헌법: 없는 사실을 지어내지 않는다. 모르면 물어본다.
   var SYSTEM = [
-    '너는 한국 초기기업 투자 심사역이다. 실리콘밸리 VC와 TIPS 운영사 심사 관점으로 창업팀의 IR 초안을 진단한다.',
+    '너는 한국 초기기업 투자 심사역이다. 초기 투자 심사역의 관점으로 창업팀의 IR 초안을 진단한다.',
     '',
     '# 절대 규칙 (어기면 실패다)',
     '- 사용자가 제공하지 않은 정량 수치·고객사명·연도·특허번호·인원수를 절대 지어내지 마라.',
@@ -1231,7 +1137,6 @@ a{color:inherit}
       '',
       '# 출력 JSON 스키마',
       '{',
-      '  "score": 0~100 정수 (심사역이 이 단계에 줄 점수),',
       '  "verdict": "한 문장 총평",',
       '  "issues": [{ "field": "' + keys.join('" | "') + '", "severity": "high"|"medium"|"low", "problem": "무엇이 잘못됐는지", "why": "심사역이 왜 이걸 문제 삼는지" }],',
       '  "rewrites": [{ "field": "' + keys.join('" | "') + '", "text": "그대로 붙여넣을 수 있는 개선 문장. 근거가 필요한 수치는 [__]로 비워 둘 것" }],',
@@ -1401,10 +1306,10 @@ a{color:inherit}
   //  ★키 이름을 줄여 쓰지 말 것 — 전에 C.bl / C.blLt 로 적힌 곳이 있었고(정의에 없는 키다),
   //    SVG에 fill="undefined"가 들어가 타임라인·포지셔닝의 강조색이 통째로 죽어 있었다.
   //    색이 안 나와도 예외가 나지 않아 눈으로 보기 전엔 모른다.
-  //  2026-08-19: 「프로그램용 도식 라이브러리」 팔레트(청색 톤 치환)로 통일 — 포인트 #2F6FD8 · 딥 #1F4FA3 · 틴트 #A9C6F0/#EAF2FC · 구조색 #1F2637
+  //  2026-08-20: 재디자인 코발트 팔레트로 통일 — 포인트 #1B4BF0 · 딥 #10309E · 틴트 #A9BCFA/#EDF1FE · 구조색 #1F2637
   //  네 계열의 뜻은 그대로다: blue=기본 · em=합계·강조(딥) · pu=보조(틴트) · rd=손실·경고(구조색·굵게)
-  var C = { blue:'#2F6FD8', blueLt:'#EAF2FC', blueBd:'#A9C6F0',
-            em:'#1F4FA3', emLt:'#EAF2FC', emBd:'#A9C6F0',
+  var C = { blue:'#1B4BF0', blueLt:'#EDF1FE', blueBd:'#A9BCFA',
+            em:'#10309E', emLt:'#EDF1FE', emBd:'#A9BCFA',
             pu:'#6C9BE6', puLt:'#F7F9FC', puBd:'#CFE0F8',
             rd:'#1F2637', rdLt:'#F7F9FC', rdBd:'#D8DDE8',
             ink:'#1F2537', mute:'#667087', line:'#D8DDE8' };
@@ -1547,13 +1452,13 @@ a{color:inherit}
         (cx + wB / 2) + ',' + (y + SH), (cx - wB / 2) + ',' + (y + SH)
       ].join(' ');
       // 라이브러리 틴트 램프(옅음→짙음). 흰 글자는 짙은 두 단계에만 — 옅은 파랑 위 흰 글자는 읽히지 않는다(2026-08-19 실측).
-      var RAMP = ['#EAF2FC', '#A9C6F0', '#2F6FD8', '#1F4FA3'].slice(-n);
+      var RAMP = ['#EDF1FE', '#A9BCFA', '#1B4BF0', '#10309E'].slice(-n);
       var fillC = RAMP[i];
       s += '<polygon points="' + pts + '" fill="' + fillC + '" stroke="' + C.blueBd + '" stroke-width="1.5"/>';
 
       var lab = wrap(st.label, 14, wB - 30);
       var note = wrap(st.note, 11, wB - 30);
-      var dark = (fillC === '#2F6FD8' || fillC === '#1F4FA3');
+      var dark = (fillC === '#1B4BF0' || fillC === '#10309E');
       var ty = y + SH / 2 - (note.length ? 8 : 0) + 5 - (lab.length - 1) * 9;
       s += tspans(lab, cx, ty, 14, dark ? '#fff' : C.ink, 600);
       if(note.length) s += tspans(note, cx, ty + lab.length * 19 + 2, 11, dark ? '#EAF2FC' : C.mute);
@@ -1644,7 +1549,6 @@ a{color:inherit}
 
   // ⑥ Problem — 누가 무엇을 잃고 있는가 (targetCustomer + problemDescription에서 뽑는다)
   //    덱 5장 중 cover·problem 두 장이 늘 맨 글자만 남던 자리다.
-  //    그런데 problem은 TIPS 「개발 필요성」 15점이 걸린 칸이고,
   //    상장사 IR은 6%만 쓰지만 초기기업은 반드시 써야 하는 칸이다(코퍼스 1,344건 실측).
   //
   //  ★막대그래프로 그리지 않는다. "하루 3시간"과 "월 100만원"은 단위가 달라
@@ -1968,7 +1872,7 @@ a{color:inherit}
   //  ★도식과 같은 원칙: LLM은 '무엇을 말할지'만 내고, '어떻게 보일지'는 코드가 정한다.
   //  ★그리고 하나 더 — LLM이 낸 문구의 **숫자를 코드가 IR 원문과 대조**한다.
   //    슬라이드에 박힌 허구 수치는 팀이 투자자 앞에서 그대로 읽게 된다.
-  //    "지어내지 마라"는 프롬프트만으로는 못 막는다(TIPS 채점에서 이미 겪었다).
+  //    "지어내지 마라"는 프롬프트만으로는 못 막는다(옛 TIPS 채점에서 이미 겪었다·기록).
   //  ★슬라이드와 도식을 LLM 호출 '한 번'에 받는다 — 계정당 일일 상한을 아껴야 한다.
   // ══════════════════════════════════════════════════════════════
   //  figs = 그 장에 놓을 **슬롯** 이름이다(도식 이름이 아니다).
@@ -2015,7 +1919,7 @@ a{color:inherit}
       '- ★★숫자는 IR에 적힌 것만 쓴다. IR에 없는 수치·연도·비율·금액을 만들어내면 안 된다.',
       '  근거가 없으면 숫자를 아예 빼고 문장으로 써라. 코드가 원문과 대조해 걸러낸다.',
       '- ★회사명·기관명·경쟁사명도 IR에 있는 것만. 없으면 유형으로 표현하라.',
-      '- rnd = R&D 항목(개발 목표·성능지표·글로벌)이 IR에 있을 때만. 없으면 null.',
+      '- rnd = R&D 항목(개발 목표·성능지표)이 IR에 있을 때만. 없으면 null.',
       '- diagrams = 위 "도식 자리와 후보"를 따른다. 각 자리에 "type"과 "why"를 넣고,',
       '  해당 관계가 IR에 없으면 그 자리는 null. 후보에 없는 type은 쓰지 마라.',
       '  market은 Bottom-up만, timeline의 when은 IR에 적힌 시점만, position 좌표는 0~1.'
@@ -2074,16 +1978,6 @@ a{color:inherit}
     return String(s.title || '').replace(/^\s*\d+\.\s*/, '').replace(/\s*\([^)]*\)\s*$/, '').trim();
   }
   function stepNo(i){ return ('0' + (i + 1)).slice(-2); }
-  function stepPts(s){
-    // 그 단계가 걸린 TIPS 배점 — 채점 항목의 fields/tipsFields로 되짚는다
-    var keys = s.inputs.map(function(x){ return x.key; });
-    var pts = 0;
-    TIPS_RUBRIC.items.forEach(function(it){
-      var f = (it.fields || []).concat(it.tipsFields || []);
-      if(f.some(function(k){ return keys.indexOf(k) >= 0; })) pts = Math.max(pts, it.max);
-    });
-    return pts;
-  }
   function stepFilled(s){
     return s.inputs.every(function(i){ return (state.formData[i.key] || '').trim(); });
   }
@@ -2102,7 +1996,6 @@ a{color:inherit}
         ch += v.length;
       });
     });
-    var bad = state.lastTips ? (state.lastTips.unverified || 0) : 0;
     // 🔴 대리 편집 중임을 어느 화면에서든 계속 보인다.
     //    이 표시가 없으면 관리자가 자기 원고를 쓰는 줄 알고 남의 기업 자리에 저장한다.
     //    메타 스트립은 잉크(어두운) 배경이므로 색을 명시한다 — 안 그러면 밝은 박스에 밝은 글씨가 된다.
@@ -2117,7 +2010,6 @@ a{color:inherit}
       '<div class="m">작성 필드<b>' + n + ' / ' + tot + '</b></div>' +
       '<div class="m">분량<b>' + ch.toLocaleString() + '자</b></div>' +
       '<div class="m">투자논리 진단<b>' + (state.lastAudit ? '완료' : '—') + '</b></div>' +
-      '<div class="m' + (bad ? ' warn' : '') + '">근거 미확인<b>' + bad + '건</b></div>' +
       '<div class="sp"></div>' +
       '<div class="note">자동저장 켜짐 · 단계 이동마다</div>';
     if($('mtClose')) $('mtClose').onclick = adminCloseIR;
@@ -2125,21 +2017,19 @@ a{color:inherit}
 
   // ── 좌: 목차 ──
   function renderLeft(){
-    var got = 0;
-    IR_STEPS.forEach(function(s){ if(stepFilled(s)) got += stepPts(s); });
-
-    var h = '<h4>IR 6 STEPS<em>' + got + ' / 60</em></h4>';
+    var tot = 0, n = 0;
+    steps().forEach(function(st){ st.inputs.forEach(function(i){ tot++; if((state.formData[i.key] || '').trim()) n++; }); });
+    var pct = tot ? Math.round(n / tot * 100) : 0;
+    var h = '<div class="pb-ringwrap">' +
+              '<div class="pb-ring" style="background:conic-gradient(var(--pb-accent) 0 ' + pct + '%,var(--pb-on-ink-line) ' + pct + '% 100%)"><i>' + pct + '%</i></div>' +
+              '<div class="pb-ringtxt"><b>' + n + ' / ' + tot + ' 칸</b><span>' +
+                (tot - n > 0 ? (tot - n) + '칸 남았습니다' : '전부 채우셨습니다') + '</span></div>' +
+            '</div>';
+    h += '<h4>IR 6 STEPS</h4>';
     IR_STEPS.forEach(function(s, i){ h += navRow(s, i); });
-
     if(llm.tipsMode){
-      h += '<div class="pb-hr"></div><h4>TIPS 3 STEPS<em style="color:var(--pb-accent-ink)">+30</em></h4>';
+      h += '<div class="pb-hr"></div><h4>R&D 대응<em>선택</em></h4>';
       TIPS_STEPS.forEach(function(s, i){ h += navRow(s, IR_STEPS.length + i); });
-    }
-    h += '<div class="pb-hr"></div>' +
-         '<p class="fine">운영사 지원계획 10점은 추천 운영사가 작성합니다. 이 도구에서는 채울 수 없습니다.</p>';
-    if(!llm.tipsMode){
-      h += '<p class="fine" style="margin-top:12px;color:var(--pb-warn-deep)">' +
-           'IR 6단계만으로는 60점 컷에 구조적으로 닿지 않습니다. 채점 범위를 90점으로 넓히려면 TIPS 준비 모드를 켜십시오.</p>';
     }
     h += '<div class="sp"></div>' +
          '<button class="pb-cta" id="btnResult">결과 보기</button>' +
@@ -2154,11 +2044,8 @@ a{color:inherit}
   }
   function navRow(s, i){
     var on = i === state.stepIndex, done = stepFilled(s);
-    var risk = s.id === 'rnd_kpi';                       // 탈락이 가장 많은 단계
-    var cls = 'pb-nav' + (on ? ' is-on' : (done ? '' : ' is-todo')) + (risk && !on ? ' is-risk' : '');
-    var right = on   ? '<span class="pt">' + stepPts(s) + '</span>'
-              : risk ? '<span class="pt">탈락 최다</span>'
-              : done ? '<span class="ok">✓</span>' : '';
+    var cls = 'pb-nav' + (on ? ' is-on' : (done ? '' : ' is-todo'));
+    var right = (done && !on) ? '<span class="ok">✓</span>' : '';
     return '<button class="' + cls + '" data-i="' + i + '">' + esc(shortTitle(s)) + right + '</button>';
   }
 
@@ -2187,13 +2074,16 @@ a{color:inherit}
     Array.prototype.forEach.call($('pbCenter').querySelectorAll('.pb-row'), function(b){
       b.onclick = function(){ state.stepIndex = +b.dataset.i; render(); };
     });
+    Array.prototype.forEach.call($('pbCenter').querySelectorAll('.pb-cardtab'), function(b){
+      b.onclick = function(){ state.tab = +b.dataset.ct; render(); };
+    });
+    if(state.tab !== 0) bindCoach(steps()[state.stepIndex]);
     Array.prototype.forEach.call($('pbCenter').querySelectorAll('textarea'), function(ta){
       ta.oninput = function(){
         state.formData[ta.dataset.k] = ta.value;
         ta.parentNode.querySelector('.pb-cnt').textContent = ta.value.length + '자';
         saveLocal();
         renderMeta();
-        renderRightSoon();      // 코치 열도 따라와야 한다 — 안 그러면 탭을 옮길 때까지 낡은 판단이 최신인 양 보인다
       };
     });
     if($('btnPrev')) $('btnPrev').onclick = function(){ move(-1); };
@@ -2204,6 +2094,22 @@ a{color:inherit}
       '<div class="step-no">STEP ' + stepNo(i) + ' / ' + total + '</div>' +
       '<h2>' + esc(s.title.replace(/^\s*\d+\.\s*/, '')) + '</h2>' +
       '<p class="sub">' + esc(s.subtitle) + '</p>';
+
+    // ── 카드 탭 [작성 | 가이드 | AI 진단] — 탭을 넘겨도 원고는 그대로 남는다(2026-08-20 재디자인) ──
+    var gN = 0;
+    try{ gN = brainItemsFor(s.id).length; }catch(e){}
+    var TABS = ['작성', '가이드' + (gN ? '<span class="n">' + gN + '문항</span>' : ''), 'AI 진단'];
+    h += '<div class="pb-cardtabs">';
+    TABS.forEach(function(t, k){
+      h += '<button class="pb-cardtab' + (k === state.tab ? ' is-on' : '') + '" data-ct="' + k + '">' + t + '</button>';
+    });
+    h += '</div>';
+
+    if(state.tab !== 0){
+      h += coachPanel(s) + '</div>';
+      return h;
+    }
+
     s.inputs.forEach(function(f){
       var v = state.formData[f.key] || '';
       h += '<div class="pb-field">' +
@@ -2218,14 +2124,16 @@ a{color:inherit}
            '<button class="pb-cta sub" id="btnPrev" style="width:auto;padding:11px 20px">← 이전</button>' +
            '<button class="pb-cta" id="btnNext" style="width:auto;padding:11px 20px">' +
              (isLast ? '결과 보기 →' : '다음 →') + '</button>' +
-         '</div></div>';
+         '</div>' +
+         '<p class="pb-cardhint">위 탭에서 가이드·AI 진단을 보실 수 있습니다 — 탭을 넘겨도 원고는 그대로 남습니다.</p>' +
+         '</div>';
     return h;
   }
   function move(d){
     var n = steps().length;
     // ★마지막 단계에서 [다음]은 '결과 보기'다.
     //   전에는 인덱스를 잘라내기만 해 **눌러도 아무 일이 없었다** — 고장으로 보인다.
-    //   마지막이 어디인지는 모드가 정한다: TIPS 꺼짐 = 6 팀·Ask / 켜짐 = 9 글로벌.
+    //   마지막이 어디인지는 모드가 정한다: R&D 꺼짐 = 6 팀·Ask / 켜짐 = 8 성로벌.
     if(d > 0 && state.stepIndex >= n - 1){
       syncToServer();
       goResult();
@@ -2244,12 +2152,8 @@ a{color:inherit}
   //   가이드는 '무엇을 써야 하는가'이고 나머지는 '쓴 것에 대한 평'이다.
   //   ~~"멘토가 맨 앞" 원칙은 폐기했다(민부장 지시 2026-07-30).~~
   //
-  //   가이드 = D5 IR 학습자료 지식체계 문항(①) + B6 전문 관점(②·다음 단계)
-  //            + B1 신청서 재료(③) + 내 배분(④)
-  //   ~~멘토~~ = 2026-08-19 민부장 지시로 탭 삭제(LAGMP 의견 연동과 함께). 관리자 코멘트(노션③)는 서버에 남지만 화면에 안 그린다.
-  //   ~~상장사 대조군~~ = 삭제(민부장 지시). '내 배분'만 가이드로 옮겨 살렸다.
-  var TABS_BASE = ['가이드', 'AI 진단'];   // ~~멘토 탭~~ 2026-08-19 민부장 지시로 삭제(관리자 코멘트는 화면에서 내렸다)
-  function tabs(){ return TABS_BASE; }   // ~~IR 고도화 탭(LAGMP stage2·3)~~ 2026-08-19 제거
+  //   가이드 = D5 IR 학습자료 지식체계 문항(①) + B6 전문 관점(②·다음 단계) + B1 신청서 재료(③)
+  //   ~~멘토·상장사 대조군·분량 배분~~ = 2026-08-19~20 민부장 지시로 전부 삭제(배점·LAGMP 연동 폐기).
 
   //  🔴 어느 탭이든 "여기 내용은 의견일 뿐"임을 밝힌다(민부장 지시).
   //     시스템은 판정자가 아니라 쟁점 제기자다 — 산학협력단 운영지원 AI와 같은 사상.
@@ -2257,30 +2161,22 @@ a{color:inherit}
     '<p class="pb-disclaim">여기 내용은 <b>의견일 뿐이며 참고 자료로 활용</b>하십시오. ' +
     '판정이 아닙니다 — 최종 판단과 책임은 작성자에게 있습니다.</p>';
 
-  function renderRight(){
-    var s = steps()[state.stepIndex];
-    var TABS = tabs();
-    // 탭이 사라지면(의견 소멸·계정 전환) 사라진 탭에 머물러 빈 화면이 남는다
-    if(state.tab >= TABS.length) state.tab = 0;
+  //  카드 안 코치 패널 — 다크 인셋. ~~우측 코치 열(#pbRight)~~ 2026-08-20 재디자인으로 폐지(작성 화면).
+  //  state.tab: 0=작성 · 1=가이드 · 2=AI 진단
+  function coachPanel(s){
+    var h = '<div class="pb-coach"><div class="pb-panel">';
 
-    var h = '<div class="pb-tabs">';
-    TABS.forEach(function(t, i){
-      h += '<button class="pb-tab' + (i === state.tab ? ' is-on' : '') + '" data-t="' + i + '">' +
-           esc(t) + '</button>';
-    });
-    h += '</div><div class="pb-panel">';
-
-    if(state.tab === 0){
-      // ── 가이드 ── ①문항 ②전문 관점 ③신청서 재료 ④내 배분
+    if(state.tab === 1){
+      // ── 가이드 ── ①문항 ②전문 관점 ③신청서 재료
       h += guideBlock(s);
       h += b1RefBlock(s);
-      h += mineBlock(s);
-    } else if(state.tab === 1){
+    } else if(state.tab === 2){
       var dg = state.diags[s.id];
       var dStale = !!dg && dg.hash !== stepHash(s);
       h += '<h5>AI 진단</h5>' +
            '<p>이 단계를 진단하면 심사역 관점의 지적과 개선 문장을 제안합니다. ' +
-           '근거가 필요한 자리는 <b>[__]</b>로 비워 둡니다 — 없는 수치를 만들어 넣지 않기 위해서입니다.</p>';
+           '근거가 필요한 자리는 <b>[__]</b>로 비워 둡니다 — 없는 수치를 만들어 넣지 않기 위해서입니다.</p>' +
+           '<p class="pb-note" style="margin:6px 0 10px">AI 진단은 기업별 10회로 제한됩니다.</p>';
       if(dStale){
         h += '<div class="pb-stalebar"><b>이 진단은 고치기 전 문장에 대한 것입니다.</b>' +
              '<p>' + (dg.at ? esc(String(dg.at).slice(0,16).replace('T',' ')) + ' 진단 이후 ' : '') +
@@ -2289,70 +2185,16 @@ a{color:inherit}
       h += '<button class="pb-inkbtn" id="btnAI">' + (dg ? '다시 진단' : '이 단계 진단받기') + '</button>' +
            '<div id="pbDiag" class="pb-diag' + (dStale ? ' pb-stale' : '') + '"></div>';
     }
-    h += DISCLAIMER + '</div>';
-    $('pbRight').innerHTML = h;
-
-    Array.prototype.forEach.call($('pbRight').querySelectorAll('.pb-tab'), function(b){
-      b.onclick = function(){ state.tab = +b.dataset.t; renderRight(); };
-    });
+    h += DISCLAIMER + '</div></div>';
+    return h;
+  }
+  function bindCoach(s){
     if($('btnAI')){
       $('btnAI').onclick = runDiag;
       if(state.diags[s.id]) renderDiagInto(state.diags[s.id].data);
     }
     if($('btnB1Ref')) $('btnB1Ref').onclick = reloadB1Ref;
     bindGuideToggles();
-  }
-
-  // ★타자 한 자마다 오른쪽을 다시 그리면 깜박이고 무겁다. 손을 멈추면 따라온다.
-  //   코치 열은 #pbRight이고 입력란은 #pbCenter이므로 다시 그려도 포커스를 빼앗지 않는다.
-  var rightTimer = null;
-  function renderRightSoon(){
-    clearTimeout(rightTimer);
-    rightTimer = setTimeout(function(){ if(state.view === 'write') renderRight(); }, 600);
-  }
-
-  // ── 내 배분 ──
-  //  🔴 (기록) 상장사 실측 6·20·7·13%는 **출현율**(그 섹션이 등장한 덱의 비율)이지 분량 비중이 아니다 — 화면에서는 2026-08-19에 뺐다.
-  //     내 글자수 비중과 한 줄에 놓으면 단위가 다른 숫자를 견주는 것이 된다 —
-  //     시스템이 거짓말을 하게 되므로, 분량은 **TIPS 배점 비중**과만 견준다.
-  //     근거: D:\00_기타\22_IR_인텔리전스_허브\docs\IR_뼈대_단계별_비교.md §1
-  var STEP_RUBRIC = { problem:'need', market:'impact', business:'biz', team_ask:'team',
-                      rnd_goal:'fit', rnd_kpi:'exec', rnd_global:'global' };
-  function mineBlock(s){
-    var mine = stepChars(s), total = 0;          // stepChars = 이미 있는 글자수 함수를 그대로 쓴다
-    steps().forEach(function(x){ total += stepChars(x); });
-    if(!total) return '<div class="pb-mine"><h5>내 배분</h5>' +
-      '<p class="vd">아직 쓰신 글이 없습니다. 채우시면 이 단계에 들인 분량을 배점과 견줘 보여드립니다.</p></div>';
-
-    var minePct = Math.round(mine / total * 100);
-    var h = '<div class="pb-mine"><h5>내 배분</h5>' +
-            '<div class="row"><span>이 단계 분량</span><span>' + mine.toLocaleString() + '자 · 전체의 ' + minePct + '%</span></div>' +
-            '<div class="bar"><i style="width:' + Math.min(100, minePct) + '%"></i></div>';
-
-    var rid = STEP_RUBRIC[s.id];
-    var item = null;
-    scorable().forEach(function(it){ if(it.id === rid) item = it; });
-    if(item){
-      var poss = 0;
-      scorable().forEach(function(it){ poss += it.max; });
-      var wantPct = poss ? Math.round(item.max / poss * 100) : 0;
-      var d = minePct - wantPct;
-      h += '<div class="row"><span>TIPS 배점 비중</span><span>' + item.max + '점 · 채점가능 ' + poss + '점의 ' + wantPct + '%</span></div>' +
-           '<div class="bar want"><i style="width:' + Math.min(100, wantPct) + '%"></i></div>' +
-           '<p class="vd">' +
-           (Math.abs(d) <= 5
-              ? '분량과 배점이 대체로 맞습니다.'
-              : (d < 0
-                  ? '<b>배점이 큰데 분량은 얇습니다</b>(' + Math.abs(d) + '%p 차이). 여기서 점수가 새어 나갑니다.'
-                  : '배점보다 두껍게 쓰셨습니다(' + d + '%p 차이). 다른 단계가 얇지 않은지 보십시오.')) +
-           '</p>';
-    } else {
-      h += '<p class="vd">이 단계에 직접 대응하는 TIPS 채점항목은 없습니다' +
-           (s.id === 'solution' ? ' — 기술의 <b>적정성·실현성</b>은 IR이 아니라 R&amp;D 사업계획서가 묻습니다.' : '.') +
-           '</p>';
-    }
-    // ~~상장사 1,344건 출현율 문구~~ = 2026-08-19 민부장 지시로 제거(상장사 대조군 삭제의 마무리). 데이터 필드(corpusNote·corpusShare)도 함께 뺐다.
-    return h + '</div>';
   }
 
   // ══ 가이드 ① — D5 지식체계 문항 ═══════════════════════════════
@@ -2426,7 +2268,7 @@ a{color:inherit}
   }
 
   function bindGuideToggles(){
-    Array.prototype.forEach.call($('pbRight').querySelectorAll('.pb-qmore'), function(b){
+    Array.prototype.forEach.call(document.querySelectorAll('.pb-coach .pb-qmore'), function(b){
       b.onclick = function(){
         var box = $('rx-' + b.dataset.rx);
         if(!box) return;
@@ -2442,7 +2284,7 @@ a{color:inherit}
   //  🔴 숫자로 문장을 조립하지 않는다. "연 480만원 × 3,200곳 = 153억"을 시스템이 만들면
   //     그것은 기업이 쓴 문장이 아니라 시스템의 해석이고, 투자자가 근거를 물으면 팀이 답하지 못한다.
   //     그래서 값만 나란히 놓고, 문장은 사람이 쓴다.
-  //  🔴 ③ 18단계 아이템분석은 여기에 싣지 않는다(미결 1 판단). 심사 배점·비판적 진단이 섞여 있어
+  //  🔴 ③ 아이템분석은 여기에 싣지 않는다(미결 1 판단). 심사 배점·비판적 진단이 섞여 있어
   //     피심사자 본인에게 보이면 변별력이 깨진다 — LAGMP가 applicantdetail에서 막는 것과 같은 이유다.
   var B1_REF_STEPS = {
     cover:    { extra:['사업아이템명'] },
@@ -2537,7 +2379,7 @@ a{color:inherit}
         state.b1ref = d.ref || null;
         state.b1At = new Date().toISOString();
         writeLocal();
-        renderRight();
+        render();                                  // 참고자료 블록을 다시 그린다
       })
       .catch(function(err){ alert('받지 못했습니다 — ' + (err.message || '오류')); })
       .then(function(){
@@ -2562,7 +2404,7 @@ a{color:inherit}
         // ★무엇을 보고 받은 진단인지를 함께 남긴다 — 이 해시가 낡음 판정의 근거다.
         state.diags[s.id] = { data:d, hash:stepHash(s), at:new Date().toISOString() };
         writeLocal();
-        renderRight();                             // 버튼 라벨·낡음 배너까지 다시 그린다
+        render();                                  // 버튼 라벨·낡음 배너까지 다시 그린다
       })
       .catch(function(err){
         renderDiagInto({ verdict:'진단하지 못했습니다 — ' + (err.message || '오류') });
@@ -2637,7 +2479,7 @@ a{color:inherit}
         // ★판단과 그 근거 해시도 같이 남긴다. 이것이 없으면 새로고침 한 번에
         //   "고치기 전 진단"이라는 사실이 사라지고, 낡은 진단이 최신인 양 다시 뜬다.
         diags: state.diags,
-        tipsHash: state.tipsHash, auditHash: state.auditHash,
+        auditHash: state.auditHash,
         // ★신청서 참고자료도 남긴다. 없으면 새로고침 한 번에 참고 열이 통째로 비고,
         //   기업은 "아까는 있었는데"라며 불러오기를 다시 눌러 원고를 통째로 잃는다.
         b1ref: state.b1ref || null, b1At: state.b1At || ''
@@ -2653,9 +2495,9 @@ a{color:inherit}
   function loadLocal(){
     // ★먼저 비운다 — 로그아웃해도 스크립트가 메모리에 남아 앞 기업 내용이 새어 나온다
     state.formData = {}; state.stepIndex = 0; state.completed = false;
-    state.lastTips = null; state.lastAudit = null; state.lastGate = null; state.lastDeck = null;
+    state.lastAudit = null; state.lastDeck = null;
     // ★진단·기준선도 반드시 비운다. 칸만 갈라두면 A기업이 받은 진단이 B기업 화면에 남는다.
-    state.diags = {}; state.tipsHash = ''; state.auditHash = '';
+    state.diags = {}; state.auditHash = '';
     // ★신청서 참고자료는 그 기업의 신청 내용이다 — 계정을 갈면 반드시 비운다.
     //   칸(localStorage 키)만 갈라두면 A기업의 신청서가 B기업 코치 열에 그대로 남는다.
     state.b1ref = null; state.b1At = '';
@@ -2670,7 +2512,6 @@ a{color:inherit}
         state.stepIndex = Math.min(+s.stepIndex || 0, steps().length - 1);
         state.completed = !!s.completed;
         state.diags      = (s.diags && typeof s.diags === 'object') ? s.diags : {};
-        state.tipsHash   = s.tipsHash || '';
         state.auditHash  = s.auditHash || '';
         state.b1ref      = (s.b1ref && typeof s.b1ref === 'object') ? s.b1ref : null;
         state.b1At       = s.b1At || '';
@@ -2709,11 +2550,15 @@ a{color:inherit}
 
   function render(){
     syncHeader();
+    // ★우측 열은 작성 화면에서 쓰지 않는다(2026-08-20 재디자인) — 코치는 카드 안 탭으로 들어갔다.
+    var noR = (state.view === 'write' || !state.view);
+    $('pbRight').classList.toggle('hidden', noR);
+    $('pbShell').classList.toggle('no-right', noR);
     if(state.view === 'result'){ renderResultView(); return; }
     if(state.view === 'deck'){   renderDeckView();   return; }
     if(state.view === 'admin'){  renderAdminView();  return; }
     $('pbCenter').style.padding = '';
-    renderLeft(); renderCenter(); renderRight(); renderMeta();
+    renderLeft(); renderCenter(); renderMeta();
   }
   function goResult(){ state.view = 'result'; state.stepIndex = 0; render(); window.scrollTo(0,0); }
   function goWrite(){  state.view = 'write';  render(); window.scrollTo(0,0); }
@@ -2804,6 +2649,7 @@ a{color:inherit}
          '도식은 「프로그램용 도식 라이브러리」 규격(960×540)입니다.</p>' +
          '<div class="sp"></div>' +
          '<button class="pb-cta" id="dkPdf">PDF 다운로드</button>' +
+         '<button class="pb-cta sub" style="margin-top:8px" id="dkPpt">PPT 다운로드</button>' +
          '<button class="pb-cta sub" style="margin-top:8px" id="dkPrint">인쇄로 저장(대체 경로)</button>' +
          '<button class="pb-cta sub" style="margin-top:8px" id="dkKeep">이 자료 보관</button>' +
          '<button class="pb-cta sub" style="margin-top:8px" id="dkRegen">자료 전체 다시 만들기</button>' +
@@ -2818,6 +2664,7 @@ a{color:inherit}
     });
     if($('ckRnd')) $('ckRnd').onchange = function(){ state.deckRnd = this.checked; render(); };
     $('dkPdf').onclick   = function(){ exportDeckPdf(this); };
+    $('dkPpt').onclick   = function(){ exportDeckPpt(this); };
     $('dkPrint').onclick = function(){
       document.body.classList.add('deck-print');
       window.print();
@@ -3044,6 +2891,69 @@ a{color:inherit}
     });
   }
 
+  // 덱 → PPTX (2026-08-20 민부장 지시 · grilling Q8=(a) 이미지 기반).
+  //  ★슬라이드는 고해상 PNG 한 장으로 넣는다 — 글꼴(Noto Sans KR·Archivo)이 없는 PC에서도 디자인이 안 깨진다.
+  //  ★대신 제목·본문 텍스트를 발표자 노트에 함께 넣는다 — 고칠 재료는 글자로 준다.
+  //  ★pptxgenjs 도 PDF 라이브러리처럼 **누를 때만** 불러온다(평소 script CDN 0 유지).
+  var PPT_LIB = 'https://cdnjs.cloudflare.com/ajax/libs/PptxGenJS/3.12.0/pptxgen.bundle.min.js';
+  function exportDeckPpt(btn){
+    var slides = Array.prototype.filter.call(document.querySelectorAll('#pbCenter .pb-slide'), function(x){
+      return !x.classList.contains('is-empty');
+    });
+    if(!slides.length){ alert('내보낼 슬라이드가 없습니다.'); return; }
+    var label = btn ? btn.textContent : '';
+    if(btn){ btn.disabled = true; btn.textContent = 'PPT 준비 중…'; }
+    document.body.classList.add('pb-pdfing');
+
+    var stage = document.createElement('div');
+    stage.style.cssText = 'position:fixed;left:-20000px;top:0;width:960px;background:#fff;z-index:-1';
+    document.body.appendChild(stage);
+
+    loadScriptOnce(PDF_LIBS[0])                       // html2canvas
+      .then(function(){ return loadScriptOnce(PPT_LIB); })
+      .then(function(){
+        if(!window.html2canvas || !window.PptxGenJS) throw new Error('ppt libs');
+        var pptx = new window.PptxGenJS();
+        pptx.defineLayout({ name:'PB169', width:10, height:5.625 });   // 960×540 비율 그대로
+        pptx.layout = 'PB169';
+        var chain = Promise.resolve();
+        slides.forEach(function(src){
+          chain = chain.then(function(){
+            var cl = src.cloneNode(true);
+            cl.style.transform = 'none'; cl.style.position = 'relative'; cl.style.left = '0'; cl.style.top = '0';
+            flattenFields(cl);
+            stage.innerHTML = ''; stage.appendChild(cl);
+            return window.html2canvas(cl, { scale:2, backgroundColor:'#ffffff', useCORS:true, logging:false, width:960, height:540 })
+              .then(function(cv){
+                var sl = pptx.addSlide();
+                sl.addImage({ data: cv.toDataURL('image/png'), x:0, y:0, w:10, h:5.625 });
+                // 발표자 노트 = 그 장의 텍스트(수정 재료)
+                var note = [];
+                Array.prototype.forEach.call(src.querySelectorAll('.s-head,.s-sub,.s-bullets li,[data-dk]'), function(t){
+                  var v = (t.value != null ? t.value : t.textContent) || '';
+                  v = v.replace(/\s+/g, ' ').trim();
+                  if(v && note.indexOf(v) < 0) note.push(v);
+                });
+                if(!note.length) note.push((src.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 800));
+                sl.addNotes(note.join('\n'));
+              });
+          });
+        });
+        return chain.then(function(){
+          return pptx.writeFile({ fileName: pdfFileName('IR피칭자료').replace(/\.pdf$/, '.pptx') });
+        });
+      })
+      .catch(function(err){
+        console.warn('PPT', err);
+        alert('PPT 생성 라이브러리를 불러오지 못했습니다(네트워크 차단 가능).\n\nPDF 다운로드 또는 인쇄 저장을 이용하십시오.');
+      })
+      .then(function(){
+        stage.remove();
+        document.body.classList.remove('pb-pdfing');
+        if(btn){ btn.disabled = false; btn.textContent = label; }
+      });
+  }
+
   // 결과 화면의 IR 본문·도식 → A4 세로 여러 쪽.
   //  ★한 장짜리 긴 캔버스를 쪽 높이로 자르면 글줄 한가운데가 잘린다(2026-08-19 실측) —
   //    그래서 블록(머리글·단계별 절·도식 카드) 단위로 따로 찍어 쪽에 채워 넣는다. 블록 하나가 한 쪽보다 길면 그때만 자른다.
@@ -3239,7 +3149,7 @@ a{color:inherit}
             '<p class="fine">여기서 정한 값이 <b>전 계정의 다음 접속</b>에 그대로 적용됩니다. ' +
             '팀에게는 설정 화면이 없습니다.</p>' +
             '<label style="display:flex;gap:9px;align-items:center;margin-top:12px;font-size:14px">' +
-              '<input type="checkbox" id="cfgTips"' + (llm.tipsMode ? ' checked' : '') + '> TIPS 준비 모드(9단계)</label>' +
+              '<input type="checkbox" id="cfgTips"' + (llm.tipsMode ? ' checked' : '') + '> R&D 대응 단계(8단계)</label>' +
             '<button class="pb-cta sub" style="margin-top:12px" id="cfgApply">전체 적용</button>' +
             '<div class="sp"></div>' +
             '<button class="pb-cta sub" id="adWrite">내 IR 작성 화면</button>';
@@ -3285,7 +3195,7 @@ a{color:inherit}
       h += '<button class="pb-aprow" data-nm="' + esc(x.company) + '" data-cid="' + esc(x.cid || '') + '">' +
              '<b>' + esc(x.company || '(이름 없음)') + '</b>' +
              '<span>' + esc(x.cid || '') + '</span>' +
-             '<em>' + (w ? '작성 ' + (w.filled != null ? w.filled + '/17' : '있음') + (w.status === '제출' ? ' · 제출' : '') : '미작성') + '</em>' +
+             '<em>' + (w ? '작성 ' + (w.filled != null ? Math.round((+w.filled || 0) * 16) + '/16' : '있음') + (w.status === '제출' ? ' · 제출' : '') : '미작성') + '</em>' +
            '</button>';
     });
     if(list.length > 200) h += '<p class="pb-note">' + (list.length - 200) + '곳 더 있습니다 — 검색어를 좁히십시오.</p>';
@@ -3314,7 +3224,7 @@ a{color:inherit}
            '<h3>참여기업 리스트</h3>' +
            '<p class="pb-note" style="margin-bottom:12px">이노테크 접수 명부입니다. ' +
            '이름을 치거나 목록에서 고르시면 <b>그 기업의 IR 원고가 열립니다</b>(관리자 권한으로 직접 고치는 대리 편집). ' +
-           '(주)·주식회사는 빼고 검색해도 찾습니다. 오른쪽에 작성 진행(작성 n/17 · 제출)이 함께 보입니다.<br>' +
+           '(주)·주식회사는 빼고 검색해도 찾습니다. 오른쪽에 작성 진행(작성 n/16 · 제출)이 함께 보입니다.<br>' +
            '<span style="color:var(--pb-ink-3)">※ 여기는 <b>누구를</b> 작업할지 고르는 곳입니다. ' +
            '기업을 연 뒤 상단 [신청서 내용 가져오기]를 누르면 <b>그 기업이 낸 린캔버스로 작성칸이 채워집니다.</b></span></p>' +
            '<input id="apQ" class="pb-apq" placeholder="기업명 또는 접수번호 — 예: 엑스업 · ITC2026-002" ' +
@@ -3425,6 +3335,7 @@ a{color:inherit}
         state.auditHash = irHash();               // 무엇을 보고 한 진단인지 기억한다
         writeLocal();
         renderAuditBox(); renderMeta(); syncToServer();
+        if(state.view === 'result') renderResultRight();   // 우측 투자자 점검표도 같이 갱신(2026-08-20)
       })
       .catch(function(err){
         $('auditBox').innerHTML = '<div class="pb-warnbox" style="margin-top:14px">진단하지 못했습니다 — ' +
@@ -3527,10 +3438,9 @@ a{color:inherit}
   //  ①(단계별 원고)은 덮어쓰지만 ④는 만들 때마다 쌓인다 — 지난 덱을 되찾을 수 있어야 한다.
   function saveOutput(kind, btn){
     if(!serverOn()){ alert('서버에 연결돼 있지 않아 보관할 수 없습니다.'); return; }
-    // ★낡은 채점·감수가 한 벌로 묶여 ④에 쌓이면, 나중에 되찾을 때 그것이 '그때의 점수'로 읽힌다.
+    // ★낡은 진단이 한 벌로 묶여 ④에 쌓이면, 나중에 되찾을 때 그것이 '그때의 점수'로 읽힌다.
     //   보관을 막지는 않는다 — 원고만 보관하려는 경우도 있다. 다만 모르고 넘어가게 두지 않는다.
     var st = [];
-    if(irStale(state.tipsHash))  st.push('TIPS 채점');
     if(irStale(state.auditHash)) st.push('투자논리 진단');
     if(st.length && !confirm(
         st.join('·') + '은 지금 원고보다 낡았습니다(고치신 뒤 다시 하지 않았습니다).\n\n' +
@@ -3625,9 +3535,6 @@ a{color:inherit}
   }
 
   // ══ 결과 화면 ═════════════════════════════════════════════════
-  function canScore(it){ return it.coverage !== 'none' || (llm.tipsMode && it.tipsFields); }
-  function scorable(){ return TIPS_RUBRIC.items.filter(canScore); }
-
   function renderResultView(){
     renderMeta();
     renderResultLeft();
@@ -3636,13 +3543,12 @@ a{color:inherit}
   }
 
   function renderResultLeft(){
-    var h = '<h4>결과<em>' + (llm.tipsMode ? '9단계' : '6단계') + '</em></h4>' +
+    var h = '<h4>결과<em>' + (llm.tipsMode ? '8단계' : '6단계') + '</em></h4>' +
             '<button class="pb-nav" id="rlIR">IR 본문</button>' +
             '<button class="pb-nav" id="rlFig">도식</button>' +
-            '<button class="pb-nav" id="rlGate">TIPS 자격 요건</button>' +
             '<div class="pb-hr"></div>' +
-            '<p class="fine">진단·채점표는 화면에서만 봅니다. 인쇄하면 IR 본문과 도식만 나갑니다 — ' +
-            '투자자에게 보내는 자료에 채점표가 실리면 안 되기 때문입니다.</p>' +
+            '<p class="fine">진단·코칭 메모는 화면에서만 봅니다. 인쇄하면 IR 본문과 도식만 나갑니다 — ' +
+            '투자자에게 보내는 자료에 코칭 메모가 실리면 안 되기 때문입니다.</p>' +
             '<div class="sp"></div>' +
             '<button class="pb-cta" id="rlDeck">IR 피칭 자료 만들기 (도식·PDF)</button>' +
             '<button class="pb-cta sub" style="margin-top:8px" id="rlPrint">IR 본문 PDF 다운로드</button>' +
@@ -3651,7 +3557,6 @@ a{color:inherit}
     var go = function(id){ var el = document.getElementById(id); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); };
     $('rlIR').onclick   = function(){ go('secIR'); };
     $('rlFig').onclick  = function(){ go('secFig'); };
-    $('rlGate').onclick = function(){ go('secGate'); };
     $('rlPrint').onclick= function(){ exportFlowPdf([$('secIR'), $('secFig')], 'IR본문', this); };
     $('rlDeck').onclick = goDeck;
     $('rlBack').onclick = goWrite;
@@ -3692,21 +3597,6 @@ a{color:inherit}
            '<div id="figBox"></div>' +
          '</div>';
 
-    // ── 자격 게이트 ── 🔴 TIPS 준비 모드일 때만 나타난다.
-    //    TIPS를 준비하지 않는 팀에게 신청 자격·배점표를 들이밀면, 쓰지도 않을 기준으로
-    //    자기 IR을 재게 된다. 필요 없는 판단 기준은 보여주지 않는 것이 낫다.
-    if(llm.tipsMode){
-      h += '<div id="secGate" class="pb-card pb-noprint" style="margin-top:18px">' +
-             '<h3>TIPS 신청 자격</h3>' +
-             '<p class="pb-note" style="margin-bottom:14px">하나라도 미달이면 채점을 시작하지 않습니다. ' +
-             '자격이 없으면 점수가 아무 의미가 없기 때문입니다.</p>' +
-             '<div class="pb-gate" id="gateBox"></div>' +
-             '<button class="pb-cta" style="margin-top:18px" id="btnTips">' +
-               (state.lastTips ? 'TIPS 기준으로 다시 채점하기' : 'TIPS 기준으로 채점하기') + '</button>' +
-             '<div id="gateMsg"></div>' +
-           '</div>';
-    }
-
     // ── 투자논리 진단(7축) · 제출 ──
     h += '<div class="pb-card pb-noprint" style="margin-top:18px">' +
            '<h3>투자논리 진단 <span class="pb-note" style="font:inherit;font-size:13px">7축 · 점수 없음</span></h3>' +
@@ -3732,233 +3622,51 @@ a{color:inherit}
            '<button class="pb-cta sub" style="margin-top:14px;margin-left:8px;width:auto;padding:11px 18px" id="btnKeepIR">' +
              '이 상태로 보관</button>' +
            '<p class="pb-note" style="margin-top:10px">보관은 제출과 다릅니다. ' +
-           '지금 원고·채점·도식을 <b>한 벌 통째로</b> 노션에 쌓아 둡니다 — 나중에 되찾아 견줄 수 있습니다.</p>' +
+           '지금 원고·진단·도식을 <b>한 벌 통째로</b> 노션에 쌓아 둡니다 — 나중에 되찾아 견줄 수 있습니다.</p>' +
          '</div>';
 
     $('pbCenter').innerHTML = h;
-    if(llm.tipsMode) renderGate();
     if(state.lastDiagrams) renderFigures(state.lastDiagrams);
     if(state.lastAudit) renderAuditBox();
     $('btnFig').onclick    = runDiagrams;
-    // TIPS 모드가 꺼져 있으면 게이트 블록 자체가 없다 — 없는 요소에 핸들러를 걸면 화면이 죽는다
-    if($('btnTips')) $('btnTips').onclick = runTips;
     $('btnAudit').onclick  = runAudit;
     $('btnSubmit').onclick = doSubmit;
     $('btnKeepIR').onclick = function(){ saveOutput('IR 완성본', this); };
   }
 
-  // ── 자격 게이트 ──
-  function renderGate(){
-    var saved = {};
-    try{ saved = JSON.parse(localStorage.getItem(tkey()) || '{}') || {}; }catch(e){}
-    var h = '';
-    TIPS_GATE.forEach(function(g){
-      var cur = saved[g.id] || '';
-      var isFail = cur === g.fail;
-      h += '<div class="g' + (isFail ? ' is-fail' : '') + '"><b>' + esc(g.q) + '</b>' +
-           '<select id="g-' + g.id + '" data-g="' + g.id + '">' +
-             '<option value="">선택하십시오</option>' +
-             g.opts.map(function(o){
-               return '<option value="' + esc(o.v) + '"' + (cur === o.v ? ' selected' : '') + '>' + esc(o.t) + '</option>';
-             }).join('') +
-           '</select>' +
-           (isFail ? '<div class="why">' + esc(g.why) + '</div>' : '') +
-         '</div>';
-    });
-    $('gateBox').innerHTML = h;
-    Array.prototype.forEach.call($('gateBox').querySelectorAll('select'), function(sel){
-      sel.onchange = function(){ readGate(); renderGate(); };
-    });
-  }
-  function readGate(){
-    var ans = {};
-    TIPS_GATE.forEach(function(g){
-      var s = document.getElementById('g-' + g.id);
-      ans[g.id] = s ? s.value : '';
-    });
-    try{ localStorage.setItem(tkey(), JSON.stringify(ans)); }catch(e){}
-    return ans;
-  }
-  function checkGate(ans){
-    var failed = [];
-    TIPS_GATE.forEach(function(g){ if(ans[g.id] === g.fail) failed.push({ q:g.q, why:g.why }); });
-    return failed;
-  }
-
-  // ── TIPS 채점 ──
-  function tipsPrompt(){
-    var items = scorable();
-    var lines = items.map(function(it){
-      return '### ' + it.id + ' — ' + it.name + ' (' + it.cat + ', 배점 ' + it.max + '점)\n' +
-             '평가지표: ' + it.criteria;
-    }).join('\n\n');
-    return [
-      '아래 창업팀의 IR을 **TIPS 선정평가표**로 채점하라. 너는 TIPS 평가위원이다.',
-      '',
-      '# 채점할 항목 (이것만 채점한다. 목록에 없는 항목은 건드리지 마라)',
-      lines,
-      '',
-      '# 창업팀의 IR',
-      contextBlock(null),
-      '',
-      '# 채점 규칙 (반드시 지켜라)',
-      '- 등급은 S / A / B / C / D 다섯 중 하나다. S=탁월, A=우수, B=보통, C=미흡, D=매우미흡.',
-      '- **점수(숫자)를 계산하지 마라.** 등급만 내라. 합산은 시스템이 한다.',
-      '- **evidence에는 IR 원문 문장을 그대로 인용하라.** 요약하거나 바꿔 쓰지 마라.',
-      '- ★**인용할 원문이 없으면 그 항목의 등급은 D이고 evidence는 빈 문자열이다.** 없는 근거를 지어내면 실패다.',
-      '- fix는 그 항목의 점수를 올리려면 **무엇을 추가로 써야 하는지** 구체적으로 적어라. "더 구체적으로"는 금지다.',
-      llm.reviewer ? '- (심사자 모드) risk에는 평가위원이 감점할 지점을, ask에는 발표 질의응답에서 던질 질문을 적어라.' : '',
-      '',
-      '# 출력 JSON',
-      '{ "scores": [{ "id":"' + items.map(function(i){ return i.id; }).join('" | "') + '",',
-      '               "grade":"S"|"A"|"B"|"C"|"D",',
-      '               "evidence":"IR 원문 인용 (없으면 \\"\\")",',
-      '               "reason":"그 등급을 준 이유 한 문장",',
-      '               "fix":"점수를 올리려면 무엇을 써야 하는가"' +
-                     (llm.reviewer ? ',\n               "risk":"평가위원이 감점할 지점",\n               "ask":"발표 질의응답에서 나올 질문"' : '') + ' }] }',
-      '',
-      'scores는 위 ' + items.length + '개 항목 전부에 대해 정확히 ' + items.length + '개를 내라.'
-    ].filter(Boolean).join('\n');
-  }
-
-  function runTips(){
-    if(busy) return;
-    var ans = readGate();
-    var failed = checkGate(ans);
-    if(failed.length){
-      // ★자격 미달이면 LLM을 부르지 않는다. 자격이 없으면 점수가 무의미하다.
-      $('gateMsg').innerHTML = '<div class="pb-warnbox" style="margin-top:14px"><b>신청 자격에 미달합니다 — 채점을 시작하지 않았습니다.</b><br>' +
-        failed.map(function(f){ return '· ' + esc(f.q) + ' — ' + esc(f.why); }).join('<br>') + '</div>';
-      state.lastGate = { ok:false, failed:failed, answers:ans };
-      syncToServer();                                  // 자격 미달도 이력에 남긴다(왜 떨어졌는지가 정보다)
-      return;
-    }
-    $('gateMsg').innerHTML = '';
-    state.lastGate = { ok:true, answers:ans };
-
-    var btn = $('btnTips');
-    busy = true; btn.disabled = true; btn.textContent = '채점 중…';
-    callLLM(SYSTEM, tipsPrompt())
-      .then(function(d){
-        state.lastTips = buildTips(d);
-        state.tipsHash = irHash();                // 무엇을 보고 낸 점수인지 기억한다
-        writeLocal();
-        renderResultRight();
-        renderMeta();
-        syncToServer();
-      })
-      .catch(function(err){
-        $('gateMsg').innerHTML = '<div class="pb-warnbox" style="margin-top:14px">채점하지 못했습니다 — ' + esc(err.message || '오류') + '</div>';
-      })
-      .then(function(){
-        busy = false;
-        if($('btnTips')){
-          $('btnTips').disabled = false;
-          $('btnTips').textContent = state.lastTips ? 'TIPS 기준으로 다시 채점하기' : 'TIPS 기준으로 채점하기';
-        }
-      });
-  }
-
-  // ★점수 합산은 코드가 한다. LLM에 산수를 시키지 않는다.
-  function buildTips(d){
-    var byId = {};
-    arr(d && d.scores).forEach(function(s){ if(s && s.id) byId[s.id] = s; });
-
-    var got = 0, poss = 0, na = 0, unverified = 0, rows = [];
-    TIPS_RUBRIC.items.forEach(function(it){
-      var ok = canScore(it), s = byId[it.id];
-      if(!ok || !s){
-        na += it.max;
-        rows.push({ item:it, grade:'NA', pts:0, missed: ok && !s });
-        return;
-      }
-      var gi = TIPS_RUBRIC.gradePoints.indexOf(s.grade);
-      var pts = gi >= 0 ? it.pts[gi] : 0;
-      poss += it.max; got += pts;
-      var ev = s.evidence || '';
-      var verified = ev ? !!verifyEvidence(ev) : null;
-      if(ev && !verified) unverified++;
-      rows.push({ item:it, grade:(gi >= 0 ? s.grade : 'D'), pts:pts, evidence:ev,
-                  verified:verified, reason:s.reason || '', fix:s.fix || '',
-                  risk:s.risk || '', ask:s.ask || '' });
-    });
-    return { got:got, poss:poss, na:na, unverified:unverified, rows:rows,
-             rubric:TIPS_RUBRIC.name, source:TIPS_RUBRIC.source, passMark:TIPS_RUBRIC.passMark,
-             scoredAt:new Date().toISOString() };
-  }
-
+  //  ── 투자자 점검표 ── '말했다 / 아직'. 재료 = 투자논리 진단(7축) 결과 — 별도 판정을 새로 만들지 않는다(2026-08-20).
   function renderResultRight(){
-    var t = state.lastTips;
-    var h = '<div class="pb-panel">';
-    if(!t){
-      h += '<h5>TIPS 진단</h5><p>왼쪽에서 자격 요건을 고르신 뒤 <b>채점하기</b>를 누르십시오.</p>' +
-           '<p class="pb-note" style="margin-top:14px;color:var(--pb-on-ink-4)">' +
-           '배점과 등급점수는 공식 원문입니다. 다만 S~D 판정 기준선은 공식 문서에 없어 ' +
-           '이 도구의 자체 정의입니다 — 점수를 공식인 것처럼 쓰지 마십시오.</p>';
+    var a = state.lastAudit;
+    var h = '<div class="pb-panel"><h5>투자자 점검표</h5>';
+    if(!a || a.kind !== 'axis'){
+      h += '<p>가운데 <b>[투자논리 진단]</b>을 받으시면 이 자리에 「말했다 / 아직」 점검표가 채워집니다.</p>' +
+           '<p class="pb-note" style="margin-top:12px;color:var(--pb-on-ink-4)">점수를 매기지 않습니다. 무엇을 아직 말하지 않았는지만 짚습니다.</p>';
     } else {
-      var pct = t.poss ? Math.round(t.got / t.poss * 100) : 0;
-      var tStale = irStale(state.tipsHash);
-      if(tStale){
-        // ★점수는 지우지 않는다. 다만 지금 원고의 점수가 아니라는 것을 분명히 한다 —
-        //   낡은 점수를 최신인 양 보관·제출하면 그것이 곧 잘못된 판단의 근거가 된다.
-        h += '<div class="pb-stalebar"><b>이 점수는 고치기 전 IR의 점수입니다.</b>' +
-             '<p>채점 이후 원고를 고치셨습니다. 지금 점수를 알려면 다시 채점하십시오.</p></div>';
+      if(irStale(state.auditHash)){
+        h += '<div class="pb-stalebar"><b>고치기 전 원고 기준입니다.</b><p>진단 이후 원고를 고치셨습니다 — 다시 진단하시면 갱신됩니다.</p></div>';
       }
-      h += '<div class="pb-score' + (tStale ? ' pb-stale' : '') + '"><b>' + t.got + '</b><span>/ ' + t.poss + '점 (' + pct + '%)</span></div>';
-      if(t.unverified){
-        h += '<div class="pb-sdet"><span class="bad">근거 미확인 ' + t.unverified + '건 — ' +
-             'AI가 IR에 없는 문장을 인용했습니다. 이 채점을 신뢰하지 마십시오.</span></div>';
-      }
-      t.rows.forEach(function(r){
-        var na = r.grade === 'NA';
-        h += '<div class="pb-srow' + (na ? ' na' : '') + '">' +
-               '<span class="nm">' + esc(r.item.name) + '</span>' +
-               '<span class="pt">' + r.item.max + '</span>' +
-               '<span class="gd">' + (na ? '—' : esc(r.grade)) + '</span>' +
-             '</div>';
-        if(na){
-          h += '<div class="pb-sdet">' + (r.item.gapHint || 'IR에 없는 정보입니다.') + '</div>';
+      var yet = [];
+      a.axes.forEach(function(ax){
+        var nm = String(ax.name || '').split(' · ')[1] || ax.name;
+        if(ax.claims.length){
+          h += '<div class="pb-ck ok"><span>✓</span>' + esc(nm) + ' — ' + ax.claims.length + '건 말했습니다</div>';
         } else {
-          h += '<div class="pb-sdet">';
-          if(r.evidence){
-            h += '<q>' + esc(r.evidence) + '</q>';
-            if(!r.verified) h += ' <span class="bad">⚠ 원문에서 확인되지 않았습니다</span>';
-          } else {
-            h += '<span class="bad">IR에서 근거를 찾지 못했습니다.</span>';
-          }
-          if(r.reason) h += '<br>' + esc(r.reason);
-          if(r.fix) h += '<span class="fix">→ ' + esc(r.fix) + '</span>';
-          if(llm.reviewer && (r.risk || r.ask)){
-            h += '<span class="fix" style="color:var(--pb-warn-txt-on-ink)">🔒 ' +
-                 esc(r.risk || '') + (r.ask ? ' / Q. ' + esc(r.ask) : '') + '</span>';
-          }
-          h += '</div>';
+          h += '<div class="pb-ck yet"><span>—</span>' + esc(nm) + ' — 아직 말하지 않았습니다</div>';
         }
+        ax.missing.forEach(function(m){ yet.push(m); });
       });
-      // ★가장 중요한 메시지 — 지금 그릇으로 60점에 닿을 수 있는가
-      h += '<div class="pb-sdet" style="margin-top:14px;border-top:1px solid var(--pb-on-ink-line);padding-top:14px">' +
-           '<b style="color:var(--pb-paper)">TIPS는 종합 ' + t.passMark + '점 미만이면 지원제외입니다.</b><br>';
-      if(!llm.tipsMode){
-        h += '채점하지 못한 <b>' + t.na + '점</b>은 IR이 아니라 <b>R&amp;D 사업계획서</b>에서 나옵니다. ' +
-             'IR 6단계를 아무리 잘 써도 ' + t.passMark + '점에 닿을 수 없습니다 — ' +
-             '<b>TIPS 준비 모드</b>를 켜면 90점까지 채점됩니다.';
-      } else {
-        var reach = t.got + 10;
-        h += '남은 <b>' + t.na + '점(운영사 지원계획)</b>은 추천 운영사가 작성합니다. ' +
-             (t.got >= t.passMark
-               ? '창업팀 몫만으로 이미 ' + t.passMark + '점을 넘겼습니다.'
-               : '창업팀 몫 + 운영사 최대 10점 = <b>최대 ' + reach + '점</b>입니다. ' +
-                 (reach >= t.passMark ? '운영사 점수에 기대야 하는 위태로운 상태입니다.'
-                                      : '<b>운영사가 만점을 받아도 미달합니다.</b>'));
+      a.edges.forEach(function(e){ if(e.status === 'BROKEN' && e.why) yet.push(e.why); });
+      if(yet.length){
+        h += '<div class="pb-hr" style="margin:12px 0"></div><p class="pb-note" style="margin-bottom:6px">아직 —</p>';
+        yet.slice(0, 8).forEach(function(t){ h += '<div class="pb-ck yet"><span>—</span>' + esc(t) + '</div>'; });
+        if(yet.length > 8) h += '<p class="pb-note">외 ' + (yet.length - 8) + '건 — 가운데 진단 상세에 있습니다.</p>';
       }
-      h += '</div><p class="pb-note" style="margin-top:12px;color:var(--pb-on-ink-4)">' +
-           esc(t.source) + '</p>';
     }
-    h += '</div>';
+    h += '<p class="pb-note" style="margin-top:14px;color:var(--pb-on-ink-4)">코칭 메모는 PDF에 실리지 않습니다.</p></div>';
     $('pbRight').innerHTML = h;
   }
 
-  // ── 도식 ──
+
   function runDiagrams(){
     if(busy) return;
     var btn = $('btnFig');
@@ -4060,7 +3768,7 @@ a{color:inherit}
       body: JSON.stringify({
         systemInstruction:{ parts:[{ text:system }] },
         contents:[{ role:'user', parts:[{ text:user }] }],
-        // ★TIPS 채점은 8항목 × (근거·이유·보완·감점·질문)이라 응답이 길다.
+        // ★투자논리 진단·덱은 응답이 길다.
         //   2048로는 잘려 MAX_TOKENS가 난다 — JSON 파싱 실패의 진짜 원인이 이것이었다.
         generationConfig:{ temperature:0.4, responseMimeType:'application/json', maxOutputTokens:8192 }
       })
@@ -4129,17 +3837,15 @@ a{color:inherit}
       exportedAt: new Date().toISOString(),
       company: state.formData.companyName || '',
       cid: state.cid || '',
-      mode: llm.tipsMode ? 'TIPS 9단계' : 'IR 6단계',
+      mode: llm.tipsMode ? 'IR 8단계' : 'IR 6단계',
       model: llm.model,
       formData: state.formData,
-      gate: state.lastGate || null,
-      tips: state.lastTips || null,
       audit: state.lastAudit || null,
-      // ★"이 점수는 어느 원고의 것인가"를 서버에도 넘긴다.
+      // ★"이 진단은 어느 원고의 것인가"를 서버에도 넘긴다.
       //   지금까지 낡음 판정은 이 브라우저만 알았다 — 노션을 보는 사람은 점수만 보고
       //   그것이 이미 고친 원고 이전의 것인지 알 수 없었다(설계정본 미결 6).
       irHash: irHash(),
-      tipsHash: state.tipsHash || ''
+      irHash: irHash()
     };
   }
   // ★빈 값은 보내지 않는다.
@@ -4192,19 +3898,17 @@ a{color:inherit}
       if(typeof fd[k] === 'string') state.formData[k] = fd[k];
     });
     state.cid        = s.cid || '';
-    state.lastTips   = s.tips || null;
     state.lastAudit  = s.audit || null;
-    state.lastGate   = s.gate || null;
     state.status     = s.status || '';
     state.submittedAt= s.submittedAt || '';
     // ★단계별 진단은 이 원고에 대한 것이 아니다 — 다른 PC에서 쓴 원고를 받아왔을 수도 있다.
     state.diags = {};
-    // ★채점·감수는 받아 쓰지만 '무엇을 보고 낸 것인지'는 모른다.
+    // ★진단은 받아 쓰지만 '무엇을 보고 낸 것인지'는 모른다.
     //   모르는 것을 낡았다고 하지도, 최신이라고 하지도 않는다 → 빈 해시 = 판정 불가.
-    state.tipsHash = ''; state.auditHash = '';
+    state.auditHash = '';
 
-    // ★R&D 항목이 있으면 TIPS 모드를 켠다 — 안 켜면 그 입력이 화면에서 사라진다
-    var hasRnd = ['devGoal','devPrior','devKpi','devVerify','globalPlan'].some(function(k){
+    // ★R&D 항목이 있으면 R&D 대응을 켠다 — 안 켜면 그 입력이 화면에서 사라진다
+    var hasRnd = ['devGoal','devPrior','devKpi','devVerify'].some(function(k){
       return (state.formData[k] || '').trim();
     });
     if(hasRnd && !llm.tipsMode){
@@ -4243,8 +3947,8 @@ a{color:inherit}
     if(written && !confirm(
         '신청서 내용으로 ' + written + '개 칸이 통째로 대체됩니다.\n\n' +
         '지금까지 고치신 내용은 사라집니다' +
-        (llm.tipsMode ? ' (R&D 3단계 포함).' : '.') + '\n' +
-        'AI 진단·TIPS 채점 결과도 함께 지워집니다.\n\n계속할까요?')) return;
+        (llm.tipsMode ? ' (R&D 2단계 포함).' : '.') + '\n' +
+        'AI 진단·투자논리 진단 결과도 함께 지워집니다.\n\n계속할까요?')) return;
 
     var btn = $('hdB1');
     busy = true; btn.disabled = true; btn.textContent = '불러오는 중…';
@@ -4264,9 +3968,9 @@ a{color:inherit}
           }
         });
         // 내용이 통째로 바뀌었으므로 그 위에서 나온 판단은 전부 버린다
-        state.diags = {}; state.lastTips = null; state.lastAudit = null;
+        state.diags = {}; state.lastAudit = null;
         state.lastDiagrams = null; state.lastDeck = null;
-        state.tipsHash = ''; state.auditHash = '';
+        state.auditHash = '';
         state.b1ref = d.ref || null;
         state.b1At = new Date().toISOString();
         state.stepIndex = 0;
@@ -4352,7 +4056,7 @@ a{color:inherit}
       $('hdTips').parentNode.insertBefore(b, $('hdTips'));
     }
 
-    // ★기업은 처음 한 번 TIPS 준비 여부를 정한다. 관리자는 묻지 않는다(전체 설정을 다루는 쪽이다).
+    // ★기업은 처음 한 번 R&D 대응 여부를 정한다. 관리자는 묻지 않는다(전체 설정을 다루는 쪽이다).
     if(!isAdmin()){
       var ch = tipsChoice();
       if(ch === 'yes' || ch === 'no') llm.tipsMode = (ch === 'yes');
@@ -4369,12 +4073,10 @@ a{color:inherit}
   //  묻는 것은 한 번뿐이다. 그 뒤엔 상단 토글로 언제든 바꾼다.
   function askTipsOnce(){
     var yes = confirm(
-      'TIPS(팁스) 프로그램을 준비하십니까?\n\n' +
-      '[확인] 예 — TIPS 준비 모드로 작성합니다\n' +
-      '   · R&D 3단계(개발 목표 · 성능지표 · 글로벌)가 더해져 9단계가 됩니다\n' +
-      '   · 신청 자격 검토와 TIPS 기준 채점을 쓰실 수 있습니다\n\n' +
+      'R&D 과제(정부 R&D 등)를 준비하십니까?\n\n' +
+      '[확인] 예 — R&D 2단계(개발 목표 · 성능지표)가 더해져 8단계로 작성합니다\n\n' +
       '[취소] 아니오 — 투자용 IR 6단계만 작성합니다\n\n' +
-      '※ 상단 [TIPS 준비 모드] 버튼으로 언제든 바꾸실 수 있습니다.');
+      '※ 상단 [R&D 대응] 버튼으로 언제든 바꾸실 수 있습니다.');
     llm.tipsMode = !!yes;
     setTipsChoice(llm.tipsMode);
   }
@@ -4413,8 +4115,8 @@ a{color:inherit}
     state.formData = {};                      // 메모리도 비운다
     // ★판단도 함께 비운다 — 칸만 갈라두면 메모리 경로로 샌다(로그인 시 loadLocal이 또 비운다: 두 겹)
     state.diags = {};
-    state.tipsHash = ''; state.auditHash = '';
-    state.lastTips = null; state.lastAudit = null;
+    state.auditHash = '';
+    state.lastAudit = null;
     state.b1ref = null; state.b1At = '';
     // ★대리 편집 상태도 반드시 푼다. 남겨두면 다음 로그인이 그 기업 칸을 열어
     //   다른 사람이 남의 원고를 보게 된다.
@@ -4443,7 +4145,7 @@ a{color:inherit}
   //    화면만 비우면 목록에 그대로 남아 지운 것처럼 보이지 않는다.
   //  ★단 완전 삭제는 하지 않는다 — 서버가 노션 **휴지통**으로 내린다(30일 복구 가능).
   //    되돌릴 수 없는 조작은 만들지 않는다.
-  //  ★②채점 이력·③멘토 코멘트는 남긴다. 지우는 것은 '원고'다 —
+  //  ★②이력·③멘토 코멘트는 남긴다. 지우는 것은 '원고'다 —
   //    이력과 사람 의견까지 지우면 왜 지웠는지조차 사라진다.
   function resetAll(){
     var n = Object.keys(state.formData).filter(function(k){
@@ -4455,9 +4157,9 @@ a{color:inherit}
     if(!confirm(
         (target ? '「' + target + '」의 ' : '') + '작성 원고를 초기화합니다.\n\n' +
         '· 화면과 이 브라우저의 ' + n + '개 칸이 비워집니다\n' +
-        '· AI 진단·TIPS 채점·피칭 덱·신청서 참고자료도 지워집니다\n' +
+        '· AI 진단·투자논리 진단·피칭 덱·신청서 참고자료도 지워집니다\n' +
         '· 참여기업 리스트에서 「미작성」으로 돌아갑니다\n\n' +
-        '채점 이력과 멘토 코멘트는 그대로 남고,\n' +
+        '이전 기록(노션 이력·멘토 코멘트)은 그대로 남고,\n' +
         '원고는 노션 휴지통에 30일간 보관돼 복구할 수 있습니다.\n\n계속할까요?')) return;
 
     var clearLocal = function(){
@@ -4465,8 +4167,8 @@ a{color:inherit}
       state.completed = false;
       state.stepIndex = 0;
       state.diags = {};
-      state.tipsHash = ''; state.auditHash = '';
-      state.lastTips = null; state.lastAudit = null; state.lastGate = null;
+      state.auditHash = '';
+      state.lastAudit = null;
       state.lastDeck = null; state.lastDiagrams = null;
       state.b1ref = null; state.b1At = '';
       state.view = 'write';
