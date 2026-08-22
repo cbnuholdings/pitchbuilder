@@ -192,6 +192,9 @@ a{color:inherit}
 .pb-hbtn:hover{background:rgba(243,247,252,.08)}
 .pb-hbtn.ghost{border-color:transparent;color:var(--pb-on-ink-3);font-weight:400}
 .pb-hbtn.ghost:hover{color:var(--pb-paper)}
+/* 사용 안내(PDF) — 헤더 왼쪽, 로고 옆. <a>라서 밑줄과 기본 링크색을 지운다. */
+a.pb-hbtn{text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 
 /* ── 메타 스트립 (네이비) ───────────────────── */
 .pb-meta{
@@ -796,6 +799,15 @@ a{color:inherit}
 <!-- ══ 헤더 (로그인 후) ════════════════════════ -->
 <header id="pbHead" class="pb-head hidden">
   <div class="pb-brand" id="hdHome" role="button" tabindex="0" title="처음 화면으로"><b>PitchBuilder</b><span>IR DRAFTING</span></div>
+  <!-- 사용 안내(PDF) — 로고 옆 왼쪽 상단(2026-08-22 민부장 지시).
+       ★새 탭으로 연다. 브라우저 PDF 뷰어에서 보고 그 자리에서 저장할 수 있다.
+       ★파일명을 영문 guide.pdf 로 둔다 — 한글 파일명은 주소에서 인코딩이 갈려 링크가 깨진다. -->
+  <a class="pb-hbtn" id="hdGuide" href="guide.pdf" target="_blank" rel="noopener"
+     title="PitchBuilder 사용 안내 (PDF · 새 탭)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 3v12"></path><path d="m7 11 5 5 5-5"></path><path d="M4 20h16"></path>
+    </svg>가이드 다운로드</a>
   <div class="pb-who" id="hdWho"></div>
   <div class="sp"></div>
   <button class="pb-toggle" id="hdTips">R&amp;D 대응<span class="sw"></span></button>
