@@ -7,6 +7,25 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <title>PitchBuilder — 2026 이노테크 창업 IR 작성 도구</title>
+<!-- 링크 공유 카드(카카오톡·메일·슬랙) — 2026-08-22.
+     🔴 og:image 는 **절대 주소**여야 한다. 상대 경로면 카카오톡이 그림을 찾지 못한다.
+     🔴 그림을 바꿔도 카카오는 한동안 옛것을 물고 있다 — 캐시를 비우려면 파일명 뒤 ?v= 를 올린다. -->
+<meta property="og:type"        content="website">
+<meta property="og:site_name"   content="충북대학교기술지주">
+<meta property="og:locale"      content="ko_KR">
+<meta property="og:url"         content="https://pitching.cbnuholdings.com/">
+<meta property="og:title"       content="PitchBuilder — IR을 쓰고, 점검하고, 피칭 자료까지">
+<meta property="og:description" content="투자자 앞에 설 자료를 한 자리에서 만듭니다. 도식 → 투자논리 진단 → 피칭 자료(슬라이드·PDF·PPT).">
+<meta property="og:image"       content="https://pitching.cbnuholdings.com/og.png?v=1">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt"   content="PitchBuilder — 도식 만들기, 투자논리 진단, IR 피칭 자료">
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="PitchBuilder — IR을 쓰고, 점검하고, 피칭 자료까지">
+<meta name="twitter:description" content="투자자 앞에 설 자료를 한 자리에서 만듭니다.">
+<meta name="twitter:image"       content="https://pitching.cbnuholdings.com/og.png?v=1">
+<meta name="description" content="충북대학교기술지주 IR PitchBuilder — IR 작성, 투자논리 진단, 피칭 자료 제작 도구.">
+<meta name="theme-color" content="#0E1116">
 <style>
 /* ══════════════════════════════════════════════════════════════
    PitchBuilder v2 — 원페이지
@@ -195,6 +214,15 @@ a{color:inherit}
 /* 사용 안내(PDF) — 헤더 왼쪽, 로고 옆. <a>라서 밑줄과 기본 링크색을 지운다. */
 a.pb-hbtn{text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
+
+.pb-usesub{background:var(--pb-surface);padding:0 14px 9px;font-size:12.5px;
+  color:var(--pb-text-mute);display:flex;justify-content:space-between;gap:12px}
+.pb-usesub em{font-style:normal;color:var(--pb-text-mute);opacity:.8;white-space:nowrap}
+.pb-days{display:flex;gap:6px;align-items:flex-end;margin-top:14px;overflow-x:auto;padding-bottom:4px}
+.pb-days .d{flex:1;min-width:36px;display:flex;flex-direction:column;align-items:center;gap:5px}
+.pb-days .v{width:100%;max-width:34px;background:var(--pb-accent);border-radius:5px 5px 0 0;display:block}
+.pb-days .l{font:400 11px var(--pb-font-mono);color:var(--pb-text-mute)}
+.pb-days .c2{font:600 12px var(--pb-font-mono);color:var(--pb-text-body)}
 
 /* ── 로그인 안내창 (2026-08-22) ── AI 사용 횟수를 처음에 알린다 ── */
 .pb-veil{position:fixed;inset:0;background:rgba(14,17,22,.55);z-index:80;
@@ -2569,7 +2597,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   function awCall(s, e, btn){
     awBusy = true;
     if(btn){ btn.disabled = true; btn.textContent = '정리 중…'; }
-    callLLM(SYSTEM, awPrompt(s, e))
+    callLLM(SYSTEM, awPrompt(s, e), 'aw')
       .then(function(d){
         var r = awNormalize(s, d, e);
         e.draft = r.draft; e.warn = r.warn;
@@ -2954,7 +2982,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     }
     var btn = $('btnAI');
     busy = true; btn.disabled = true; btn.textContent = '진단 중…';
-    callLLM(SYSTEM, stepPrompt())
+    callLLM(SYSTEM, stepPrompt(), 'step')
       .then(function(d){
         // ★무엇을 보고 받은 진단인지를 함께 남긴다 — 이 해시가 낡음 판정의 근거다.
         state.diags[s.id] = { data:d, hash:stepHash(s), at:new Date().toISOString() };
@@ -3177,7 +3205,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     var btn = $('btnDeckMake') || $('btnDeckGo') || $('rlDeck');
     if(btn){ btn.disabled = true; btn.textContent = '만드는 중…'; }
 
-    callLLM(SYSTEM, deckPrompt())
+    callLLM(SYSTEM, deckPrompt(), 'deck')
       .then(function(d){
         // ★도식은 ①의 판정이 정본이다(2026-08-22). 덱이 낸 것은 ①이 비운 자리만 채운다.
         //   이 우선순위를 뒤집으면 기업이 ①에서 보고 받아들인 그림과 덱의 그림이 달라진다.
@@ -3884,6 +3912,40 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
            '<div class="k"><b>' + idle + '</b><span>아직 안 씀</span></div>' +
          '</div>';
 
+    // ── 기능별 ── 무엇에 쓰였는가
+    var kinds = u.kinds || {}, ka = u.kindAll || {};
+    var kk = Object.keys(kinds).filter(function(k){ return ka[k]; })
+                   .sort(function(x, y){ return ka[y] - ka[x]; });
+    if(kk.length){
+      h += '<div class="pb-card" style="margin-top:16px"><h3>기능별</h3>' +
+           '<div class="pb-usetbl">';
+      kk.forEach(function(k){
+        var w = u.total ? Math.round(ka[k] / u.total * 100) : 0;
+        h += '<div class="pb-userow"><span class="c">' + esc(kinds[k]) + '</span>' +
+             '<span class="i">' + w + '%</span>' +
+             '<span class="bar"><i style="width:' + w + '%"></i></span>' +
+             '<span class="n">' + ka[k] + '회</span></div>';
+      });
+      h += '</div></div>';
+    }
+
+    // ── 날짜별 ── 최근 14일
+    var days = arr(u.days);
+    if(days.length){
+      var mx = Math.max.apply(null, days.map(function(x){ return x.n; })) || 1;
+      h += '<div class="pb-card" style="margin-top:16px"><h3>날짜별 <span class="pb-note" ' +
+           'style="font:inherit;font-size:13px">최근 ' + days.length + '일</span></h3>' +
+           '<div class="pb-days">';
+      days.forEach(function(x){
+        var d = String(x.day);
+        h += '<div class="d" title="' + esc(d) + ' · ' + x.n + '회">' +
+               '<span class="v" style="height:' + Math.max(6, Math.round(x.n / mx * 82)) + 'px"></span>' +
+               '<span class="l">' + esc(d.slice(4, 6) + '/' + d.slice(6, 8)) + '</span>' +
+               '<span class="c2">' + x.n + '</span></div>';
+      });
+      h += '</div></div>';
+    }
+
     h += '<div class="pb-card" style="margin-top:16px">' +
            '<h3>기업별 AI 사용 <span class="pb-note" style="font:inherit;font-size:13px">기업당 ' +
              u.limit + '회</span></h3>' +
@@ -3900,7 +3962,16 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
              '<span class="i">' + esc(r.id) + '</span>' +
              '<span class="bar"><i style="width:' + w + '%"></i></span>' +
              '<span class="n">' + r.used + ' / ' + r.limit + '</span>' +
-           '</div>';
+           '</div>' +
+           //  그 기업이 무엇에 썼는지 — 한 줄로 편다. 안 쓴 기업은 줄을 만들지 않는다.
+           (r.used
+             ? '<div class="pb-usesub">' +
+                 Object.keys(r.byKind || {}).sort(function(x, y){ return r.byKind[y] - r.byKind[x]; })
+                   .map(function(k){ return esc((u.kinds || {})[k] || k) + ' ' + r.byKind[k]; })
+                   .join(' · ') +
+                 (r.last ? '<em>마지막 ' + esc(String(r.last).slice(4,6) + '/' + String(r.last).slice(6,8)) + '</em>' : '') +
+               '</div>'
+             : '');
     });
     h += '</div>';
     if(!rows.length) h += '<p class="pb-note">기업 계정이 없습니다.</p>';
@@ -4046,7 +4117,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     if(busy) return;
     var btn = $('btnAudit');
     busy = true; btn.disabled = true; btn.textContent = '진단 중…';
-    callLLM(SYSTEM, axisPrompt())
+    callLLM(SYSTEM, axisPrompt(), 'axis')
       .then(function(d){
         state.lastAudit = axisNormalize(d);        // 코드가 검증한 것만 남는다
         state.lastAudit.kind = 'axis';
@@ -4290,7 +4361,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 
     var label = btn.textContent;
     busy = true; btn.disabled = true; btn.textContent = '뽑는 중…';
-    callLLM(SYSTEM, prompt)
+    callLLM(SYSTEM, prompt, 'figone')
       .then(function(d){
         state.lastDeck.diagrams = state.lastDeck.diagrams || {};
         // ★슬라이드 문구(slides)는 건드리지 않는다. 이 도식 하나만 갈아끼운다.
@@ -4590,7 +4661,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     if(busy) return;
     var btn = $('btnFig');
     busy = true; btn.disabled = true; btn.textContent = '그리는 중…';
-    callLLM(SYSTEM, diagramPrompt())
+    callLLM(SYSTEM, diagramPrompt(), 'fig')
       .then(function(d){
         state.lastDiagrams = d;
         state.figHash = irHash();        // 어느 원고를 보고 뽑은 도식인지 기억한다
@@ -4679,11 +4750,14 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   // ── Gemini ──
   //  교체 지점은 이 함수 하나뿐이다.
   var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
-  function callLLM(system, user){
+  //  kind = 무엇을 부르는지(관리자 사용량 화면이 기능별로 센다·2026-08-22).
+  //   ★서버는 action=llm 만 보므로 화면이 알려 주지 않으면 구분이 되지 않는다.
+  function callLLM(system, user, kind){
     if(LOCAL) return Promise.reject(new Error('로컬 검수 모드입니다 — AI를 부르지 않습니다.'));
     if(llm.conn === 'proxy'){
       return callProxy({ action:'llm', id:llm.id, code:llm.code,
-                         system:system, user:user, reviewer: !!llm.reviewer })
+                         system:system, user:user, reviewer: !!llm.reviewer,
+                         kind: kind || 'etc' })
              .then(function(d){ llmBump(); quotaTake(d); return parseJSON(d.text); });
     }
     var url = GEMINI_BASE + encodeURIComponent(llm.model) +
