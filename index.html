@@ -850,7 +850,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
                 // B1 신청서 참고자료(P2) — 본문에 넣지 않고 코치 열에서만 보여준다
                 b1ref:null, b1At:'' };
   var llm = { conn:'byok', key:'', proxy:'', id:'', code:'',
-              model:'gemini-flash-latest', reviewer:false, tipsMode:false };
+              model:'gemini-flash-latest', reviewer:false, tipsMode:false,
+              quota:null };            // 서버가 준 AI 사용 잔여 {used,limit} — 기업만 받는다
   var busy = false;
   // ~~B2 성장관리(LAGMP) 종합의견~~ — 2026-08-19 민부장 지시로 연동 제거. 접속코드만 LAGMP와 공유한다(로그인).
 
@@ -2293,6 +2294,14 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       '<div class="m">작성 필드<b>' + n + ' / ' + tot + '</b></div>' +
       '<div class="m">분량<b>' + ch.toLocaleString() + '자</b></div>' +
       '<div class="m">투자논리 진단<b>' + (state.lastAudit ? '완료' : '—') + '</b></div>' +
+      //  ★AI 사용 횟수 — 기업에게만 뜬다(관리자는 총량 제한이 없다).
+      //   다 쓰면 붉게. 남은 횟수를 모르고 쓰다 갑자기 막히는 일이 없어야 한다.
+      (llm.quota
+        ? '<div class="m"' + (quotaLeft() === 0
+            ? ' style="background:var(--pb-warn-bg);border-color:var(--pb-warn-line);color:var(--pb-warn-deep)"' : '') +
+          '>AI 사용<b' + (quotaLeft() === 0 ? ' style="color:var(--pb-warn-deep)"' : '') + '>' +
+          llm.quota.used + ' / ' + llm.quota.limit + '회</b></div>'
+        : '') +
       '<div class="sp"></div>' +
       '<div class="note">자동저장 켜짐 · 단계 이동마다</div>';
     if($('mtClose')) $('mtClose').onclick = adminCloseIR;
@@ -2403,6 +2412,21 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   function llmCntKey(){ return LLMCNT_BASE + '::' + ((llm.id || '').trim() || 'anon') + '::' + localYMD(); }
   function llmToday(){ try{ return +(localStorage.getItem(llmCntKey()) || 0) || 0; }catch(e){ return 0; } }
   function llmBump(){ try{ localStorage.setItem(llmCntKey(), String(llmToday() + 1)); }catch(e){} }
+
+  // ── AI 사용 횟수 ── 기업은 **누적 총 N회**까지 쓴다(2026-08-22 민부장 지시).
+  //  🔴 세는 주체는 서버다. 브라우저가 세면 다른 PC에서 쓴 것이 빠지고 localStorage 를
+  //     지우면 0으로 보인다. 화면은 서버가 준 값을 **받아 적기만** 한다.
+  function quotaTake(d){
+    if(d && d.quota && typeof d.quota.limit === 'number' && d.quota.limit > 0){
+      llm.quota = { used: +d.quota.used || 0, limit: +d.quota.limit };
+      try{ renderMeta(); }catch(e){}
+    }
+  }
+  function quotaLeft(){ return llm.quota ? Math.max(0, llm.quota.limit - llm.quota.used) : null; }
+  //  자리마다 다르게 적으면 기업이 서로 다른 숫자로 읽는다 — 문장은 하나로 둔다.
+  function quotaText(){
+    return llm.quota ? ('AI 사용 ' + llm.quota.used + ' / ' + llm.quota.limit + '회') : '';
+  }
 
   function awOpening(s){
     return '「' + shortTitle(s) + '」 칸을 문답으로 채워 봅시다. 먼저 — ' + s.inputs[0].label + '부터 말씀해 주십시오.\n' +
@@ -2605,7 +2629,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     h += '<div class="pb-awbar">' +
            '<button class="pb-awbtn' + (!aw.on ? ' is-on' : '') + '" data-aw="0">직접 작성</button>' +
            '<button class="pb-awbtn' + (aw.on ? ' is-on' : '') + '" data-aw="1">AI 작성모드</button>' +
-           '<span class="pb-awcnt">오늘 AI 호출 ' + llmToday() + '회 사용</span>' +
+           '<span class="pb-awcnt">' + (llm.quota ? esc(quotaText())
+                                                   : ('오늘 AI 호출 ' + llmToday() + '회 사용')) + '</span>' +
          '</div>';
     if(aw.on){
       h += awPanel(s) + '</div>';
@@ -4544,7 +4569,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     if(llm.conn === 'proxy'){
       return callProxy({ action:'llm', id:llm.id, code:llm.code,
                          system:system, user:user, reviewer: !!llm.reviewer })
-             .then(function(d){ llmBump(); return parseJSON(d.text); });
+             .then(function(d){ llmBump(); quotaTake(d); return parseJSON(d.text); });
     }
     var url = GEMINI_BASE + encodeURIComponent(llm.model) +
               ':generateContent?key=' + encodeURIComponent(llm.key);
@@ -4580,6 +4605,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     return apiGet('ping', {}).then(function(d){
       if(!d || !d.ok) return;
       llm.reviewer = !!d.reviewer;            // 심사자 권한도 서버 판정을 따른다
+      quotaTake(d);                      // 남은 AI 사용 횟수(기업에게만 내려온다)
       var c = d.config;
       if(c){
         if(c.model) llm.model = c.model;
@@ -4814,6 +4840,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         return;
       }
       llm.reviewer = !!d.reviewer;
+      quotaTake(d);                      // 남은 AI 사용 횟수(기업에게만 내려온다)
       state.cid = d.cid || id;
       if(d.company) state.formData.companyName = state.formData.companyName || d.company;
       if(d.config){
