@@ -1910,6 +1910,12 @@ a{color:inherit}
   var DECK_SLIDES = [
     { id:'cover',    label:'Cover',            figs:[] },
     { id:'problem',  label:'Problem',          figs:['pain'] },
+    //  ★2026-08-22 신설 — 「왜 지금인가」. 20개사 실측에서 전원이 이 항목에 걸렸는데
+    //    원인은 기업이 아니라 **덱에 그 자리가 없었던 것**이었다.
+    //    🔴 opt = 선택 슬라이드. IR에 타이밍 근거가 없으면 LLM이 null을 내고 이 장은
+    //      아예 빠진다 — 빈 장을 끼워 넣지 않는다. 그때 덱 점검이 「없다」고 짚으며,
+    //      그 지적은 이제 기업이 손댈 수 있는 것이 된다(IR에 근거를 쓰면 채워진다).
+    { id:'why_now',  label:'Why now',          figs:[], opt:true },
     { id:'solution', label:'Solution',         figs:['solution', 'moat'] },
     { id:'market',   label:'Market & BM',      figs:['market', 'gtm'] },
     { id:'team_ask', label:'Team & Ask',       figs:['ask'] }
@@ -1928,6 +1934,7 @@ a{color:inherit}
       '  "slides": [',
       '    { "id":"cover",    "headline":"회사명 — 한 줄 정체성", "sub":"보조 문장 1개" },',
       '    { "id":"problem",  "headline":"문제를 한 문장으로", "bullets":["...","..."] },',
+      '    { "id":"why_now",  "headline":"왜 지금인가 — 최근 무엇이 바뀌었는가", "bullets":["...","..."] },',
       '    { "id":"solution", "headline":"해결책을 한 문장으로", "bullets":["...","..."] },',
       '    { "id":"market",   "headline":"시장·수익모델을 한 문장으로", "bullets":["...","..."] },',
       '    { "id":"team_ask", "headline":"왜 우리인가 + 얼마가 필요한가", "bullets":["...","..."] }',
@@ -1949,6 +1956,9 @@ a{color:inherit}
       '- ★★숫자는 IR에 적힌 것만 쓴다. IR에 없는 수치·연도·비율·금액을 만들어내면 안 된다.',
       '  근거가 없으면 숫자를 아예 빼고 문장으로 써라. 코드가 원문과 대조해 걸러낸다.',
       '- ★회사명·기관명·경쟁사명도 IR에 있는 것만. 없으면 유형으로 표현하라.',
+      '- ★why_now = **IR에 최근 바뀐 외부 변수(규제 시행·기술 상용화·가격·수요 전환)와 그 시점이',
+      '  적혀 있을 때만** 만든다. 없으면 **null**로 두고 지어내지 마라 — 빈 장은 만들지 않는다.',
+      '  쓸 때는 완료형으로(「~되었다」), 앞으로의 전망(연평균 성장률 등)은 근거로 쓰지 마라.',
       '- rnd = R&D 항목(개발 목표·성능지표)이 IR에 있을 때만. 없으면 null.',
       '- diagrams = 위 "도식 자리와 후보"를 따른다. 각 자리에 "type"과 "why"를 넣고,',
       '  해당 관계가 IR에 없으면 그 자리는 null. 후보에 없는 type은 쓰지 마라.',
@@ -1995,17 +2005,27 @@ a{color:inherit}
 
   var DECK_CHECKS = {
     'IR-DCK-01': function(d){
-      var bad = (d.slides || []).filter(function(s){ return s && !isSentence(s.headline); });
+      //  🔴 cover는 제외한다. 덱 프롬프트가 표지 제목을 「회사명 — 한 줄 정체성」으로
+      //    지시하므로 명사구가 정상이다. 빼지 않으면 20개사 전부가 표지 하나 때문에
+      //    걸린다 — 기업의 결함이 아니라 이 체크의 결함이다(2026-08-22 20개사 실측).
+      var bad = (d.slides || []).filter(function(s){
+        return s && s.id !== 'cover' && !isSentence(s.headline);
+      });
       return { ok: !bad.length,
                note: bad.length ? bad.length + '장의 제목이 명사구입니다 — 결론 문장으로 바꾸십시오.'
-                                : '전 슬라이드 제목이 완결 문장입니다.' };
+                                : '본문 슬라이드 제목이 모두 완결 문장입니다(표지 제외).' };
     },
     'IR-DCK-03': function(d){
-      var txt = deckText(d);
-      var has = /왜\s*지금|지금인가|올해|최근|시행|개정|고시/.test(txt) && /\d{4}|\d+년|\d+월/.test(txt);
-      return { ok: has,
-               note: has ? '타이밍 근거로 볼 표현과 시점이 덱에 있습니다.'
-                         : '「왜 지금인가」에 해당하는 시점 근거가 덱에서 확인되지 않습니다.' };
+      //  🔴 2026-08-22 이전에는 덱 전체 문구에서 낱말을 찾았고, 덱에 「왜 지금」 자리가
+      //    없어 20개사 전원이 걸렸다. 자리를 만든 뒤로는 **그 장이 있는지**를 본다.
+      var wn = (d.slides || []).filter(function(s){ return s && s.id === 'why_now'; })[0];
+      var body = wn ? [wn.headline, wn.sub].concat(arr(wn.bullets)).join(' ') : '';
+      if(!body.trim())
+        return { ok:false, note:'「왜 지금인가」 장이 없습니다 — IR에 최근 바뀐 외부 변수와 그 시점을 먼저 쓰십시오.' };
+      var when = /\d{4}|\d+년|\d+월|올해|작년|최근/.test(body);
+      return { ok: when,
+               note: when ? '「왜 지금인가」 장에 바뀐 것과 시점이 함께 있습니다.'
+                          : '「왜 지금인가」 장은 있으나 언제 바뀌었는지가 없습니다 — 시점을 적으십시오.' };
     },
     'IR-VIZ-02': function(d){
       var bad = (d.slides || []).filter(function(s){ return s && arr(s.bullets).length > 3; });
@@ -2959,6 +2979,8 @@ a{color:inherit}
     DECK_SLIDES.forEach(function(def){
       var data = (deck.slides || []).filter(function(s){ return s && s.id === def.id; })[0]
               || { headline:'', bullets:[] };
+      // ★선택 슬라이드는 내용이 없으면 넣지 않는다 — 빈 장이 덱·PDF에 끼면 안 된다.
+      if(def.opt && !String(data.headline || '').trim()) return;
       out.push({ def:def, data:data, fig:(def.figs || [])[0] || null, figOnly:false });
       (def.figs || []).slice(1).forEach(function(k){
         out.push({ def:{ id:def.id + '_' + k, label:def.label, figs:[k] }, data:data, fig:k, figOnly:true });
