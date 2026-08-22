@@ -3433,7 +3433,21 @@ a{color:inherit}
   //  ★슬라이드는 고해상 PNG 한 장으로 넣는다 — 글꼴(Noto Sans KR·Archivo)이 없는 PC에서도 디자인이 안 깨진다.
   //  ★대신 제목·본문 텍스트를 발표자 노트에 함께 넣는다 — 고칠 재료는 글자로 준다.
   //  ★pptxgenjs 도 PDF 라이브러리처럼 **누를 때만** 불러온다(평소 script CDN 0 유지).
-  var PPT_LIB = 'https://cdnjs.cloudflare.com/ajax/libs/PptxGenJS/3.12.0/pptxgen.bundle.min.js';
+  //  🔴 2026-08-22 실측 — **cdnjs 에는 pptxgenjs 가 없다.** 종전 주소
+  //    `cdnjs.../PptxGenJS/3.12.0/pptxgen.bundle.min.js` 는 대소문자를 어떻게 쓰든 404 였고,
+  //    그래서 [PPT 다운로드]는 만든 날부터 한 번도 파일을 내놓지 못했다(항상 catch 로 떨어졌다).
+  //    같은 파일에서 html2canvas·jsPDF 가 cdnjs 로 잘 돌고 있어 호스트를 의심하지 않은 것이 원인이다.
+  //  ★두 곳을 둔다 — 사내망이 한쪽을 막아도 다른 쪽으로 간다. 순서대로 시도한다.
+  var PPT_LIBS = [
+    'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js',
+    'https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'
+  ];
+  //  앞의 것이 실패하면 다음 것으로. 전부 실패해야 실패다.
+  function loadAnyScript(list, i){
+    i = i || 0;
+    if(i >= list.length) return Promise.reject(new Error('load failed: ' + list.join(' , ')));
+    return loadScriptOnce(list[i]).catch(function(){ return loadAnyScript(list, i + 1); });
+  }
   function exportDeckPpt(btn){
     var slides = Array.prototype.filter.call(document.querySelectorAll('#pbCenter .pb-slide'), function(x){
       return !x.classList.contains('is-empty');
@@ -3448,7 +3462,7 @@ a{color:inherit}
     document.body.appendChild(stage);
 
     loadScriptOnce(PDF_LIBS[0])                       // html2canvas
-      .then(function(){ return loadScriptOnce(PPT_LIB); })
+      .then(function(){ return loadAnyScript(PPT_LIBS); })
       .then(function(){
         if(!window.html2canvas || !window.PptxGenJS) throw new Error('ppt libs');
         var pptx = new window.PptxGenJS();
@@ -3495,14 +3509,23 @@ a{color:inherit}
   // 결과 화면의 IR 본문·도식 → A4 세로 여러 쪽.
   //  ★한 장짜리 긴 캔버스를 쪽 높이로 자르면 글줄 한가운데가 잘린다(2026-08-19 실측) —
   //    그래서 블록(머리글·단계별 절·도식 카드) 단위로 따로 찍어 쪽에 채워 넣는다. 블록 하나가 한 쪽보다 길면 그때만 자른다.
-  function exportFlowPdf(els, kind, btn){
+  //  opts.returnData = true 면 **파일로 저장하지 않고** data URI 를 돌려준다.
+  //   ★제출할 때 이 PDF 를 서버로 보내 성장관리 플랫폼에 붙이기 위해서다(2026-08-22 민부장 지시).
+  //     GAS 가 만드는 텍스트 PDF 에는 **도식이 들어가지 않는다** — 도식은 브라우저가 그린다.
+  //   ★그 모드에서는 알림창·인쇄 폴백을 띄우지 않는다. 제출 흐름을 막으면 안 된다.
+  function exportFlowPdf(els, kind, btn, opts){
+    opts = opts || {};
     els = (Array.isArray(els) ? els : [els]).filter(Boolean);
-    if(!els.length){ alert('내보낼 내용이 없습니다.'); return; }
+    if(!els.length){
+      if(!opts.returnData) alert('내보낼 내용이 없습니다.');
+      return Promise.resolve(null);
+    }
     var label = btn ? btn.textContent : '';
     if(btn){ btn.disabled = true; btn.textContent = 'PDF 준비 중…'; }
     var stage = document.createElement('div');
     stage.style.cssText = 'position:fixed;left:-20000px;top:0;width:794px;background:#fff;z-index:-1';
     document.body.appendChild(stage);
+    var out = null;                                    // returnData 모드에서 돌려줄 data URI
 
     // 블록으로 쪼갠다
     var blocks = [];
@@ -3537,7 +3560,7 @@ a{color:inherit}
     blocks.forEach(function(b){ stage.appendChild(b); });
 
     var PAGE_W = 794, PAGE_H = 1123, TOP = 0, BOTTOM = 40;
-    pdfLibs().then(function(){
+    return pdfLibs().then(function(){
       var pdf = new window.jspdf.jsPDF({ orientation:'portrait', unit:'px', format:[PAGE_W, PAGE_H], hotfixes:['px_scaling'] });
       var y = TOP, first = true;
       var chain = Promise.resolve();
@@ -3565,13 +3588,18 @@ a{color:inherit}
           }
         });
       });
-      return chain.then(function(){ pdf.save(pdfFileName(kind)); });
+      return chain.then(function(){
+        if(opts.returnData){ out = pdf.output('datauristring'); return; }
+        pdf.save(pdfFileName(kind));
+      });
     }).catch(function(err){
       console.warn('PDF', err);
+      if(opts.returnData) return;                      // 제출 흐름은 막지 않는다 — 조용히 없는 채로 간다
       if(confirm('PDF 생성 라이브러리를 불러오지 못했습니다(네트워크 차단 가능).\n\n브라우저 인쇄로 저장할까요?')) window.print();
     }).then(function(){
       stage.remove();
       if(btn){ btn.disabled = false; btn.textContent = label; }
+      return out;
     });
   }
 
@@ -4035,10 +4063,42 @@ a{color:inherit}
     if(!confirm(already ? '다시 제출하시겠습니까? 마감은 없으며 최신 내용으로 갱신됩니다.'
                         : '제출하시겠습니까? 제출 후에도 계속 고치고 다시 제출하실 수 있습니다.')) return;
     state.lastLagmp = null;
-    syncToServer({ submit:true }).then(function(){
-      renderResultView();
-      alert('제출했습니다.\n\n' + lagmpMsg());
-    });
+    var btn = $('btnSubmit'), lab = btn ? btn.textContent : '';
+    if(btn){ btn.disabled = true; btn.textContent = '제출 자료 만드는 중…'; }
+    //  ★도식이 든 PDF 를 만들어 함께 보낸다(2026-08-22 민부장 지시).
+    //   서버(GAS)가 만드는 PDF 에는 도식이 없다 — 도식은 브라우저가 그리기 때문이다.
+    submitPdf()
+      .then(function(pdf){ return syncToServer({ submit:true, pdf:pdf }); })
+      .then(function(){
+        if(btn){ btn.disabled = false; btn.textContent = lab; }
+        renderResultView();
+        alert('제출했습니다.\n\n' + lagmpMsg());
+      });
+  }
+
+  //  ── 제출과 함께 보낼 PDF ── IR 본문 + 도식(결과 화면의 [IR 본문 PDF 다운로드]와 같은 것).
+  //   🔴 실패해도 null 을 돌려준다. PDF 를 못 만들었다고 제출이 막히면 안 된다 —
+  //     그때는 서버가 만든 텍스트 PDF 가 대신 올라간다.
+  //   🔴 큰 파일은 보내지 않는다. 요청이 통째로 실패하면 제출 자체가 실패한다.
+  var SUBMIT_PDF_MAX = 8000000;                       // base64 글자 수(≈ 6MB 원본)
+  var SUBMIT_PDF_WAIT = 25000;                        // 25초
+  function submitPdf(){
+    var els = [$('secIR'), $('secFig')].filter(Boolean);
+    if(!els.length) return Promise.resolve(null);
+    //  🔴 반드시 시간 제한을 건다. CDN 이 막힌 망에서는 스크립트 로드가 성공도 실패도 하지
+    //    않고 매달릴 수 있고, 그러면 **제출 버튼이 영영 안 끝난다**. 못 만들면 없는 채로 보낸다.
+    var raced = Promise.race([
+      exportFlowPdf(els, 'IR자료', null, { returnData:true }),
+      new Promise(function(res){ setTimeout(function(){ res(null); }, SUBMIT_PDF_WAIT); })
+    ]);
+    return raced
+      .then(function(uri){
+        var b64 = String(uri || '').split(',')[1] || '';
+        if(!b64) return null;
+        if(b64.length > SUBMIT_PDF_MAX){ console.warn('제출 PDF 가 너무 큽니다', b64.length); return null; }
+        return { b64: b64 };
+      })
+      .catch(function(err){ console.warn('제출 PDF', err); return null; });
   }
 
   //  ── ⑤ 성장관리 플랫폼 반영 결과를 사람 말로 옮긴다(2026-08-22) ──
@@ -4047,7 +4107,10 @@ a{color:inherit}
   function lagmpMsg(){
     var g = state.lastLagmp;
     if(!g) return '성장관리 플랫폼 연동은 켜져 있지 않습니다 — 담당자가 별도로 확인합니다.';
-    if(g.ok && g.file)   return '성장관리 플랫폼의 [② IR 고도화 · 검토 대상 IR 파일]에 이번 원고가 올라갔습니다.';
+    //  ★알림창과 화면 양쪽에 그대로 쓰인다 — 태그를 넣지 않는다(알림창엔 글자로 보이고 화면은 이스케이프된다).
+    if(g.ok && g.file)
+      return '성장관리 플랫폼의 [② IR 고도화 · 검토 대상 IR 파일]에 이번 원고가' +
+             (g.kind === 'screen' ? ' 도식과 함께' : '') + ' 올라갔습니다.';
     if(g.ok && !g.file)  return '성장관리 플랫폼에 제출 기록은 올라갔으나 IR 파일은 붙이지 못했습니다. 담당자에게 알려 주십시오.';
     if(g.error === 'off')   return '성장관리 플랫폼 연동은 켜져 있지 않습니다 — 담당자가 별도로 확인합니다.';
     if(g.error === 'role')  return '성장관리 플랫폼 반영은 기업 계정으로 제출할 때만 이뤄집니다.';
@@ -4583,7 +4646,9 @@ a{color:inherit}
     syncing = true;
     chip('saving');
     return callProxy({ action:(opts && opts.submit) ? 'submit' : 'save',
-                       id:llm.id, code:llm.code, snapshot:body, submit:!!(opts && opts.submit) })
+                       id:llm.id, code:llm.code, snapshot:body, submit:!!(opts && opts.submit),
+                       // ⑤ 성장관리 플랫폼에 붙일 도식 포함 PDF(제출일 때만·없으면 서버가 대신 만든다)
+                       pdfB64: (opts && opts.pdf && opts.pdf.b64) || '' })
       .then(function(d){
         if(my !== syncSeq) return;            // 더 최신 저장이 이미 끝났다 — 무시한다
         if(d.status) state.status = d.status;
