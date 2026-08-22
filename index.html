@@ -196,6 +196,34 @@ a{color:inherit}
 a.pb-hbtn{text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 
+/* ── 로그인 안내창 (2026-08-22) ── AI 사용 횟수를 처음에 알린다 ── */
+.pb-veil{position:fixed;inset:0;background:rgba(14,17,22,.55);z-index:80;
+  display:flex;align-items:center;justify-content:center;padding:24px}
+.pb-dlg{background:var(--pb-paper);border-radius:14px;max-width:460px;width:100%;
+  padding:26px 28px 22px;box-shadow:0 18px 60px rgba(14,17,22,.3)}
+.pb-dlg h4{font:600 18px/1.35 var(--pb-font-serif);color:var(--pb-text);margin-bottom:10px}
+.pb-dlg p{font-size:14.5px;line-height:1.75;color:var(--pb-text-body);margin-bottom:10px}
+.pb-dlg .big{font:700 30px/1 var(--pb-font-serif);color:var(--pb-accent-ink);
+  display:block;margin:14px 0 4px}
+.pb-dlg .big.is-low{color:var(--pb-warn-deep)}
+.pb-dlg ul{margin:8px 0 12px;padding-left:16px;font-size:13.5px;color:var(--pb-text-mute);line-height:1.7}
+.pb-dlg .fine{font-size:12.5px;color:var(--pb-text-mute);line-height:1.65}
+
+/* ── 관리자 · AI 사용량 표 (2026-08-22) ── */
+.pb-usetbl{margin-top:12px;display:flex;flex-direction:column;gap:1px;
+  background:var(--pb-line);border:1px solid var(--pb-line);border-radius:var(--pb-radius);overflow:hidden}
+.pb-userow{display:grid;grid-template-columns:1fr 118px 1fr 74px;gap:12px;align-items:center;
+  padding:9px 14px;background:var(--pb-surface);font-size:14px}
+.pb-userow .c{font-weight:600;color:var(--pb-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pb-userow .i{font:400 12px var(--pb-font-mono);color:var(--pb-text-mute)}
+.pb-userow .bar{height:7px;border-radius:99px;background:var(--pb-line-soft);overflow:hidden}
+.pb-userow .bar i{display:block;height:100%;background:var(--pb-accent);border-radius:99px}
+.pb-userow .n{text-align:right;font:600 13px var(--pb-font-mono);color:var(--pb-text-body)}
+.pb-userow.is-full .bar i{background:var(--pb-warn)}
+.pb-userow.is-full .n{color:var(--pb-warn-deep)}
+.pb-userow.is-idle .n{color:var(--pb-text-mute);font-weight:400}
+@media (max-width:820px){ .pb-userow{grid-template-columns:1fr 64px} .pb-userow .i,.pb-userow .bar{display:none} }
+
 /* ── 메타 스트립 (네이비) ───────────────────── */
 .pb-meta{
   display:flex;align-items:center;padding:0 26px;
@@ -3701,7 +3729,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   //    관리자 코멘트(노션③)는 서버 action comments/savecomments에 남아 있으나 화면은 부르지 않는다.
   //  editing = 관리자가 '대신 편집 중인 기업' {company, cid}. null이면 자기 것을 쓴다.
   var admin = { rows:[], loading:false, editing:null,
-                applicants:[], apLoading:false, q:'' };
+                applicants:[], apLoading:false, q:'',
+                tab:'co', usage:null, usageLoading:false };   // tab = co | usage
 
   // ★기업명 검색은 법인격 표기를 떼고 맞춘다.
   //   "(주)엑스업"·"주식회사 엑스업"·"엑스업"은 사람에게 같은 회사인데
@@ -3746,7 +3775,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 
   function renderAdminLeft(){
     var h = '<h4>관리자</h4>' +
-            '<button class="pb-nav is-on">신청기업</button>' +
+            '<button class="pb-nav' + (admin.tab === 'usage' ? '' : ' is-on') + '" id="adTabCo">신청기업</button>' +
+            '<button class="pb-nav' + (admin.tab === 'usage' ? ' is-on' : '') + '" id="adTabUse">AI 사용량</button>' +
             '<div class="pb-hr"></div>' +
             '<h4>전체 설정</h4>' +
             '<p class="fine">여기서 정한 값이 <b>전 계정의 다음 접속</b>에 그대로 적용됩니다. ' +
@@ -3757,6 +3787,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
             '<div class="sp"></div>' +
             '<button class="pb-cta sub" id="adWrite">내 IR 작성 화면</button>';
     $('pbLeft').innerHTML = h;
+    $('adTabCo').onclick  = function(){ admin.tab = 'co';    renderAdminCenter(); renderAdminLeft(); };
+    $('adTabUse').onclick = function(){ admin.tab = 'usage'; renderAdminCenter(); renderAdminLeft(); loadUsage(); };
     $('cfgApply').onclick = function(){
       if(!serverOn()){ alert('서버에 연결돼 있지 않습니다.'); return; }
       callProxy({ action:'setconfig', id:llm.id, code:llm.code,
@@ -3810,8 +3842,91 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     });
   }
 
+  // ══ AI 사용량 (관리자 전용 · 2026-08-22 민부장 지시) ═══════════
+  //  ★서버가 세는 값을 그대로 보여 준다. 화면이 따로 계산하지 않는다.
+  function loadUsage(){
+    if(!serverOn()){ admin.usage = { err:'서버에 연결돼 있지 않습니다.' }; renderAdminCenter(); return; }
+    admin.usage = null; admin.usageLoading = true; renderAdminCenter();
+    apiGet('usage', {}).then(function(d){
+      admin.usageLoading = false;
+      admin.usage = (d && d.ok) ? d : { err:(d && d.error) || '불러오지 못했습니다.' };
+      renderAdminCenter();
+    }).catch(function(err){
+      admin.usageLoading = false;
+      admin.usage = { err: err.message || '불러오지 못했습니다.' };
+      renderAdminCenter();
+    });
+  }
+
+  function renderUsage(){
+    var u = admin.usage;
+    var h = '';
+    if(admin.usageLoading){
+      $('pbCenter').innerHTML = '<div class="pb-card"><p class="pb-note">사용량을 불러오는 중…</p></div>';
+      return;
+    }
+    if(!u || u.err){
+      $('pbCenter').innerHTML = '<div class="pb-card"><h3>AI 사용량</h3>' +
+        '<p class="pb-note">' + esc((u && u.err) || '불러오지 못했습니다.') + '</p>' +
+        '<button class="pb-cta sub" style="margin-top:12px;width:auto;padding:10px 16px" id="useRe">다시 불러오기</button></div>';
+      if($('useRe')) $('useRe').onclick = loadUsage;
+      return;
+    }
+    var rows = arr(u.rows), cap = u.capacity || 0;
+    var pct = cap ? Math.round(u.total / cap * 100) : 0;
+    var done = rows.filter(function(r){ return r.used >= r.limit; }).length;
+    var idle = rows.filter(function(r){ return !r.used; }).length;
+
+    h += '<div class="pb-kpi">' +
+           '<div class="k"><b>' + u.total + '</b><span>전체 호출</span></div>' +
+           '<div class="k"><b>' + pct + '%</b><span>배정 대비(' + cap + '회)</span></div>' +
+           '<div class="k"><b>' + done + '</b><span>한도 소진</span></div>' +
+           '<div class="k"><b>' + idle + '</b><span>아직 안 씀</span></div>' +
+         '</div>';
+
+    h += '<div class="pb-card" style="margin-top:16px">' +
+           '<h3>기업별 AI 사용 <span class="pb-note" style="font:inherit;font-size:13px">기업당 ' +
+             u.limit + '회</span></h3>' +
+           '<p class="pb-note">한 번 쓰는 것 — 단계별 AI 진단 · AI 작성모드 답변 · 도식 만들기 · ' +
+           '투자논리 진단 · IR 피칭 자료 만들기 · 덱 도식 다시 뽑기. ' +
+           '가이드 탭과 덱 점검은 부르지 않습니다. ' +
+           '<b>되돌리려면</b> 스크립트 속성 <code>use_&lt;접수번호&gt;</code>를 지우십시오.</p>' +
+           '<div class="pb-usetbl">';
+    rows.forEach(function(r){
+      var w = r.limit ? Math.min(100, Math.round(r.used / r.limit * 100)) : 0;
+      var full = r.used >= r.limit;
+      h += '<div class="pb-userow' + (full ? ' is-full' : (r.used ? '' : ' is-idle')) + '">' +
+             '<span class="c">' + esc(r.company) + '</span>' +
+             '<span class="i">' + esc(r.id) + '</span>' +
+             '<span class="bar"><i style="width:' + w + '%"></i></span>' +
+             '<span class="n">' + r.used + ' / ' + r.limit + '</span>' +
+           '</div>';
+    });
+    h += '</div>';
+    if(!rows.length) h += '<p class="pb-note">기업 계정이 없습니다.</p>';
+    h += '</div>';
+
+    if(arr(u.orphan).length){
+      h += '<div class="pb-card" style="margin-top:16px">' +
+             '<h3>명부에 없는 잔재</h3>' +
+             '<p class="pb-note">계정이 바뀐 뒤 남은 기록입니다. 스크립트 속성에서 지우실 수 있습니다.</p>';
+      arr(u.orphan).forEach(function(o){
+        h += '<div class="pb-ck yet"><span>·</span><code>use_' + esc(o.id) + '</code> — ' + o.used + '회</div>';
+      });
+      h += '</div>';
+    }
+    h += '<div class="pb-card" style="margin-top:16px"><h3>관리자 계정</h3>' +
+           '<p class="pb-note">관리자·서브 관리자는 <b>총량 제한을 받지 않습니다</b> — 운영자가 막히면 ' +
+           '기업 전체가 함께 멈추기 때문입니다. 대신 하루 <b>' + (u.adminDaily || 40) + '회</b>가 걸립니다.</p>' +
+           '<button class="pb-cta sub" style="margin-top:12px;width:auto;padding:10px 16px" id="useRe2">새로고침</button>' +
+         '</div>';
+    $('pbCenter').innerHTML = h;
+    if($('useRe2')) $('useRe2').onclick = loadUsage;
+  }
+
   function renderAdminCenter(){
     $('pbCenter').style.padding = '';
+    if(admin.tab === 'usage'){ renderUsage(); return; }
     var rows = admin.rows;
     var sub = rows.filter(function(r){ return r.status === '제출'; }).length;
     var wrote = rows.filter(function(r){ return (r.filled || 0) > 0; }).length;
@@ -4856,6 +4971,45 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       $('btnLogin').disabled = false; $('btnLogin').textContent = '들어가기';
     });
   }
+  //  ── 로그인 안내창 ── 남은 AI 사용 횟수를 처음에 알린다(2026-08-22 민부장 지시).
+  //   ★alert 을 쓰지 않는다. 화면 톤과 다르고, 무엇이 1회인지 담을 수 없다.
+  //   ★기업에게만 띄운다 — 관리자는 총량을 받지 않으므로 알릴 것이 없다.
+  function quotaNotice(){
+    //  ★열린 것이 있으면 먼저 치운다 — 계정을 갈아 가며 들어오면 안내창이 겹쳐 쌓인다.
+    var old = document.getElementById('quotaVeil');
+    if(old && old.parentNode) old.parentNode.removeChild(old);
+    if(!llm.quota || isAdmin()) return;
+    var left = quotaLeft(), lim = llm.quota.limit;
+    var v = document.createElement('div');
+    v.className = 'pb-veil'; v.id = 'quotaVeil';
+    v.innerHTML =
+      '<div class="pb-dlg" role="dialog" aria-modal="true" aria-labelledby="qdT">' +
+        '<h4 id="qdT">AI 사용 안내</h4>' +
+        '<p>이 계정은 AI 기능을 <b>모두 합쳐 ' + lim + '회</b>까지 쓰실 수 있습니다.</p>' +
+        '<span class="big' + (left <= 3 ? ' is-low' : '') + '">' +
+          (left > 0 ? ('남은 ' + left + '회') : '남은 횟수 없음') + '</span>' +
+        '<p class="fine">지금까지 ' + llm.quota.used + '회 쓰셨습니다.</p>' +
+        '<p style="margin-top:14px">한 번 쓰는 것은 이렇습니다.</p>' +
+        '<ul>' +
+          '<li>단계별 AI 진단 · AI 작성모드 답변 한 번</li>' +
+          '<li>도식 만들기 · 투자논리 진단</li>' +
+          '<li>IR 피칭 자료 만들기 · 덱 도식 다시 뽑기</li>' +
+        '</ul>' +
+        '<p class="fine">[가이드] 탭과 [덱 점검]은 <b>쓰지 않습니다</b>. ' +
+        '남은 횟수는 화면 위쪽 띠에서 늘 보실 수 있습니다.' +
+        (left === 0 ? ' 더 필요하시면 운영사에 요청하십시오.' : '') + '</p>' +
+        '<button class="pb-cta" style="margin-top:18px" id="qdOk">확인</button>' +
+      '</div>';
+    document.body.appendChild(v);
+    var close = function(){ if(v.parentNode) v.parentNode.removeChild(v); };
+    v.querySelector('#qdOk').onclick = close;
+    v.onclick = function(e){ if(e.target === v) close(); };
+    document.addEventListener('keydown', function esc(e){
+      if(e.key === 'Escape'){ close(); document.removeEventListener('keydown', esc); }
+    });
+    try{ v.querySelector('#qdOk').focus(); }catch(e){}
+  }
+
   function openApp(label){
     loadLocal();
     $('viewLogin').classList.add('hidden');
@@ -4886,6 +5040,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     // ★팀에게는 관리자 화면이 열릴 여지를 두지 않는다(앞 세션의 view가 남을 수 있다)
     if(isAdmin()){ goAdmin(); }
     else { state.view = 'write'; admin.editing = null; render(); }
+    quotaNotice();          // 남은 AI 사용 횟수를 처음에 알린다(기업만)
   }
 
   //  묻는 것은 한 번뿐이다. 그 뒤엔 상단 토글로 언제든 바꾼다.
