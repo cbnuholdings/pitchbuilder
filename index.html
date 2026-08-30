@@ -16,14 +16,14 @@
 <meta property="og:url"         content="https://pitching.cbnuholdings.com/">
 <meta property="og:title"       content="PitchBuilder — IR을 쓰고, 점검하고, 피칭 자료까지">
 <meta property="og:description" content="투자자 앞에 설 자료를 한 자리에서 만듭니다. 도식 → 투자논리 진단 → 피칭 자료(슬라이드·PDF·PPT).">
-<meta property="og:image"       content="https://pitching.cbnuholdings.com/og.png?v=2">
-<meta property="og:image:width"  content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:image"       content="https://pitching.cbnuholdings.com/og.png?v=3">
+<meta property="og:image:width"  content="3600">
+<meta property="og:image:height" content="1890">
 <meta property="og:image:alt"   content="PitchBuilder — 도식 만들기, 투자논리 진단, IR 피칭 자료">
 <meta name="twitter:card"        content="summary_large_image">
 <meta name="twitter:title"       content="PitchBuilder — IR을 쓰고, 점검하고, 피칭 자료까지">
 <meta name="twitter:description" content="투자자 앞에 설 자료를 한 자리에서 만듭니다.">
-<meta name="twitter:image"       content="https://pitching.cbnuholdings.com/og.png?v=2">
+<meta name="twitter:image"       content="https://pitching.cbnuholdings.com/og.png?v=3">
 <meta name="description" content="충북대학교기술지주 IR PitchBuilder — IR 작성, 투자논리 진단, 피칭 자료 제작 도구.">
 <meta name="theme-color" content="#0E1116">
 <style>
@@ -867,7 +867,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   <div class="pb-who" id="hdWho"></div>
   <div class="sp"></div>
   <button class="pb-toggle" id="hdTips">R&amp;D 대응<span class="sw"></span></button>
-  <div class="pb-chip" id="hdChip"><span class="dot"></span><span id="hdChipTxt">저장 대기</span></div>
+  <div class="pb-chip" id="hdChip" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="hdChipTxt">저장 대기</span></div>
   <button class="pb-hbtn" id="hdB1">신청서 내용 가져오기</button>
   <button class="pb-hbtn" id="hdSave">저장</button>
   <button class="pb-hbtn" id="hdLoad">저장분 불러오기</button>
@@ -2435,8 +2435,22 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     Array.prototype.forEach.call($('pbCenter').querySelectorAll('.pb-row'), function(b){
       b.onclick = function(){ state.stepIndex = +b.dataset.i; render(); };
     });
-    Array.prototype.forEach.call($('pbCenter').querySelectorAll('.pb-cardtab'), function(b){
+    var cardTabs = $('pbCenter').querySelectorAll('.pb-cardtab');
+    Array.prototype.forEach.call(cardTabs, function(b){
       b.onclick = function(){ state.tab = +b.dataset.ct; render(); };
+      // ★tablist 규약 — ←/→ 로 탭을 옮기고 Home/End 로 양끝. render() 뒤에는
+      //   새로 그려진 활성 탭에 초점을 되돌려야 키보드 사용자가 위치를 잃지 않는다.
+      b.onkeydown = function(ev){
+        var n = cardTabs.length, cur = +b.dataset.ct, to = -1;
+        if(ev.key === 'ArrowRight') to = (cur + 1) % n;
+        else if(ev.key === 'ArrowLeft') to = (cur - 1 + n) % n;
+        else if(ev.key === 'Home') to = 0;
+        else if(ev.key === 'End') to = n - 1;
+        if(to < 0) return;
+        ev.preventDefault();
+        state.tab = to; render();
+        try{ $('ctab-' + to).focus(); }catch(e){}
+      };
     });
     if(state.tab !== 0) bindCoach(steps()[state.stepIndex]);
     if(state.tab === 0) bindAw(steps()[state.stepIndex]);
@@ -2566,7 +2580,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       h += '<div class="pb-awmsg ' + (m.role === 'me' ? 'me' : 'ai') + '">' + esc(m.text) + '</div>';
     });
     h += '</div>' +
-         '<div class="pb-awin"><textarea id="awIn" placeholder="답을 적으십시오"></textarea>' +
+         '<div class="pb-awin"><textarea id="awIn" aria-label="AI 작성모드 답변 입력" placeholder="답을 적으십시오"></textarea>' +
          '<button class="pb-awsend" id="awSend">보내기</button></div>' +
          '<p class="pb-awhint">질문에 말로 답하면 오른쪽 원고가 채워집니다. 말하지 않은 수치는 만들지 않습니다. ' +
          '모르는 항목은 "모릅니다"라고 답하셔도 됩니다 — [__]로 비운 채 남깁니다.</p></div>';
@@ -2670,14 +2684,23 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     var gN = 0;
     try{ gN = brainItemsFor(s.id).length; }catch(e){}
     var TABS = ['작성', '가이드' + (gN ? '<span class="n">' + gN + '문항</span>' : ''), 'AI 진단'];
-    h += '<div class="pb-cardtabs">';
+    // ★탭 상태를 눈으로만 알리면 스크린리더는 어느 탭이 열렸는지 모른다(2026-08-30 접근성 보완).
+    //   role=tab + aria-selected 로 상태를 코드에 싣고, 로빙 tabindex(활성 0·나머지 -1)로
+    //   화살표 이동을 붙인다 — role 만 주고 키보드를 안 주면 오히려 기대만 만들고 배신한다.
+    h += '<div class="pb-cardtabs" role="tablist" aria-label="작성 카드 탭">';
     TABS.forEach(function(t, k){
-      h += '<button class="pb-cardtab' + (k === state.tab ? ' is-on' : '') + '" data-ct="' + k + '">' + t + '</button>';
+      var on = (k === state.tab);
+      h += '<button class="pb-cardtab' + (on ? ' is-on' : '') + '" data-ct="' + k + '"' +
+             ' id="ctab-' + k + '" role="tab" aria-selected="' + (on ? 'true' : 'false') + '"' +
+             ' aria-controls="ctabpanel" tabindex="' + (on ? '0' : '-1') + '">' + t + '</button>';
     });
     h += '</div>';
+    // 탭 아래 내용 전체가 하나의 탭 패널이다 — 아래 세 갈래 반환 경로가 모두 이 div 를 닫는다.
+    // ★패널에 tabindex 를 주지 않는다: 안에 이미 초점 받는 요소(textarea·button)가 있다.
+    h += '<div id="ctabpanel" role="tabpanel" aria-labelledby="ctab-' + state.tab + '">';
 
     if(state.tab !== 0){
-      h += coachPanel(s) + '</div>';
+      h += coachPanel(s) + '</div></div>';
       return h;
     }
 
@@ -2689,15 +2712,15 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
                                                    : ('오늘 AI 호출 ' + llmToday() + '회 사용')) + '</span>' +
          '</div>';
     if(aw.on){
-      h += awPanel(s) + '</div>';
+      h += awPanel(s) + '</div></div>';
       return h;
     }
 
     s.inputs.forEach(function(f){
       var v = state.formData[f.key] || '';
       h += '<div class="pb-field">' +
-             '<label>' + esc(f.label) + '<span class="key">' + esc(f.key) + '</span></label>' +
-             '<textarea data-k="' + esc(f.key) + '" placeholder="' + esc(f.placeholder || '') + '">' + esc(v) + '</textarea>' +
+             '<label for="fld-' + esc(f.key) + '">' + esc(f.label) + '<span class="key">' + esc(f.key) + '</span></label>' +
+             '<textarea id="fld-' + esc(f.key) + '" data-k="' + esc(f.key) + '" placeholder="' + esc(f.placeholder || '') + '">' + esc(v) + '</textarea>' +
              '<div class="pb-cnt">' + v.length + '자</div>' +
            '</div>';
     });
@@ -2709,7 +2732,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
              (isLast ? '결과 보기 →' : '다음 →') + '</button>' +
          '</div>' +
          '<p class="pb-cardhint">위 탭에서 가이드·AI 진단을 보실 수 있습니다 — 탭을 넘겨도 원고는 그대로 남습니다.</p>' +
-         '</div>';
+         '</div></div>';
     return h;
   }
   function move(d){
@@ -2766,7 +2789,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
              '이 단계를 고치셨습니다. 지금 원고에 대한 판단이 필요하면 다시 진단하십시오.</p></div>';
       }
       h += '<button class="pb-inkbtn" id="btnAI">' + (dg ? '다시 진단' : '이 단계 진단받기') + '</button>' +
-           '<div id="pbDiag" class="pb-diag' + (dStale ? ' pb-stale' : '') + '"></div>';
+           // ★진단 결과는 이 빈 칸에 나중에 채워진다. 칸이 먼저 DOM 에 있어야
+           //   aria-live 가 동작한다 — 결과와 함께 만들어 붙이면 알림이 뜨지 않는다.
+           '<div id="pbDiag" class="pb-diag' + (dStale ? ' pb-stale' : '') + '" ' +
+             'aria-live="polite" aria-busy="false"></div>';
     }
     h += DISCLAIMER + '</div></div>';
     return h;
@@ -2982,6 +3008,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     }
     var btn = $('btnAI');
     busy = true; btn.disabled = true; btn.textContent = '진단 중…';
+    // 결과가 오는 동안 aria-live 가 중간 상태를 읽지 않게 막는다
+    if($('pbDiag')) $('pbDiag').setAttribute('aria-busy', 'true');
     callLLM(SYSTEM, stepPrompt(), 'step')
       .then(function(d){
         // ★무엇을 보고 받은 진단인지를 함께 남긴다 — 이 해시가 낡음 판정의 근거다.
@@ -2994,6 +3022,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       })
       .then(function(){
         busy = false;
+        if($('pbDiag')) $('pbDiag').setAttribute('aria-busy', 'false');
         // ★라벨을 고정 문구로 되돌리면 안 된다 — 이미 진단을 받은 뒤에는 [다시 진단]이어야 한다.
         if($('btnAI')){
           $('btnAI').disabled = false;
@@ -3374,7 +3403,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       card.appendChild(t);
     } else {
       flagNums(def.label, data.headline);
-      card.appendChild(field('s-head', data.headline, function(v){ data.headline = v; }));
+      card.appendChild(field('s-head', data.headline, function(v){ data.headline = v; },
+                             def.label + ' 슬라이드 제목'));
     }
 
     var body = document.createElement('div');
@@ -3382,7 +3412,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     card.appendChild(body);
 
     if(def.id === 'cover'){
-      card.insertBefore(field('s-sub', data.sub, function(v){ data.sub = v; }), body);
+      card.insertBefore(field('s-sub', data.sub, function(v){ data.sub = v; },
+                              def.label + ' 슬라이드 부제'), body);
     } else if(!it.figOnly){
       var ul = document.createElement('ul');
       ul.className = 's-bullets';
@@ -3391,7 +3422,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         var li = document.createElement('li');
         var dot = document.createElement('span'); dot.className = 's-dot';
         li.appendChild(dot);
-        li.appendChild(field('s-bullet', b, function(v){ data.bullets[i] = v; }));
+        li.appendChild(field('s-bullet', b, function(v){ data.bullets[i] = v; },
+                             def.label + ' 슬라이드 ' + (i + 1) + '번째 항목'));
         ul.appendChild(li);
       });
       body.appendChild(ul);
@@ -3696,9 +3728,12 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     });
   }
 
-  function field(cls, val, onEdit){
+  //  ★label — 덱 편집칸은 라벨을 붙일 자리가 화면에 없다(슬라이드 위에 바로 얹힌 글이다).
+  //    그래서 aria-label 로만 이름을 준다. 없으면 스크린리더가 「편집란, 비어 있음」만 읽는다.
+  function field(cls, val, onEdit, label){
     var ta = document.createElement('textarea');
     ta.className = cls;
+    ta.setAttribute('aria-label', label || '슬라이드 문구');
     ta.rows = 1;
     ta.value = String(val || '');
     ta.oninput = function(){
@@ -4016,7 +4051,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
            '(주)·주식회사는 빼고 검색해도 찾습니다. 오른쪽에 작성 진행(작성 n/16 · 제출)이 함께 보입니다.<br>' +
            '<span style="color:var(--pb-ink-3)">※ 여기는 <b>누구를</b> 작업할지 고르는 곳입니다. ' +
            '기업을 연 뒤 상단 [신청서 내용 가져오기]를 누르면 <b>그 기업이 낸 린캔버스로 작성칸이 채워집니다.</b></span></p>' +
-           '<input id="apQ" class="pb-apq" placeholder="기업명 또는 접수번호 — 예: 엑스업 · ITC2026-002" ' +
+           '<input id="apQ" class="pb-apq" aria-label="기업명 또는 접수번호로 검색" ' +
+             'placeholder="기업명 또는 접수번호 — 예: 엑스업 · ITC2026-002" ' +
              'value="' + esc(admin.q) + '" autocomplete="off">' +
            '<div id="apList" class="pb-aplist">' + apRowsHtml() + '</div>' +
          '</div>';
