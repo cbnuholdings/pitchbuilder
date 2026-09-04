@@ -479,6 +479,23 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   background:var(--pb-paper);
 }
 .pb-login .r h3{font:600 23px var(--pb-font-serif);color:var(--pb-text)}
+/* 로그인만 모바일 대응(내부는 PC 전제) — 2열 고정이라 390px 폭에서 입력칸이 83px 로 줄었다(2026-09-04) */
+@media (max-width:760px){
+  .pb-login{grid-template-columns:1fr;min-height:auto}
+  .pb-login .l,.pb-login .r{padding:32px 24px}
+  .pb-login .l h1{font-size:28px}
+  .pb-login .l p{max-width:none}
+}
+/* 재무 트윈 숫자 표(.pb-mine)와 점검표(.pb-ck) — 클래스만 있고 규칙이 없어 라벨과 값이 붙어 나왔다(2026-09-04) */
+.pb-mine .row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--pb-on-ink-line);font-size:13px}
+.pb-mine .row span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+.pb-mine .vd{margin-top:10px;font-size:12px;line-height:1.7;color:var(--pb-on-ink-3)}
+.pb-ck{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.6;margin-top:4px}
+.pb-ck>span{flex:0 0 18px;text-align:center;font-weight:700}
+.pb-ck.ok>span{color:var(--pb-ok)}
+.pb-ck.yet>span{color:var(--pb-text-ghost)}
+.pb-right .pb-ck.ok>span,.pb-coach .pb-ck.ok>span{color:var(--pb-ok-on-ink)}
+.pb-right .pb-ck.yet>span,.pb-coach .pb-ck.yet>span{color:var(--pb-on-ink-3)}
 .pb-in{margin-top:22px}
 .pb-in label{display:block;font-size:14px;font-weight:600;margin-bottom:7px;color:var(--pb-text)}
 .pb-in input{
@@ -2454,7 +2471,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     });
     if(state.tab !== 0) bindCoach(steps()[state.stepIndex]);
     if(state.tab === 0) bindAw(steps()[state.stepIndex]);
-    Array.prototype.forEach.call($('pbCenter').querySelectorAll('textarea'), function(ta){
+    // ★작성 칸(data-k)만 잡는다(2026-09-04). 'textarea' 전체를 잡으면 AI 작성모드 답변칸(#awIn)까지
+    //   묶여 키 입력마다 formData["undefined"]에 채팅 문장이 들어가고 .pb-cnt 가 없어 예외가 났다.
+    Array.prototype.forEach.call($('pbCenter').querySelectorAll('textarea[data-k]'), function(ta){
       ta.oninput = function(){
         state.formData[ta.dataset.k] = ta.value;
         ta.parentNode.querySelector('.pb-cnt').textContent = ta.value.length + '자';
@@ -2964,8 +2983,12 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     if(r.files && r.files.length){
       h += '<div class="pb-corpus" style="margin-top:14px"><h5>제출하신 파일</h5>';
       r.files.forEach(function(f){
-        h += '<p style="margin:4px 0"><a href="' + esc(f.url) + '" target="_blank" rel="noopener">' +
-             esc(f.name || f.label) + '</a> <span style="color:var(--pb-on-ink-3)">· ' + esc(f.label) + '</span></p>';
+        // ★http(s) 만 링크로 만든다(2026-09-04). 노션 files 속성엔 외부 URL 도 들어올 수 있어 스킴을 본다.
+        var safeUrl = /^https?:\/\//i.test(String(f.url || '')) ? f.url : '';
+        h += '<p style="margin:4px 0">' +
+             (safeUrl ? '<a href="' + esc(safeUrl) + '" target="_blank" rel="noopener">' + esc(f.name || f.label) + '</a>'
+                      : '<span>' + esc(f.name || f.label) + '</span>') +
+             ' <span style="color:var(--pb-on-ink-3)">· ' + esc(f.label) + '</span></p>';
       });
       h += '<p class="pb-note" style="color:var(--pb-on-ink-3)">링크는 시간이 지나면 만료됩니다. ' +
            '열리지 않으면 아래 [제출한 파일 확인]을 누르십시오 — <b>원고는 건드리지 않습니다.</b></p></div>';
@@ -3069,6 +3092,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       b.onclick = function(){
         var r = rw[+b.dataset.rw];
         if(!r) return;
+        // ★원고 소유권은 기업이다 — 이미 쓴 칸을 덮을 때는 먼저 묻는다(AI 작성모드 [이대로 넣기]와 같은 규칙·2026-09-04).
+        var cur = String(state.formData[r.field] || '').trim();
+        if(cur && normTxt(cur) !== normTxt(String(r.text || '')) &&
+           !confirm('이미 쓰신 칸이 AI 제안 문장으로 바뀝니다.\n지금 쓰신 내용은 되돌릴 수 없습니다.\n\n계속할까요?')) return;
         state.formData[r.field] = r.text;
         saveLocal();
         render();                                  // 입력란·목차·메타가 함께 갱신된다
@@ -3097,6 +3124,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         lastDiagrams: state.lastDiagrams || null,
         figHash: state.figHash || '',
         deckHash: state.deckHash || '',
+        // ★②투자논리 진단 결과와 덱 본문도 남긴다(2026-09-04). auditHash 만 남기고 lastAudit 을
+        //   버리면 새로고침 뒤 관문 ②가 닫혀 같은 진단을 또 부른다(AI 1회). 덱은 손으로 고친 문구까지 잃는다.
+        lastAudit: state.lastAudit || null,
+        lastDeck: state.lastDeck || null,
         // ★신청서 참고자료도 남긴다. 없으면 새로고침 한 번에 참고 열이 통째로 비고,
         //   기업은 "아까는 있었는데"라며 불러오기를 다시 눌러 원고를 통째로 잃는다.
         b1ref: state.b1ref || null, b1At: state.b1At || ''
@@ -3107,7 +3138,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   function saveLocal(){
     chip('saving');
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(function(){ chip(writeLocal() ? 'ok' : 'fail'); }, 400);
+    // ★서버 저장이 실패한 채면 로컬이 됐다고 「저장됨」으로 덮지 않는다(2026-09-04).
+    //   전에는 한 글자 더 치면 「저장 실패」가 「저장됨 14:02」로 바뀌어 실패가 숨었다.
+    saveTimer = setTimeout(function(){ chip((writeLocal() && !syncFailed) ? 'ok' : 'fail'); }, 400);
   }
   function loadLocal(){
     // ★먼저 비운다 — 로그아웃해도 스크립트가 메모리에 남아 앞 기업 내용이 새어 나온다
@@ -3129,6 +3162,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       var s = JSON.parse(raw);
       if(s && typeof s === 'object'){
         state.formData  = s.formData || {};
+        delete state.formData['undefined'];      // 구버전 선택자 버그가 남긴 키(2026-09-04) — 서버로 새지 않게
         state.stepIndex = Math.min(+s.stepIndex || 0, steps().length - 1);
         state.completed = !!s.completed;
         state.diags      = (s.diags && typeof s.diags === 'object') ? s.diags : {};
@@ -3136,6 +3170,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         state.lastDiagrams = (s.lastDiagrams && typeof s.lastDiagrams === 'object') ? s.lastDiagrams : null;
         state.figHash    = s.figHash || '';
         state.deckHash   = s.deckHash || '';
+        state.lastAudit  = (s.lastAudit && typeof s.lastAudit === 'object') ? s.lastAudit : null;
+        state.lastDeck   = (s.lastDeck && typeof s.lastDeck === 'object') ? s.lastDeck : null;
         state.b1ref      = (s.b1ref && typeof s.b1ref === 'object') ? s.b1ref : null;
         state.b1At       = s.b1At || '';
       }
@@ -3149,7 +3185,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     if(mode === 'saving'){ t.textContent = '저장중…'; }
     else if(mode === 'fail'){
       t.innerHTML = '저장 실패 — 브라우저를 닫지 마세요<button class="retry" id="hdRetry">다시 저장</button>';
-      var r = $('hdRetry'); if(r) r.onclick = saveLocal;
+      // ★[다시 저장]은 서버까지 다시 보낸다(2026-09-04). 로컬만 쓰면 「저장됨」이 뜨는데 서버엔 없다.
+      var r = $('hdRetry'); if(r) r.onclick = function(){ writeLocal(); syncToServer(); };
     } else {
       var d = new Date();
       t.textContent = '저장됨 ' + ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
@@ -3475,15 +3512,28 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
   ];
+  //  ★로드 중인 약속을 캐시하고 20초 상한을 건다(2026-09-04). 전에는 태그만 있으면 로드 중이어도
+  //    즉시 resolve 해 [PDF] 직후 [PPT]가 「라이브러리 없음」 오탐을 냈고, CDN 이 응답 없이 매달리면
+  //    버튼이 「준비 중…」으로 영구 잠겼다(제출 경로만 25초 race 가 있었다).
+  var SCRIPT_WAIT = 20000, scriptLoads = {};
   function loadScriptOnce(src){
-    return new Promise(function(res, rej){
-      if(document.querySelector('script[data-src="' + src + '"]')){ res(); return; }
-      var el = document.createElement('script');
+    if(scriptLoads[src]) return scriptLoads[src];
+    scriptLoads[src] = new Promise(function(res, rej){
+      var el = document.createElement('script'), done = false;
+      var tm = setTimeout(function(){
+        if(done) return; done = true;
+        el.remove(); delete scriptLoads[src];
+        rej(new Error('timeout ' + src));
+      }, SCRIPT_WAIT);
       el.src = src; el.async = true; el.setAttribute('data-src', src);
-      el.onload = function(){ res(); };
-      el.onerror = function(){ el.remove(); rej(new Error('load ' + src)); };
+      el.onload = function(){ if(done) return; done = true; clearTimeout(tm); res(); };
+      el.onerror = function(){
+        if(done) return; done = true; clearTimeout(tm);
+        el.remove(); delete scriptLoads[src]; rej(new Error('load ' + src));
+      };
       document.head.appendChild(el);
     });
+    return scriptLoads[src];
   }
   function pdfLibs(){
     return loadScriptOnce(PDF_LIBS[0]).then(function(){ return loadScriptOnce(PDF_LIBS[1]); }).then(function(){
@@ -3606,7 +3656,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
                 sl.addImage({ data: cv.toDataURL('image/png'), x:0, y:0, w:10, h:5.625 });
                 // 발표자 노트 = 그 장의 텍스트(수정 재료)
                 var note = [];
-                Array.prototype.forEach.call(src.querySelectorAll('.s-head,.s-sub,.s-bullets li,[data-dk]'), function(t){
+                // ★요점은 li 가 아니라 그 안의 textarea(.s-bullet)에 있다 — li.textContent 는 빈 문자열이라
+                //   발표자 노트에 제목·부제만 들어가고 요점이 통째로 빠졌다(2026-09-04).
+                Array.prototype.forEach.call(src.querySelectorAll('.s-head,.s-sub,.s-bullet,[data-dk]'), function(t){
                   var v = (t.value != null ? t.value : t.textContent) || '';
                   v = v.replace(/\s+/g, ' ').trim();
                   if(v && note.indexOf(v) < 0) note.push(v);
@@ -4164,8 +4216,11 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         syncGateUI();                                      // ②가 열렸으니 ③ 카드도 함께 갱신(2026-08-22)
       })
       .catch(function(err){
-        $('auditBox').innerHTML = '<div class="pb-warnbox" style="margin-top:14px">진단하지 못했습니다 — ' +
-                                  esc(err.message || '오류') + '</div>';
+        // ★응답 전에 화면을 옮기면 auditBox 가 없다 — 여기서 또 던지면 아래 busy 해제가 안 돼
+        //   진단·도식·덱 버튼 전부가 새로고침 전까지 죽는다(2026-09-04). null 이면 조용히 넘긴다.
+        var ab = $('auditBox');
+        if(ab) ab.innerHTML = '<div class="pb-warnbox" style="margin-top:14px">진단하지 못했습니다 — ' +
+                              esc(err.message || '오류') + '</div>';
       })
       .then(function(){
         busy = false;
@@ -4173,7 +4228,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
           $('btnAudit').disabled = false;
           $('btnAudit').textContent = state.lastAudit ? '투자논리 다시 진단' : '투자논리 진단';
         }
-      });
+      }, function(){ busy = false; });
   }
   function axPill(st){ return '<span class="pb-axpill is-' + st.toLowerCase() + '">' + esc(AX_STATUS[st] || st) + '</span>'; }
   function renderAuditBox(){
@@ -4328,8 +4383,16 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     //   서버(GAS)가 만드는 PDF 에는 도식이 없다 — 도식은 브라우저가 그리기 때문이다.
     submitPdf()
       .then(function(pdf){ return syncToServer({ submit:true, pdf:pdf }); })
-      .then(function(){
+      .then(function(r){
         if(btn){ btn.disabled = false; btn.textContent = lab; }
+        // ★서버가 받았을 때만 「제출했습니다」(2026-09-04). 전에는 저장 실패·저장 중 드롭에도
+        //   성공 알림이 떠서, 기업은 제출됐다고 믿고 창을 닫았다.
+        if(!r || !r.ok){
+          var why = (r && r.err && r.err.message) || '서버 오류';
+          alert('제출하지 못했습니다 — ' + why + '\n\n' +
+                '원고는 이 브라우저에 저장돼 있습니다. 잠시 후 [제출하기]를 다시 눌러 주십시오.');
+          return;
+        }
         renderResultView();
         alert('제출했습니다.\n\n' + lagmpMsg());
       });
@@ -4706,13 +4769,14 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         syncGateUI();                    // ①이 열렸으니 좌측 목차와 ③ 카드를 갱신
       })
       .catch(function(err){
-        $('figBox').innerHTML = '<div class="pb-warnbox" style="margin-top:14px">도식을 만들지 못했습니다 — ' +
-                                esc(err.message || '오류') + '</div>';
+        var fb = $('figBox');                  // 응답 전에 화면을 옮겼으면 없다 — busy 만 풀고 넘긴다(2026-09-04)
+        if(fb) fb.innerHTML = '<div class="pb-warnbox" style="margin-top:14px">도식을 만들지 못했습니다 — ' +
+                              esc(err.message || '오류') + '</div>';
       })
       .then(function(){
         busy = false;
         if($('btnFig')){ $('btnFig').disabled = false; $('btnFig').textContent = '도식 다시 만들기'; }
-      });
+      }, function(){ busy = false; });
   }
   function renderFigures(spec){
     var h = '';
@@ -4898,35 +4962,49 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 
   // ── 서버 저장 (단계 이동마다 자동) ──
   //  ★늦게 온 응답이 최신 상태를 되돌리지 못하게 시퀀스를 센다.
-  var syncSeq = 0, syncing = false;
+  //  ★반환값은 { ok, err?, superseded?, skipped? } 다(2026-09-04). 실패를 던지지 않는 이유는
+  //    단계 이동·진단 뒤의 호출부가 catch 없이 부르기 때문이고, 제출(doSubmit)은 ok 를 본다.
+  //  ★저장이 진행 중이면 **버리지 않고 뒤에 붙인다**. 전에는 즉시 resolve 해 버려서
+  //    저장 중에 누른 [제출하기]가 아무것도 안 보내고 「제출했습니다」를 띄웠다.
+  var syncSeq = 0, syncing = false, syncPending = null, syncFailed = false;
   function syncToServer(opts){
-    if(!serverOn() || syncing) return Promise.resolve();
+    if(!serverOn()) return Promise.resolve({ ok:false, skipped:true });
+    if(syncing && syncPending){
+      return syncPending.then(function(){ return syncToServer(opts); });
+    }
     var body = snapshot();
     body.formData = filledOnly(body.formData);
-    if(!Object.keys(body.formData).length) return Promise.resolve();
+    if(!Object.keys(body.formData).length){
+      return Promise.resolve({ ok:false, skipped:true, err:new Error('작성한 내용이 없습니다.') });
+    }
 
     var my = ++syncSeq;
     syncing = true;
     chip('saving');
-    return callProxy({ action:(opts && opts.submit) ? 'submit' : 'save',
+    syncPending = callProxy({ action:(opts && opts.submit) ? 'submit' : 'save',
                        id:llm.id, code:llm.code, snapshot:body, submit:!!(opts && opts.submit),
                        // ⑤ 성장관리 플랫폼에 붙일 도식 포함 PDF(제출일 때만·없으면 서버가 대신 만든다)
                        pdfB64: (opts && opts.pdf && opts.pdf.b64) || '' })
       .then(function(d){
-        if(my !== syncSeq) return;            // 더 최신 저장이 이미 끝났다 — 무시한다
+        if(my !== syncSeq) return { ok:true, superseded:true };   // 더 최신 저장이 이미 끝났다 — 무시한다
         if(d.status) state.status = d.status;
         if(d.submittedAt) state.submittedAt = d.submittedAt;
         // ⑤ 성장관리 플랫폼 반영 결과(제출일 때만 온다). 조용히 버리지 않는다 —
         //   기업은 "제출했으니 멘토가 본다"고 믿는데 사본이 안 갔을 수 있다.
         if(opts && opts.submit) state.lastLagmp = d.lagmp || null;
+        syncFailed = false;
         chip('ok');
+        return { ok:true, data:d };
       })
       .catch(function(err){
         // ★실패를 조용히 넘기지 않는다. 저장 안 됐는데 됐다고 믿고 창을 닫는 게 최악이다.
+        syncFailed = true;
         chip('fail');
         if(retryable(err.code)) setTimeout(function(){ syncToServer(opts); }, 4000);
+        return { ok:false, err:err };
       })
-      .then(function(){ syncing = false; });
+      .then(function(r){ syncing = false; syncPending = null; return r; });
+    return syncPending;
   }
 
   // ── 노션에서 불러오기 ──
@@ -5191,11 +5269,19 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     render();
   };
   $('hdExit').onclick = function(){
+    // ★나가기 전에 서버로 한 번 보낸다(2026-09-04). 마지막 단계 이동 뒤 타이핑분은 로컬에만 있었다.
+    //   snapshot()은 동기라 아래에서 비우기 전의 상태가 실린다.
+    try{ writeLocal(); syncToServer(); }catch(e){}
     ['pbHead','pbMeta','pbShell'].forEach(function(k){ $(k).classList.add('hidden'); });
     $('viewLogin').classList.remove('hidden');
     $('loginErr').classList.add('hidden');
     $('inCode').value = '';
     state.formData = {};                      // 메모리도 비운다
+    // ★제출 상태·연동 결과·잔여 횟수도 앞 계정의 것이다 — 남기면 다음 계정 결과 화면에
+    //   「이미 제출하셨습니다(앞 기업 일시)」와 앞 기업의 「AI 사용 n/30회」가 뜬다(2026-09-04).
+    state.status = ''; state.submittedAt = ''; state.lastLagmp = null; state.serverDraft = null;
+    state.lastDeck = null; state.lastDiagrams = null; state.figHash = ''; state.deckHash = '';
+    llm.quota = null;
     // ★판단도 함께 비운다 — 칸만 갈라두면 메모리 경로로 샌다(로그인 시 loadLocal이 또 비운다: 두 겹)
     state.diags = {};
     state.auditHash = '';
@@ -5284,9 +5370,14 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   $('hdReset').onclick = resetAll;
 
   // 창을 닫기 전 저장 — 자동저장이 아직 안 끝났을 수 있다
+  //  ★writeLocal() 전체를 쓴다(2026-09-04). 전에는 3필드 축소본으로 같은 키를 덮어
+  //    진단·도식·참고자료가 새로고침마다 지워졌고(관문 ① 재호출 = AI 1회 낭비),
+  //    [나가기] 뒤 탭을 닫으면 빈 원고가 그 기업 키에 써졌다. 로그인 화면이면 쓰지 않는다.
   window.addEventListener('beforeunload', function(){
-    try{ localStorage.setItem(skey(), JSON.stringify({
-      stepIndex: state.stepIndex, formData: state.formData, completed: state.completed })); }catch(e){}
+    try{
+      if(!$('viewLogin').classList.contains('hidden')) return;
+      writeLocal();
+    }catch(e){}
   });
 })();
 </script>
