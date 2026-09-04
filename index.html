@@ -4836,15 +4836,19 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       return d;
     });
   }
+  //  ★조회도 POST 본문으로 보낸다(2026-09-04 L-1). 접속코드를 GET 쿼리에 실으면 GAS 실행 로그·
+  //    URL 로그에 남는다. 이름은 호출부 12곳이 그대로라 apiGet 으로 둔다. 응답은 ok:false 여도
+  //    그대로 돌려준다(호출부가 d.ok 를 스스로 본다 — callProxy 와 다른 점).
   function apiGet(action, params){
-    var qs = ['action=' + encodeURIComponent(action),
-              'id=' + encodeURIComponent(llm.id),
-              'code=' + encodeURIComponent(llm.code)];
+    var body = { action:action, id:llm.id, code:llm.code };
     Object.keys(params || {}).forEach(function(k){
-      if(params[k] != null && params[k] !== '') qs.push(k + '=' + encodeURIComponent(params[k]));
+      if(params[k] != null && params[k] !== '') body[k] = params[k];
     });
-    var url = llm.proxy + (llm.proxy.indexOf('?') < 0 ? '?' : '&') + qs.join('&');
-    return fetch(url).then(function(r){ return r.json(); });
+    return fetch(llm.proxy, {
+      method:'POST',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },   // 프리플라이트 없이(GAS 는 OPTIONS 를 못 받는다)
+      body: JSON.stringify(body)
+    }).then(function(r){ return r.json(); });
   }
 
   // ── Gemini ──
@@ -4914,7 +4918,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       var fd = d.snapshot.formData, has = Object.keys(fd).some(function(k){ return String(fd[k] || '').trim(); });
       if(!has){ state.serverDraft = null; return; }
       var localHas = Object.keys(state.formData || {}).some(function(k){ return String(state.formData[k] || '').trim(); });
-      if(!localHas){ applySnapshot(d.snapshot); state.serverDraft = null; writeLocal(); if(state.view === 'write') render(); return; }
+      if(!localHas){ applySnapshot(d.snapshot, true); state.serverDraft = null; writeLocal(); if(state.view === 'write') render(); return; }
       state.serverDraft = (hashOf(normTxt(JSON.stringify(fd))) === hashOf(normTxt(JSON.stringify(state.formData)))) ? null : d.snapshot;
       if(state.view === 'write') render();
     }).catch(function(){});
@@ -5008,7 +5012,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   }
 
   // ── 노션에서 불러오기 ──
-  function applySnapshot(s){
+  //  keepJudgements(2026-09-04 L-2) = 같은 계정이 이 브라우저에서 낸 판단(단계 진단·낡음 판정)을 남긴다.
+  //   나가기 때 원고만 지우고 판단은 남기므로, 다음 로그인의 서버 원고 적용이 판단을 버리면 안 된다.
+  //   안전한 이유 = 판단마다 「그때 본 원고의 해시」가 붙어 있어 원고가 달라지면 스스로 낡음이 된다.
+  function applySnapshot(s, keepJudgements){
     state.serverDraft = null;
     var fd = (s && s.formData) ? s.formData : s;      // 옛 형식(formData만)도 받아준다
     if(!fd || typeof fd !== 'object') throw new Error('형식을 알 수 없습니다.');
@@ -5018,14 +5025,18 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       if(typeof fd[k] === 'string') state.formData[k] = fd[k];
     });
     state.cid        = s.cid || '';
+    var prevAudit = state.lastAudit, prevAuditHash = state.auditHash;
     state.lastAudit  = s.audit || null;
     state.status     = s.status || '';
     state.submittedAt= s.submittedAt || '';
     // ★단계별 진단은 이 원고에 대한 것이 아니다 — 다른 PC에서 쓴 원고를 받아왔을 수도 있다.
-    state.diags = {};
+    if(!keepJudgements) state.diags = {};
     // ★진단은 받아 쓰지만 '무엇을 보고 낸 것인지'는 모른다.
     //   모르는 것을 낡았다고 하지도, 최신이라고 하지도 않는다 → 빈 해시 = 판정 불가.
-    state.auditHash = '';
+    //   단, 서버 진단이 이 브라우저가 낸 것과 같으면(내용 동일) 그 해시는 안다 — 그대로 둔다.
+    var same = keepJudgements && prevAudit && state.lastAudit &&
+               hashOf(JSON.stringify(prevAudit)) === hashOf(JSON.stringify(state.lastAudit));
+    state.auditHash = same ? prevAuditHash : '';
 
     // ★R&D 항목이 있으면 R&D 대응을 켠다 — 안 켜면 그 입력이 화면에서 사라진다
     var hasRnd = ['devGoal','devPrior','devKpi','devVerify'].some(function(k){
@@ -5271,7 +5282,29 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   $('hdExit').onclick = function(){
     // ★나가기 전에 서버로 한 번 보낸다(2026-09-04). 마지막 단계 이동 뒤 타이핑분은 로컬에만 있었다.
     //   snapshot()은 동기라 아래에서 비우기 전의 상태가 실린다.
-    try{ writeLocal(); syncToServer(); }catch(e){}
+    // ★서버가 받았을 때만 이 계정의 로컬 원고를 지운다(2026-09-04 L-2). 공용 PC 에서 다음 사람이
+    //   DevTools 로 앞 기업 원고를 열어 볼 수 있었다. 실패하면 남긴다 — 로컬이 마지막 사본이다.
+    //   문답 이력(awKey)은 서버 사본이 없어 지우지 않는다. 키는 지금 잡아 둔다(다음 로그인이 who()를 바꾼다).
+    try{
+      writeLocal();
+      var exitKey = skey(), exitOn = serverOn();
+      syncToServer().then(function(r){
+        if(!exitOn || !r) return;                             // 로컬 검수 모드는 서버가 없다 — 남긴다
+        // 서버가 받았거나(ok) 보낼 것이 없어 잃을 것도 없을 때(skipped+err)만 지운다. 실패면 남긴다.
+        // ★지우는 것은 기업 문장(원고·신청서 참고자료)뿐이다. 단계 진단·도식·덱·투자논리 진단은
+        //   서버에 없거나(진단·도식·덱) 해시로 원고에 묶여 있어(낡음 판정) 지우면 재로그인마다 AI 를
+        //   다시 쓰게 된다. 그것들은 남기고, 다음 로그인 때 서버 원고와 해시로 대조한다.
+        if(r.ok || (r.skipped && r.err)){
+          try{
+            var rec = JSON.parse(localStorage.getItem(exitKey) || 'null');
+            if(rec && typeof rec === 'object'){
+              rec.formData = {}; rec.b1ref = null; rec.b1At = ''; rec.stepIndex = 0;
+              localStorage.setItem(exitKey, JSON.stringify(rec));
+            }
+          }catch(e){}
+        }
+      });
+    }catch(e){}
     ['pbHead','pbMeta','pbShell'].forEach(function(k){ $(k).classList.add('hidden'); });
     $('viewLogin').classList.remove('hidden');
     $('loginErr').classList.add('hidden');
