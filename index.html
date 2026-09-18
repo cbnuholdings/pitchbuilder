@@ -499,6 +499,11 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 .pb-lband .eyebrow{font:700 11px var(--pb-font-sans);letter-spacing:.14em;text-transform:uppercase;color:#A8134A}
 .pb-lband .lead{margin-top:7px;font:400 14px/1.75 var(--pb-font-sans);color:var(--pb-text-mute)}
 .pb-lband .lead b{color:var(--pb-text)}
+/* 통합 설명서 줄 — 5곳 공통(문안정본 Ⅴ-3). 자주를 쓰지 않는다: 흐름 띠 안이지만 본문 링크다(D12) */
+.pb-lguide{display:inline-flex;align-items:flex-start;gap:7px;margin-top:10px;padding:8px 13px;border:1px solid var(--pb-line);border-radius:10px;background:var(--pb-paper);font:400 13px/1.55 var(--pb-font-sans);color:var(--pb-text-mute);text-decoration:none}
+.pb-lguide:hover{border-color:var(--pb-accent-ink);color:var(--pb-text)}
+.pb-lguide b{font-weight:600;color:var(--pb-text)}
+.pb-lguide .mt{font-size:12px;color:var(--pb-text-ghost);white-space:nowrap;margin-left:4px}
 .pb-lband .box{margin-top:14px;border:1px solid #A8134A22;border-radius:14px;background:var(--pb-paper);padding:18px 18px 16px}
 .pb-lband .row{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}
 .pb-lband .row>.cell{flex:1 1 180px}
@@ -902,7 +907,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     <!-- 🔴 「여덟 단계」는 R&D 대응을 켠 상태의 수다(2026-09-18 실측 = 기본 6단계·토글 시 8).
          기본 화면과 어긋나므로 여섯으로 적고 토글을 괄호로 밝힌다. -->
     <p>여섯 단계를 한 칸씩 채우면 IR 본문과 도식, 피칭 덱이 함께 나옵니다(R&amp;D 대응을 켜면 두 단계가 더해집니다). 점수를 매기지 않습니다 — 무엇을 아직 말하지 않았는지만 짚어 드립니다.</p>
-    <div class="pb-lstats"><div><b>16</b><span>작성 칸</span></div><div><b>5</b><span>장 피칭 덱</span></div><div><b>12</b><span>종 도식 자동 생성</span></div></div>
+    <!-- 🔴 「16」이었다(2026-09-18 정정). 16 = IR_STEPS 12칸 + TIPS_STEPS 4칸으로, R&D 대응을
+         켠 상태의 수다. 랜딩 문구의 수는 「아무 설정도 건드리지 않은 기업이 보는 화면」으로 센다
+         — 같은 문장에서 「여섯 단계」라 쓰고 16 을 보이면 들어와서 12칸을 본다. -->
+    <div class="pb-lstats"><div><b>12</b><span>작성 칸</span></div><div><b>5</b><span>장 피칭 덱</span></div><div><b>12</b><span>종 도식 자동 생성</span></div></div>
     <p class="fine">
       빈칸 자동 생성은 제공하지 않습니다 — 없는 근거를 만들어 넣지 않기 위해서입니다.
     </p>
@@ -930,6 +938,16 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   <section class="pb-lband">
     <div class="eyebrow">이노테크 창업 지원 흐름</div>
     <p class="lead">접수에서 시작해 성장관리로 이어집니다. <b>IR 피치빌더는 성장관리 2·3단계에서 쓰는 작성 창구</b>입니다 — 여기서 만든 IR 자료는 성장관리 자료실로 보내 멘토·평가위원이 함께 봅니다.</p>
+    <!-- 통합 설명서 (문안정본 Ⅴ-3) — 🔴 target="_blank" 필수: download 만 두면 보던 화면이 교체된다.
+         cross-origin 이라 download 의 파일명 지정은 어차피 무시되므로 새 탭으로 연다.
+         guide-1.pdf 는 LAGMP 의 배포명이며 인증 없이 열린다(2026-09-18 실측 200). -->
+    <a class="pb-lguide" href="https://growth-platform.cbnuholdings.com/manuals/guide-1.pdf"
+       target="_blank" rel="noopener" title="CBNU-INNO 성장프로그램 사용 설명서 (PDF · 새 탭)">
+      <span aria-hidden="true">📘</span>
+      <!-- 🔴 메타(PDF·56쪽)를 형제 span 으로 두면 400px 에서 flex 줄바꿈에 걸려 문장 한가운데
+           끼어든다(2026-09-18 실측). 본문 span 「안」에 넣어 글줄을 따라 흐르게 한다. -->
+      <span><b>성장프로그램 통합 설명서</b> — 다섯 시스템에서 무엇을 넣고 무엇을 받는지, 화면과 예시로 정리했습니다 <span class="mt">PDF · 56쪽</span></span>
+    </a>
     <div class="box">
       <div class="row">
         <div class="cell"><div class="nm">CBNU-INNO 접수</div><div class="ds">접수번호 발급</div></div>
