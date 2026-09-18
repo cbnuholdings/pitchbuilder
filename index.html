@@ -466,7 +466,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 
 
 /* ── 로그인 ─────────────────────────────────── */
-.pb-login{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+/* 🔴 2026-09-18 — 100vh 였다. 아래에 흐름 띠·작성 단계가 붙으면서 접속 2열이 화면을 꽉 채우면
+   기업이 스크롤하지 않는 한 「내가 어디에 있는지」를 못 본다. 랜딩을 붙인 목적이 그것이므로
+   높이를 620px 로 묶어 접힌 자리 아래가 보이게 한다(좌 패널 내용이 약 560px). */
+.pb-login{display:grid;grid-template-columns:1fr 1fr;min-height:min(100vh,620px)}
 .pb-login .l{
   background:var(--pb-ink);color:var(--pb-paper);
   padding:64px 56px;display:flex;flex-direction:column;justify-content:center;
@@ -485,6 +488,44 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   .pb-login .l,.pb-login .r{padding:32px 24px}
   .pb-login .l h1{font-size:28px}
   .pb-login .l p{max-width:none}
+}
+
+/* ── 소개 랜딩 (2026-09-18 · grilling D1·D4·D7·D12) ─────────────
+   자주(#A8134A)는 지주회사 CI 원색이며 상단 띠·흐름 띠·푸터 셋에만 쓴다.
+   폰트는 PitchBuilder 자기 스택을 그대로 쓴다 — 이 앱은 서체에 의미가 붙어 있다
+   (제목 serif). 부품만 얹고 정체성은 건드리지 않는다. */
+.pb-lbrand{height:6px;background:#A8134A}
+.pb-lband{max-width:1040px;margin:0 auto;padding:30px 28px 0}
+.pb-lband .eyebrow{font:700 11px var(--pb-font-sans);letter-spacing:.14em;text-transform:uppercase;color:#A8134A}
+.pb-lband .lead{margin-top:7px;font:400 14px/1.75 var(--pb-font-sans);color:var(--pb-text-mute)}
+.pb-lband .lead b{color:var(--pb-text)}
+.pb-lband .box{margin-top:14px;border:1px solid #A8134A22;border-radius:14px;background:var(--pb-paper);padding:18px 18px 16px}
+.pb-lband .row{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}
+.pb-lband .row>.cell{flex:1 1 180px}
+.pb-lband .cell{border:1px solid var(--pb-line-soft);border-radius:10px;padding:11px 13px;background:var(--pb-paper-2,#FAF8F4)}
+.pb-lband .cell.here{border:1.5px solid #A8134A;background:#A8134A0D}
+.pb-lband .cell .nm{font:600 14px var(--pb-font-sans);color:var(--pb-text)}
+.pb-lband .cell.here .nm{color:#6E0B2E}
+.pb-lband .cell .nm em{font:700 11px var(--pb-font-sans);font-style:normal;color:#fff;background:#A8134A;border-radius:20px;padding:2px 8px;margin-left:6px;white-space:nowrap}
+.pb-lband .cell .ds{margin-top:2px;font:400 12px/1.6 var(--pb-font-sans);color:var(--pb-text-mute)}
+.pb-lband .arw{align-self:center;font:700 15px var(--pb-font-sans);color:var(--pb-text-ghost)}
+.pb-lband .sub{display:flex;gap:8px;align-items:center;margin-top:12px;font:600 12px var(--pb-font-sans);color:var(--pb-text-mute)}
+.pb-lband .tools{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;padding-left:18px}
+.pb-lband .tools>.cell{flex:1 1 200px}
+/* 단계 6칸 — minmax(200px) 로 두면 넓은 화면에서 4+2 로 갈라진다(문안정본 Ⅴ-2) */
+.pb-lband .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-top:12px}
+.pb-lband .steps>div{border:1px solid var(--pb-line-soft);border-radius:10px;padding:13px 14px;background:var(--pb-paper)}
+.pb-lband .steps .n{font:700 11px var(--pb-font-mono);letter-spacing:.08em;color:#A8134A}
+.pb-lband .steps .t{margin-top:5px;font:600 14px var(--pb-font-sans);color:var(--pb-text)}
+.pb-lband .steps .d{margin-top:4px;font:400 12.5px/1.65 var(--pb-font-sans);color:var(--pb-text-mute)}
+.pb-lfoot{margin-top:30px;border-top:3px solid #A8134A;background:var(--pb-paper);padding:18px 28px;
+  font:400 12.5px/1.8 var(--pb-font-sans);color:var(--pb-text-mute)}
+.pb-lfoot a{color:#6E0B2E}
+/* 카드가 세로로 쌓이는 폭에서는 화살표 방향이 거꾸로 읽힌다(문안정본 Ⅴ-2) */
+@media (max-width:600px){
+  .pb-lband{padding:24px 18px 0}
+  .pb-lband .arw{display:none}
+  .pb-lfoot{padding:16px 18px}
 }
 /* 재무 트윈 숫자 표(.pb-mine)와 점검표(.pb-ck) — 클래스만 있고 규칙이 없어 라벨과 값이 붙어 나왔다(2026-09-04) */
 .pb-mine .row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--pb-on-ink-line);font-size:13px}
@@ -843,11 +884,24 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 </head>
 <body>
 
-<!-- ══ 로그인 ══════════════════════════════════ -->
-<div id="viewLogin" class="pb-login">
+<!-- ══ 로그인 ══════════════════════════════════
+     2026-09-18 — 소개 랜딩으로 넓혔다(grilling D1·D4·D7·D12).
+     기업이 각 시스템 주소로 직접 들어오기 때문에 「내가 어디에 있는지」가 어느 화면에도
+     없었다. 접속 2열 아래에 5시스템 흐름 띠와 작성 단계를 둔다.
+     🔴 #viewLogin 에는 display 를 지정하지 않는다 — .hidden 이 !important 라 충돌은
+        없지만, 이 칸은 로그인 여부로 통째 감춰지는 자리다.
+     문안 정본 = 45_시스템연결_레지스트리\01_설계정본\문안정본_5시스템_흐름띠_절차.md -->
+<div id="viewLogin" class="pb-landing">
+  <!-- 지주회사 소속 표시. 자주는 이 띠·흐름 띠·푸터 셋에만 쓴다(D12) —
+       본문과 접속 카드는 PitchBuilder 자기 색(잉크·파랑)을 그대로 둔다. -->
+  <div class="pb-lbrand"></div>
+
+  <div class="pb-login">
   <div class="l">
     <h1>투자자가 읽는 순서대로<br>IR을 세웁니다.</h1>
-    <p>여덟 단계를 한 칸씩 채우면 IR 본문과 도식, 피칭 덱이 함께 나옵니다. 점수를 매기지 않습니다 — 무엇을 아직 말하지 않았는지만 짚어 드립니다.</p>
+    <!-- 🔴 「여덟 단계」는 R&D 대응을 켠 상태의 수다(2026-09-18 실측 = 기본 6단계·토글 시 8).
+         기본 화면과 어긋나므로 여섯으로 적고 토글을 괄호로 밝힌다. -->
+    <p>여섯 단계를 한 칸씩 채우면 IR 본문과 도식, 피칭 덱이 함께 나옵니다(R&amp;D 대응을 켜면 두 단계가 더해집니다). 점수를 매기지 않습니다 — 무엇을 아직 말하지 않았는지만 짚어 드립니다.</p>
     <div class="pb-lstats"><div><b>16</b><span>작성 칸</span></div><div><b>5</b><span>장 피칭 덱</span></div><div><b>12</b><span>종 도식 자동 생성</span></div></div>
     <p class="fine">
       빈칸 자동 생성은 제공하지 않습니다 — 없는 근거를 만들어 넣지 않기 위해서입니다.
@@ -867,6 +921,42 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     <button class="pb-solid" id="btnLogin">들어가기</button>
     <div id="loginErr" class="pb-err hidden"></div>
   </div>
+  </div>
+
+  <!-- ── 5개 시스템 흐름 띠 (D7·D8) ──────────────────────────
+       🔴 평면 나열은 사실과 다르다 — IR 피치빌더와 R&D 기획지원은 성장관리와 나란한
+       형제가 아니라 성장관리 6단계 안에서 쓰는 작성 창구다. 그래서 2층으로 그린다.
+       도식 정본 = 02_디자인\D3_기업여정_5시스템_2층흐름.html(45_ 폴더) -->
+  <section class="pb-lband">
+    <div class="eyebrow">이노테크 창업 지원 흐름</div>
+    <p class="lead">접수에서 시작해 성장관리로 이어집니다. <b>IR 피치빌더는 성장관리 2·3단계에서 쓰는 작성 창구</b>입니다 — 여기서 만든 IR 자료는 성장관리 자료실로 보내 멘토·평가위원이 함께 봅니다.</p>
+    <div class="box">
+      <div class="row">
+        <div class="cell"><div class="nm">CBNU-INNO 접수</div><div class="ds">접수번호 발급</div></div>
+        <span class="arw" aria-hidden="true">→</span>
+        <div class="cell"><div class="nm">FIA 창업역량진단</div><div class="ds">자가 점검</div></div>
+        <span class="arw" aria-hidden="true">→</span>
+        <div class="cell"><div class="nm">LAGMP 성장관리</div><div class="ds">멘토링 · IR · 최종보고</div></div>
+      </div>
+      <div class="sub"><span aria-hidden="true">└</span> 성장관리 안에서 쓰는 작성 창구</div>
+      <div class="tools">
+        <div class="cell here"><div class="nm">IR 피치빌더 <em>지금 보고 계신 곳</em></div><div class="ds">성장관리 2·3단계</div></div>
+        <div class="cell"><div class="nm">R&amp;D 기획지원</div><div class="ds">성장관리 4단계</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 작성 단계 ─────────────────────────────────────────
+       라벨·설명은 IR_STEPS 가 준다(아래 스크립트 renderLandingSteps) — 랜딩이 단계를
+       따로 베끼면 단계를 고칠 때 조용히 어긋난다. -->
+  <section class="pb-lband">
+    <div class="eyebrow">작성 단계</div>
+    <div class="steps" id="lbSteps"></div>
+  </section>
+
+  <footer class="pb-lfoot">
+    충북대학교기술지주(주) · IR 피치빌더 · <a href="mailto:cbnuholdings@cbnu.ac.kr">cbnuholdings@cbnu.ac.kr</a>
+  </footer>
 </div>
 
 <!-- ══ 헤더 (로그인 후) ════════════════════════ -->
@@ -5401,6 +5491,20 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       });
   }
   $('hdReset').onclick = resetAll;
+
+  /* 랜딩의 작성 단계 — IR_STEPS 를 그대로 그린다(2026-09-18).
+     🔴 라벨·설명을 랜딩에 따로 적지 않는다. 단계를 고칠 때 한 곳만 바뀌고 나머지가
+        조용히 어긋나는 일을 막는다(상수 복제는 이름 없이 숨는다).
+     기본 6단계만 보인다 — R&D 대응(TIPS_STEPS)은 로그인 뒤 토글이라 여기서는 세지 않는다. */
+  (function renderLandingSteps(){
+    var box = $('lbSteps'); if(!box) return;
+    box.innerHTML = IR_STEPS.map(function(s, i){
+      var t = String(s.title).replace(/^\d+\.\s*/, '');
+      return '<div><div class="n">' + (i < 9 ? '0' : '') + (i + 1) + '</div>' +
+             '<div class="t">' + t + '</div>' +
+             '<div class="d">' + (s.subtitle || '') + '</div></div>';
+    }).join('');
+  })();
 
   // 창을 닫기 전 저장 — 자동저장이 아직 안 끝났을 수 있다
   //  ★writeLocal() 전체를 쓴다(2026-09-04). 전에는 3필드 축소본으로 같은 키를 덮어
