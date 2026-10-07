@@ -4023,12 +4023,23 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     $('adWrite').onclick = goWrite;
   }
 
+  // 프로그램 선택(2026-10-07 INNO 회차 전환 D9) — 프로그램이 둘 이상일 때만 보인다
+  function apProgSelect(){
+    var m = {};
+    admin.applicants.forEach(function(x){ var c = x.program || 'inno'; if(!m[c]) m[c] = x.programName || (c === 'inno' ? 'CBNU-INNO' : c); });
+    var ks = Object.keys(m);
+    if(ks.length < 2) return '';
+    return '<select id="apProg" aria-label="프로그램" style="margin-bottom:8px"><option value="">전체 프로그램</option>' +
+      ks.map(function(c){ return '<option value="' + esc(c) + '"' + (admin.prog === c ? ' selected' : '') + '>' + esc(m[c]) + '</option>'; }).join('') + '</select>';
+  }
   // 검색어에 걸리는 신청기업. 법인격 표기를 뗀 이름과 접수번호 둘 다로 찾는다.
   function apFiltered(){
     var raw = String(admin.q || '').trim();
     var q = normName(raw), qc = raw.toLowerCase();
     return admin.applicants.filter(function(x){
-      if(!/^ITC2026-\d{3}$/.test(String(x.cid || ''))) return false;   // 시험 행(TEST-0001·REF01)은 리스트에서 뺀다(2026-08-19)
+      // 시험 행(TEST-0001·REF01)은 리스트에서 뺀다(2026-08-19). 🔴 연도를 못박지 않는다 — 2027 접수가 통째로 빠진다(2026-10-07)
+      if(!/^ITC\d{4}-\d{3,4}$/.test(String(x.cid || ''))) return false;
+      if(admin.prog && (x.program || 'inno') !== admin.prog) return false;   // 프로그램 필터(2026-10-07 D9)
       if(!raw) return true;
       return (q && normName(x.company).indexOf(q) >= 0) ||
              (qc && String(x.cid || '').toLowerCase().indexOf(qc) >= 0);
@@ -4212,6 +4223,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
            '(주)·주식회사는 빼고 검색해도 찾습니다. 오른쪽에 작성 진행(작성 n/16 · 제출)이 함께 보입니다.<br>' +
            '<span style="color:var(--pb-ink-3)">※ 여기는 <b>누구를</b> 작업할지 고르는 곳입니다. ' +
            '기업을 연 뒤 상단 [신청서 내용 가져오기]를 누르면 <b>그 기업이 낸 린캔버스로 작성칸이 채워집니다.</b></span></p>' +
+           apProgSelect() +
            '<input id="apQ" class="pb-apq" aria-label="기업명 또는 접수번호로 검색" ' +
              'placeholder="기업명 또는 접수번호 — 예: 엑스업 · ITC2026-002" ' +
              'value="' + esc(admin.q) + '" autocomplete="off">' +
@@ -4221,6 +4233,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     // ~~작성 현황 표~~ 2026-08-19 민부장 지시로 삭제 — 참여기업 리스트와 중복. 진행 상태는 리스트 행에 병기한다.
     $('pbCenter').innerHTML = h;
     bindApRows();
+    if($('apProg')) $('apProg').onchange = function(){ admin.prog = this.value; var box = $('apList'); if(box){ box.innerHTML = apRowsHtml(); bindApRows(); } };
     if($('apQ')){
       // ★리스트만 다시 그린다. 전체를 다시 그리면 타자 도중 포커스를 빼앗긴다.
       $('apQ').oninput = function(){
