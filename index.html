@@ -737,6 +737,33 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 
 /* ── 관리자 ────────────────────────────────── */
 .pb-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+/* ★2026-10-09 신청 프로그램 입구 — 관리자 「사업별 신청기업」 · 기업 「신청 프로그램」 (LAGMP·R&D 와 같은 구성) */
+.pb-proghero{background:var(--pb-ink);color:var(--pb-on-ink-1);border-radius:var(--pb-radius-card);padding:24px 26px;box-shadow:var(--pb-shadow-card)}
+.pb-proghero .ey{font:500 11.5px var(--pb-font-mono);letter-spacing:.14em;color:var(--pb-accent)}
+.pb-proghero h2{font:600 24px var(--pb-font-serif);color:#fff;margin:6px 0 0}
+.pb-proghero p{font:400 14px/1.65 var(--pb-font-sans);color:var(--pb-on-ink-2);margin-top:6px}
+.pb-proggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:16px}
+.pb-progcard{display:flex;flex-direction:column;gap:13px;text-align:left;cursor:pointer;min-width:0;
+  padding:18px 20px;border:1px solid var(--pb-line);border-top:4px solid var(--pb-accent-ink);border-radius:var(--pb-radius-card);
+  background:var(--pb-surface);box-shadow:var(--pb-shadow-card);font:400 14px var(--pb-font-sans);color:var(--pb-ink)}
+.pb-progcard:hover{border-color:var(--pb-accent-ink)}
+.pb-progcard:focus-visible{outline:2px solid var(--pb-accent-ink);outline-offset:2px}
+.pb-progcard .nm{font:600 18px var(--pb-font-serif);color:var(--pb-text)}
+.pb-progcard .ds{font:400 12.5px var(--pb-font-sans);color:var(--pb-text-mute);margin-top:3px}
+.pb-progcard .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.pb-progcard .chips:empty{display:none}
+.pb-progcard .chip{font:500 11px var(--pb-font-mono);padding:3px 9px;border-radius:20px;background:var(--pb-accent-soft);color:var(--pb-accent-ink)}
+.pb-progcard .chip.mute{background:var(--pb-paper);color:var(--pb-text-mute)}
+.pb-progcard .st{display:flex;gap:8px}
+.pb-progcard .st div{flex:1;background:var(--pb-paper);border-radius:var(--pb-radius);padding:8px 10px}
+.pb-progcard .st b{display:block;font:600 19px var(--pb-font-serif);color:var(--pb-text)}
+.pb-progcard .st span{font:400 11.5px var(--pb-font-sans);color:var(--pb-text-mute)}
+.pb-progcard .box{background:var(--pb-paper);border-radius:var(--pb-radius);padding:12px 14px}
+.pb-progcard .go{font:600 13.5px var(--pb-font-sans);color:var(--pb-accent-ink)}
+.pb-progcard .go.off{color:var(--pb-text-faint)}
+.pb-progcrumb{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.pb-progcrumb b{font:600 19px var(--pb-font-serif);color:var(--pb-text)}
+.pb-linkbtn{background:none;border:none;padding:0;cursor:pointer;font:500 13px var(--pb-font-sans);color:var(--pb-text-mute);text-decoration:underline}
 .pb-kpi .k{padding:16px 18px;background:var(--pb-surface);border:1px solid var(--pb-line);
   border-radius:var(--pb-radius-card)}
 .pb-kpi .k b{display:block;font:600 30px/1 var(--pb-font-mono);color:var(--pb-text)}
@@ -3325,12 +3352,13 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   function render(){
     syncHeader();
     // ★우측 열은 작성 화면에서 쓰지 않는다(2026-08-20 재디자인) — 코치는 카드 안 탭으로 들어갔다.
-    var noR = (state.view === 'write' || !state.view);
+    var noR = (state.view === 'write' || state.view === 'gate' || !state.view);
     $('pbRight').classList.toggle('hidden', noR);
     $('pbShell').classList.toggle('no-right', noR);
     if(state.view === 'result'){ renderResultView(); return; }
     if(state.view === 'deck'){   renderDeckView();   return; }
     if(state.view === 'admin'){  renderAdminView();  return; }
+    if(state.view === 'gate'){   renderGateView();   return; }
     $('pbCenter').style.padding = '';
     renderLeft(); renderCenter(); renderMeta();
   }
@@ -3954,7 +3982,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   //  editing = 관리자가 '대신 편집 중인 기업' {company, cid}. null이면 자기 것을 쓴다.
   var admin = { rows:[], loading:false, editing:null,
                 applicants:[], apLoading:false, q:'',
-                tab:'co', usage:null, usageLoading:false };   // tab = co | usage
+                tab:'co', usage:null, usageLoading:false,
+                prog:null };   // tab = co | usage · prog = null(사업별 입구) | ''(전체) | 프로그램 코드 (2026-10-09)
 
   // ★기업명 검색은 법인격 표기를 떼고 맞춘다.
   //   "(주)엑스업"·"주식회사 엑스업"·"엑스업"은 사람에게 같은 회사인데
@@ -4011,7 +4040,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
             '<div class="sp"></div>' +
             '<button class="pb-cta sub" id="adWrite">내 IR 작성 화면</button>';
     $('pbLeft').innerHTML = h;
-    $('adTabCo').onclick  = function(){ admin.tab = 'co';    renderAdminCenter(); renderAdminLeft(); };
+    $('adTabCo').onclick  = function(){ admin.tab = 'co'; admin.prog = null; renderAdminCenter(); renderAdminLeft(); };
     $('adTabUse').onclick = function(){ admin.tab = 'usage'; renderAdminCenter(); renderAdminLeft(); loadUsage(); };
     $('cfgApply').onclick = function(){
       if(!serverOn()){ alert('서버에 연결돼 있지 않습니다.'); return; }
@@ -4023,10 +4052,102 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     $('adWrite').onclick = goWrite;
   }
 
+  // ══ 신청 프로그램 입구(2026-10-09 민부장 지시) ══════════════════════
+  //  관리자 첫 화면 = 사업별 신청기업 카드 → 그 사업의 참여기업 리스트 / 기업 첫 화면 = 내 신청 프로그램 카드 → 작성 화면.
+  //  LAGMP(state/programs.js)·R&D(state/inno.js)와 같은 표다. 🔴 이름은 코드로 찾는다 — 노션 ① 에 옛 이름(「CBNU-INNO」)이 남아 있다.
+  //  새 프로그램은 여기 한 줄 · 없어도 명부의 programName 으로 카드가 생긴다.
+  var IR_PROGRAMS = [
+    { code:'inno',     name:'이노테크 창업',                  desc:'충북청주강소특구 이노테크 창업 지원' },
+    { code:'texcorps', name:'텍스코어(TeX-Corps) 실험실창업', desc:'TeX-Corps 참여 실험실창업탐색팀 성장 지원' }
+  ];
+  function progOf(x){ return (x && x.program) || 'inno'; }
+  function progReg(code){ for(var i = 0; i < IR_PROGRAMS.length; i++) if(IR_PROGRAMS[i].code === code) return IR_PROGRAMS[i]; return null; }
+  function progName(x){ var r = progReg(progOf(x)); return r ? r.name : ((x && x.programName) || progOf(x)); }
+  function progOptions(list){
+    var m = {}, ks = [];
+    IR_PROGRAMS.forEach(function(p){ m[p.code] = p.name; ks.push(p.code); });
+    list.forEach(function(x){ var c = progOf(x); if(!m[c]){ m[c] = progName(x); ks.push(c); } });
+    return ks.map(function(c){ return { code:c, name:m[c] }; });
+  }
+  //  시험 행(TEST-0001·REF01)은 센 수에서도 뺀다 — 리스트(apFiltered)와 같은 기준
+  function realApplicants(){ return admin.applicants.filter(function(x){ return /^ITC\d{4}-\d{3,4}$/.test(String(x.cid || '')); }); }
+  //  그 사업 기업의 ① 원고 행 — 원고는 기업명으로만 잇는다(리스트의 「작성 n/16」과 같은 대조)
+  function rowsOf(apps){
+    var nm = {}; apps.forEach(function(x){ nm[normName(x.company)] = 1; });
+    return admin.rows.filter(function(r){ return r.company && nm[normName(r.company)]; });
+  }
+  function renderProgHome(){
+    var apps = realApplicants();
+    var h = '<div class="pb-proghero"><div class="ey">PROGRAMS</div><h2>사업별 신청기업</h2>' +
+            '<p>관리할 사업을 고르면 그 사업 신청기업의 IR 작성 현황으로 들어갑니다. 기업별 원고 열람·대리 편집은 리스트 안에서 합니다.</p></div>';
+    if(admin.apLoading) h += '<p class="pb-note" style="margin-top:14px">명부를 불러오는 중…</p>';
+    h += '<div class="pb-proggrid">';
+    progOptions(apps).forEach(function(p){
+      var list = apps.filter(function(x){ return progOf(x) === p.code; });
+      var rs = rowsOf(list);
+      var wrote = rs.filter(function(r){ return (r.filled || 0) > 0; }).length;
+      var sub = rs.filter(function(r){ return r.status === '제출'; }).length;
+      var reg = progReg(p.code);
+      h += '<button class="pb-progcard" data-prog="' + esc(p.code) + '" aria-label="' + esc(p.name) + ' 참여기업 리스트">' +
+             '<div><div class="nm">' + esc(p.name) + '</div><div class="ds">' + esc((reg && reg.desc) || p.code) + '</div></div>' +
+             '<div class="st"><div><b>' + list.length + '</b><span>신청기업</span></div>' +
+               '<div><b>' + wrote + '</b><span>작성 착수</span></div>' +
+               '<div><b>' + sub + '</b><span>제출 완료</span></div></div>' +
+             '<div class="go' + (list.length ? '' : ' off') + '">' + (list.length ? '참여기업 리스트 →' : '아직 선정된 기업이 없습니다 →') + '</div>' +
+           '</button>';
+    });
+    h += '</div><button class="pb-linkbtn" id="progAll" style="margin-top:16px">사업 구분 없이 전체 기업 보기 (' + apps.length + ')</button>';
+    $('pbCenter').innerHTML = h;
+    Array.prototype.forEach.call($('pbCenter').querySelectorAll('.pb-progcard'), function(b){
+      b.onclick = function(){ admin.prog = b.getAttribute('data-prog'); admin.q = ''; renderAdminCenter(); window.scrollTo(0, 0); };
+    });
+    $('progAll').onclick = function(){ admin.prog = ''; admin.q = ''; renderAdminCenter(); };
+  }
+
+  //  기업 — 내 신청 프로그램. 계정 하나 = 접수번호 하나라 카드도 하나다(프로그램 정보는 ping 이 INNO 에서 받아 온다).
+  var GATE_KEY = 'pb_program_entered';
+  //  통과 표시는 계정별 — 로컬 모드는 cid 가 없어 로그인 아이디로 가른다(빈 값끼리 같다고 보면 다른 계정이 입구를 건너뛴다)
+  function gateWho(){ return String(state.cid || llm.id || ''); }
+  function gateEntered(){ try{ var w = gateWho(); return !!w && sessionStorage.getItem(GATE_KEY) === w; }catch(e){ return false; } }
+  function setGateEntered(on){ try{ if(on) sessionStorage.setItem(GATE_KEY, gateWho()); else sessionStorage.removeItem(GATE_KEY); }catch(e){} }
+  function renderGateView(){
+    var pg = state.program || {}, reg = progReg(progOf(pg));
+    var filled = 0, tot = 0;
+    steps().forEach(function(s){ s.inputs.forEach(function(i){ tot++; if(String(state.formData[i.key] || '').trim()) filled++; }); });
+    $('pbMeta').innerHTML = '';
+    $('pbLeft').innerHTML = '<h4>신청 프로그램</h4><p class="fine">카드를 누르면 IR 작성 화면으로 들어갑니다. 같은 창에서는 다시 묻지 않습니다.</p>';
+    $('pbCenter').style.padding = '';
+    $('pbCenter').innerHTML =
+      '<div style="max-width:760px">' +
+      '<div class="pb-proghero"><div class="ey">MY PROGRAM</div><h2>신청 프로그램</h2>' +
+        '<p>신청하신 프로그램입니다. 카드를 누르면 이 프로그램의 IR 피치덱 작성 화면으로 들어갑니다.</p></div>' +
+      '<button class="pb-progcard" id="gateEnter" style="width:100%;margin-top:16px" aria-label="' + esc(progName(pg)) + ' 들어가기">' +
+        '<div><div class="chips">' + (pg.roundLabel ? '<span class="chip">' + esc(pg.roundLabel) + '</span>' : '') +
+          (state.cid ? '<span class="chip mute">' + esc(state.cid) + '</span>' : '') + '</div>' +
+          '<div class="nm">' + esc(progName(pg)) + '</div>' + (reg ? '<div class="ds">' + esc(reg.desc) + '</div>' : '') + '</div>' +
+        '<div class="box">' + (state.formData.companyName ? '<b style="display:block;font:600 15px var(--pb-font-sans);margin-bottom:4px">' + esc(state.formData.companyName) + '</b>' : '') +
+          '<div style="font:400 12.5px var(--pb-font-sans);color:var(--pb-text-mute)">IR 원고 ' +
+          (filled ? '작성 중 · 입력칸 ' + filled + ' / ' + tot : '아직 작성 전입니다') + '</div></div>' +
+        '<div class="go">프로그램 들어가기 →</div>' +
+      '</button></div>';
+    $('gateEnter').onclick = enterProgram;
+  }
+  //  입구를 지나 작성 화면으로 — R&D 대응 여부 질문·AI 사용 횟수 안내는 입구 뒤에서 한다
+  function enterProgram(){
+    setGateEntered(true);
+    var ch = tipsChoice();
+    if(ch === 'yes' || ch === 'no') llm.tipsMode = (ch === 'yes');
+    else askTipsOnce();
+    $('hdTips').classList.toggle('on', llm.tipsMode);
+    state.stepIndex = Math.min(state.stepIndex, steps().length - 1);
+    state.view = 'write'; admin.editing = null; render(); window.scrollTo(0, 0);
+    quotaNotice();          // 남은 AI 사용 횟수를 처음에 알린다(기업만)
+  }
+
   // 프로그램 선택(2026-10-07 INNO 회차 전환 D9) — 프로그램이 둘 이상일 때만 보인다
   function apProgSelect(){
     var m = {};
-    admin.applicants.forEach(function(x){ var c = x.program || 'inno'; if(!m[c]) m[c] = x.programName || (c === 'inno' ? 'CBNU-INNO' : c); });
+    admin.applicants.forEach(function(x){ var c = progOf(x); if(!m[c]) m[c] = progName(x); });
     var ks = Object.keys(m);
     if(ks.length < 2) return '';
     return '<select id="apProg" aria-label="프로그램" style="margin-bottom:8px"><option value="">전체 프로그램</option>' +
@@ -4205,12 +4326,16 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   function renderAdminCenter(){
     $('pbCenter').style.padding = '';
     if(admin.tab === 'usage'){ renderUsage(); return; }
-    var rows = admin.rows;
+    if(admin.prog === null){ renderProgHome(); return; }      // 사업별 입구(2026-10-09)
+    var apps = realApplicants().filter(function(x){ return !admin.prog || progOf(x) === admin.prog; });
+    var rows = admin.prog ? rowsOf(apps) : admin.rows;
     var sub = rows.filter(function(r){ return r.status === '제출'; }).length;
     var wrote = rows.filter(function(r){ return (r.filled || 0) > 0; }).length;
 
-    var h = '<div class="pb-kpi">' +
-              '<div class="k"><b>' + admin.applicants.length + '</b><span>신청기업</span></div>' +
+    var h = '<div class="pb-progcrumb"><button class="pb-hbtn ghost" id="progBack">← 사업 목록</button>' +
+              '<b>' + esc(admin.prog ? progName({ program: admin.prog }) : '전체 기업') + '</b></div>' +
+            '<div class="pb-kpi">' +
+              '<div class="k"><b>' + apps.length + '</b><span>신청기업</span></div>' +
               '<div class="k"><b>' + wrote + '</b><span>작성 착수</span></div>' +
               '<div class="k"><b>' + sub + '</b><span>제출 완료</span></div>' +
             '</div>';
@@ -4232,8 +4357,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 
     // ~~작성 현황 표~~ 2026-08-19 민부장 지시로 삭제 — 참여기업 리스트와 중복. 진행 상태는 리스트 행에 병기한다.
     $('pbCenter').innerHTML = h;
+    $('progBack').onclick = function(){ admin.prog = null; admin.q = ''; renderAdminCenter(); };
     bindApRows();
-    if($('apProg')) $('apProg').onchange = function(){ admin.prog = this.value; var box = $('apList'); if(box){ box.innerHTML = apRowsHtml(); bindApRows(); } };
+    if($('apProg')) $('apProg').onchange = function(){ admin.prog = this.value; renderAdminCenter(); };
     if($('apQ')){
       // ★리스트만 다시 그린다. 전체를 다시 그리면 타자 도중 포커스를 빼앗긴다.
       $('apQ').oninput = function(){
@@ -5288,6 +5414,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       quotaTake(d);                      // 남은 AI 사용 횟수(기업에게만 내려온다)
       state.cid = d.cid || id;
       if(d.company) state.formData.companyName = state.formData.companyName || d.company;
+      state.program = { program: d.program || null, programName: d.programName || '', roundLabel: d.roundLabel || '' };   // 신청 프로그램 입구(2026-10-09)
       if(d.config){
         if(d.config.model) llm.model = d.config.model;
         if(typeof d.config.tipsMode === 'boolean') llm.tipsMode = d.config.tipsMode;
@@ -5359,18 +5486,12 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     }
 
     // ★기업은 처음 한 번 R&D 대응 여부를 정한다. 관리자는 묻지 않는다(전체 설정을 다루는 쪽이다).
-    if(!isAdmin()){
-      var ch = tipsChoice();
-      if(ch === 'yes' || ch === 'no') llm.tipsMode = (ch === 'yes');
-      else askTipsOnce();
-      $('hdTips').classList.toggle('on', llm.tipsMode);
-      state.stepIndex = Math.min(state.stepIndex, steps().length - 1);
-    }
-
+    //   ★2026-10-09 그 질문과 사용 횟수 안내는 신청 프로그램 입구를 지난 뒤(enterProgram)로 옮겼다.
+    //   같은 탭에서 이미 입구를 지났으면(새로고침) 바로 작성 화면이다.
     // ★팀에게는 관리자 화면이 열릴 여지를 두지 않는다(앞 세션의 view가 남을 수 있다)
-    if(isAdmin()){ goAdmin(); }
-    else { state.view = 'write'; admin.editing = null; render(); }
-    quotaNotice();          // 남은 AI 사용 횟수를 처음에 알린다(기업만)
+    if(isAdmin()){ admin.prog = null; goAdmin(); }
+    else if(gateEntered()){ enterProgram(); }
+    else { state.view = 'gate'; admin.editing = null; render(); }
   }
 
   //  묻는 것은 한 번뿐이다. 그 뒤엔 상단 토글로 언제든 바꾼다.
@@ -5393,7 +5514,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   //    그 뒤 저장이 어느 기업으로 가는지 화면만 봐서는 알 수 없게 된다.
   function goHome(){
     if(admin && admin.editing){ adminCloseIR(); return; }
-    if(isAdmin()){ goAdmin(); return; }
+    if(isAdmin()){ admin.prog = null; goAdmin(); return; }
     state.view = 'write';
     state.stepIndex = 0;
     render();
