@@ -1234,6 +1234,15 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 .pb-float .pb-pophd{cursor:move;user-select:none}
 .pb-popbtns{display:flex;gap:6px;flex-shrink:0}
 @media (max-width:760px){.pb-float .pb-dlg.pb-dlg-pop{left:8px!important;right:8px;top:56px!important;width:auto}}
+/* 담당자 화면 — 사업 먼저(10-11) · 도식 덱 장표 */
+.pb-opprog{max-width:860px;color:var(--pb-text-body)}.pb-opprog h3{margin:6px 0 4px}
+.pb-opprogs{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px}
+.pb-opprogc{display:flex;flex-direction:column;gap:6px;text-align:left;padding:16px;border:1px solid var(--pb-line);border-radius:10px;background:#fff;font:inherit;cursor:pointer;color:inherit}
+.pb-opprogc:hover{border-color:var(--pb-accent-ink)}.pb-opprogc b{font-size:16px}.pb-opprogc small{color:var(--pb-text-mute)}
+.pb-oprl .pb-hbtn{margin-bottom:10px}
+.pb-oprole{font-style:normal;font-size:11.5px;color:var(--pb-text-mute);border:1px solid var(--pb-line);border-radius:10px;padding:0 6px;margin-left:4px}
+.pb-opdeck{margin:8px 0 10px;overflow:hidden;border-radius:6px}
+.pb-optxt summary{cursor:pointer;font-size:13px;color:var(--pb-text-mute);margin:6px 0}
 </style>
 </head>
 <body>
@@ -4829,14 +4838,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   //  ~~멘토 코멘트(단계별·총평) 저장~~ 2026-08-19 멘토 탭 삭제 → 2026-08-20 입력 UI 제거.
   //  같은 값을 두 곳(중앙 검토화면·우측)에 두던 구조도 함께 사라졌다.
   //  관리자 「장표 의견」 탭 — 담당자 2단 부품을 가운데에 띄운다(서브관리자는 서버가 지정 사업 기업만 준다)
-  function renderOpTab(){
-    $('pbCenter').innerHTML = '<p class="pb-vnote" style="padding:20px">불러오는 중…</p>';
-    apiGet('list', {}).then(function(d){
-      if(admin.tab !== 'op') return;
-      if(!d || !d.ok){ $('pbCenter').innerHTML = '<p class="pb-vnote" style="padding:20px">' + esc((d && d.error) || '목록을 불러오지 못했습니다.') + '</p>'; return; }
-      opReviewer($('pbCenter'), d.companies || []);
-    }).catch(function(){ $('pbCenter').innerHTML = '<p class="pb-vnote" style="padding:20px">서버에 연결하지 못했습니다.</p>'; });
-  }
+  function renderOpTab(){ opReviewerStart($('pbCenter')); }   // 사업 → 기업(등재 기준 · 서브관리자는 서버가 지정 사업만 준다)
   function renderAdminRight(){
     if(admin.tab === 'op'){
       $('pbRight').innerHTML = '<div class="pb-panel"><h5>장표 의견</h5><p>기업을 고르고 장표마다 의견을 쓴 뒤 [기업 전달]을 누르면, 기업이 IR 피치빌더를 열 때 「담당자 의견 · 사람」으로 봅니다.</p>' +
@@ -5584,10 +5586,15 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       '<p class="pb-vnote">성장관리 플랫폼에서 배정된 기업의 IR 원고를 읽고 장표별 의견을 남깁니다. 원고를 고치거나 내려받을 수는 없습니다. 평가위원은 원고만 열람합니다.</p>' +
       '<div id="vHost">불러오는 중…</div>';
     $('vOut').onclick = function(){ location.reload(); };
-    apiGet('list', {}).then(function(d){
-      if(!d || !d.ok){ $('vHost').textContent = (d && d.error) || '목록을 불러오지 못했습니다.'; return; }
-      opReviewer($('vHost'), d.companies || []);
-    }).catch(function(){ $('vHost').textContent = '서버에 연결하지 못했습니다.'; });
+    opReviewerStart($('vHost'));
+  }
+  //  담당자 목록은 배정·등재 기준(opCos · 10-11) — 원고를 초기화한 기업도 「원고 없음」으로 남는다
+  function opReviewerStart(host){
+    host.innerHTML = '<p class="pb-vnote">불러오는 중…</p>';
+    opPost('opCos', {}).then(function(d){
+      if(!d || !d.ok){ host.innerHTML = '<p class="pb-vnote">' + esc((d && d.error) || '목록을 불러오지 못했습니다.') + '</p>'; return; }
+      opReviewer(host, d.companies || [], d.programs || []);
+    }).catch(function(){ host.innerHTML = '<p class="pb-vnote">서버에 연결하지 못했습니다.</p>'; });
   }
 
   // ══ 장표별 사람 의견 (ⅩⅣ-D · 정본 = 01_설계정본/설계결정_grilling_장표의견_20261010.md) ══
@@ -5702,9 +5709,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 
   // ── 담당자 쪽(2단) ──
   var opr = null;
-  function opReviewer(host, list){
-    opr = { host:host, list:list || [], co:null, snap:null, rows:[], cur:'IR-01', canWrite:false, canWithdraw:false,
-            me:'', loading:false, err:'', timer:null, pend:null, saving:'' };
+  //  사업(프로그램)을 먼저 고르고 → 그 사업 기업 목록(10-11 민부장 · 멘토·컨설턴트·평가위원은 INNO 의 새 프로그램에도 배정된다)
+  function opReviewer(host, list, progs){
+    opr = { host:host, all:list || [], list:[], progs:progs || [], prog:null, co:null, snap:null, rows:[], cur:'IR-01',
+            canWrite:false, canWithdraw:false, role:'', me:'', loading:false, err:'', timer:null, pend:null, saving:'' };
     opRender();
   }
   function opMine(){ return opr.rows.filter(function(r){ return r.authorId === opr.me; }); }
@@ -5713,20 +5721,60 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     return opMine().filter(function(r){ return r.status !== '작성중' && r.unit === u; })
                    .sort(function(a, b){ return (b.v || 0) - (a.v || 0); })[0];
   }
-  function opNextV(){ return 1 + opMine().reduce(function(m, r){ return (r.status !== '작성중' && r.v > m) ? r.v : m; }, 0); }
+  function opNextV(){ return 1 + opMine().reduce(function(m, r){ return ((r.status === '전달됨' || r.status === '철회됨') && r.v > m) ? r.v : m; }, 0); }
   function opRender(){
     var o = opr; if(!o) return;
-    var h = '<div class="pb-opr"><div class="pb-oprl"><h4>기업</h4>' +
+    if(!o.prog){
+      var hp = '<div class="pb-opprog"><h3>사업(프로그램)을 고르십시오</h3><p class="pb-vnote">관리자가 배정한 사업입니다. 사업을 고르면 그 사업의 기업 목록이 나옵니다.</p>';
+      hp += o.progs.length ? '<div class="pb-opprogs">' + o.progs.map(function(p){
+        var n = o.all.filter(function(c){ return c.program === p; }).length;
+        return '<button type="button" class="pb-opprogc" data-p="' + esc(p) + '"><b>' + esc(progName({ program:p })) + '</b><small>기업 ' + n + '곳</small></button>';
+      }).join('') + '</div>' : '<p class="pb-vnote">배정된 사업이 없습니다. 담당자에게 배정을 요청해 주십시오.</p>';
+      o.host.innerHTML = hp + '</div>';
+      Array.prototype.forEach.call(o.host.querySelectorAll('.pb-opprogc'), function(b){
+        b.onclick = function(){
+          o.prog = b.getAttribute('data-p');
+          o.list = o.all.filter(function(c){ return c.program === o.prog; });
+          o.co = null; opRender();
+        };
+      });
+      return;
+    }
+    var h = '<div class="pb-opr"><div class="pb-oprl"><button type="button" class="pb-hbtn ghost" id="opProgBack">← 사업 목록</button>' +
+      '<h4>' + esc(progName({ program:o.prog })) + ' · 기업 ' + o.list.length + '곳</h4>' +
       (o.list.length ? o.list.map(function(c, i){
         return '<button type="button" class="pb-vco' + (o.co && o.co.cid === c.cid ? ' is-on' : '') + '" data-i="' + i + '">' + esc(c.company) +
-               '<small>' + esc([c.cid, c.status, c.updated].filter(Boolean).join(' · ')) + '</small></button>';
-      }).join('') : '<p class="pb-vnote">열람할 수 있는 기업 중 IR 원고가 저장된 곳이 아직 없습니다.</p>') +
+               (c.role === 'eval' ? ' <em class="pb-oprole">평가위원 · 열람</em>' : '') +
+               '<small>' + esc([c.cid, c.hasIR ? (c.status || '작성중') : '원고 없음', c.updated].filter(Boolean).join(' · ')) + '</small></button>';
+      }).join('') : '<p class="pb-vnote">이 사업에 배정된 기업이 없습니다.</p>') +
       '</div><div class="pb-oprr" id="oprR">' + opDetail() + '</div></div>';
     o.host.innerHTML = h;
+    $('opProgBack').onclick = function(){ opFlush(function(){ o.prog = null; o.co = null; opRender(); }); };
     Array.prototype.forEach.call(o.host.querySelectorAll('.pb-oprl .pb-vco'), function(b){
       b.onclick = function(){ opFlush(function(){ opOpen(o.list[+b.getAttribute('data-i')]); }); };
     });
     opBindDetail();
+  }
+  //  도식이 있는 덱 장표(PPT 모양) — 덱 함수는 열린 원고(state)를 읽으므로 그 기업 원고를 잠깐 끼워 그리고 바로 되돌린다.
+  //  ★다운로드 버튼은 없다(G16) · 「초안 — 검토 전」 표식은 기업 검토 상태를 여기서 모르므로 뺀다.
+  function opDeckSlide(sn, id){
+    var keep = { slides:state.slides, tone:state.tone, fd:state.formData };
+    try{
+      state.slides = normSlides(sn.slides || {}); state.tone = sn.tone || ''; state.formData = { companyName: sn.company || '' };
+      var x = SL.filter(function(q){ return q.id === id; })[0], s = slideOf(id);
+      if(s.status === 'pass') return '<p class="pb-vempty">패스한 장표입니다(' + esc(s.passReason || '사유 없음') + ') — 피칭 자료에서 빠집니다.</p>';
+      if(!slideHas(s)) return '<p class="pb-vempty">아직 쓰지 않은 장표입니다.</p>';
+      var ds = deckSlides(), no = ds.indexOf(x) + 2;
+      return '<div class="pb-slidebox pb-opdeck">' + deckSlideHtml({ kind:'slide', x:x }, no, ds.length + 1).replace('<span class="s-draft">초안 — 검토 전</span>', '') + '</div>';
+    } finally { state.slides = keep.slides; state.tone = keep.tone; state.formData = keep.fd; }
+  }
+  function opFitDeck(host){
+    Array.prototype.forEach.call(host.querySelectorAll('.pb-opdeck'), function(bx){
+      var k = Math.min(1, (bx.clientWidth || 960) / 960);
+      bx.style.setProperty('--k', k);
+      bx.style.height = Math.round(540 * k) + 'px';
+      Array.prototype.forEach.call(bx.querySelectorAll('.s-viz'), fitViz);
+    });
   }
   function opDetail(){
     var o = opr;
@@ -5735,7 +5783,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     if(o.err) return '<p class="pb-vnote">' + esc(o.err) + '</p>';
     var sn = o.snap || {}, sl = sn.slides || {};
     var h = '<div class="pb-oprhd"><h3>' + esc(sn.company || o.co.company) + '</h3><span>' + esc(o.co.cid || '') +
-            (sn.status ? ' · ' + esc(sn.status) : '') + (sn.submittedAt ? ' · 제출 ' + esc(sn.submittedAt) : '') + '</span></div>';
+            (sn.status ? ' · ' + esc(sn.status) : '') + (sn.submittedAt ? ' · 제출 ' + esc(sn.submittedAt) : '') + '</span>' +
+            ((o.role === 'admin' || o.role === 'subadmin') ? '<button type="button" class="pb-hbtn ghost" id="opReset">의견 초기화</button>' : '') + '</div>';
+    if(!o.snap) h += '<p class="pb-warnbox" style="margin:10px 0">원고 없음 — 기업이 아직 쓰지 않았거나 원고를 초기화했습니다. 받은 의견은 아래에 그대로 남아 있습니다.</p>';
     h += '<div class="pb-optabs" role="tablist">' + SL.map(function(x){
       var mk = '';
       if(o.canWrite){
@@ -5748,7 +5798,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     var d = SL.filter(function(x){ return x.id === o.cur; })[0], s = sl[o.cur];
     var p = function(lab, t){ return t ? '<div class="pb-opf"><small>' + lab + '</small><p>' + esc(t) + '</p></div>' : ''; };
     var txt = s ? (p('제목', s.title) + p('핵심 메시지', s.msg) + p('근거', s.body) + p('발표 시나리오', s.scenario)) : '';
-    h += '<section class="pb-vsl"><h3>' + esc(d.id + ' ' + d.name) + '</h3>' + (txt || '<p class="pb-vempty">아직 쓰지 않았습니다.</p>') + '</section>';
+    //  10-11 민부장 — 텍스트만이 아니라 도식이 있는 최종 IR 장표(PPT 모양)를 보인다. 원고 글은 아래 접힌 칸에.
+    h += '<section class="pb-vsl"><h3>' + esc(d.id + ' ' + d.name) + '</h3>' + (o.snap ? opDeckSlide(sn, o.cur) : '') +
+         (txt ? '<details class="pb-optxt"><summary>원고 글 보기(근거 전문 · 발표 시나리오)</summary>' + txt + '</details>' : (o.snap ? '' : '<p class="pb-vempty">아직 쓰지 않았습니다.</p>')) + '</section>';
     if(!o.canWrite) return h;
     var sent = o.rows.filter(function(r){ return r.unit === o.cur && r.status !== '작성중'; })
                      .sort(function(a, b){ return String(a.sentAt).localeCompare(String(b.sentAt)); });
@@ -5783,6 +5835,14 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       clearTimeout(o.timer); o.timer = setTimeout(function(){ opFlush(); }, 1200);
     };
     if($('opSend')) $('opSend').onclick = function(){ opFlush(opSendNow); };
+    if($('opReset')) $('opReset').onclick = function(){
+      if(!confirm((o.snap && o.snap.company || o.co.company) + '의 의견을 모두 초기화합니다.\n기업·담당자 화면에서 빠지고 담당자는 v1 부터 다시 씁니다. 노션에는 기록으로 남습니다.')) return;
+      opPost('opReset', { cid:o.co.cid }).then(function(d){
+        if(!d || !d.ok){ alert((d && d.error) || '초기화하지 못했습니다.'); return; }
+        o.saving = '의견 ' + d.n + '건을 초기화했습니다'; opReload();
+      }).catch(function(){ alert('서버에 연결하지 못했습니다.'); });
+    };
+    opFitDeck(host);
     Array.prototype.forEach.call(host.querySelectorAll('[data-wd]'), function(b){
       b.onclick = function(){
         if(!confirm('이 의견을 철회합니다. 기업 화면에서 사라지고 노션에는 「철회됨」으로 남습니다.')) return;
@@ -5828,21 +5888,22 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   function opReload(){
     var o = opr;
     opPost('opList', { cid:o.co.cid }).then(function(d){
-      if(d && d.ok){ o.rows = d.rows || []; o.me = d.me || o.me; o.canWithdraw = !!d.canWithdraw; }
+      if(d && d.ok){ o.rows = d.rows || []; o.me = d.me || o.me; o.canWithdraw = !!d.canWithdraw; o.role = d.role || o.role; }
       opRender();
     });
   }
   function opOpen(c){
     var o = opr;
-    o.co = c; o.snap = null; o.rows = []; o.cur = 'IR-01'; o.loading = true; o.err = ''; o.saving = ''; o.canWrite = false;
+    o.co = c; o.snap = null; o.rows = []; o.cur = 'IR-01'; o.loading = true; o.err = ''; o.saving = ''; o.canWrite = false; o.role = '';
     opRender();
-    Promise.all([opPost('load', { company:c.company }), opPost('opList', { cid:c.cid })]).then(function(r){
+    //  원고 = 접수번호로(opLoad · 없으면 null) · 평가위원은 의견을 부르지 않는다(원고만 · Q2·Q8)
+    Promise.all([opPost('opLoad', { cid:c.cid }), c.role === 'eval' ? Promise.resolve(null) : opPost('opList', { cid:c.cid })]).then(function(r){
       if(opr !== o || o.co !== c) return;          // 그사이 다른 기업을 골랐다
       o.loading = false;
       var s = r[0], l = r[1];
       if(!s || !s.ok){ o.err = (s && s.error) || '원고를 불러오지 못했습니다.'; opRender(); return; }
-      o.snap = s.snapshot || {};
-      if(l && l.ok){ o.canWrite = true; o.rows = l.rows || []; o.me = l.me || ''; o.canWithdraw = !!l.canWithdraw; }
+      o.snap = s.snapshot || null;
+      if(l && l.ok){ o.canWrite = true; o.rows = l.rows || []; o.me = l.me || ''; o.canWithdraw = !!l.canWithdraw; o.role = l.role || ''; }
       opRender();
     }).catch(function(){ o.loading = false; o.err = '서버에 연결하지 못했습니다.'; opRender(); });
   }
