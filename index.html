@@ -4251,6 +4251,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     if(f.err){ $('pbCenter').innerHTML = h + '<p class="pb-note">' + esc(f.err) + '</p><button class="pb-cta sub" style="margin-top:12px;width:auto;padding:9px 16px" id="fsReload">다시 불러오기</button></div>';
       $('fsReload').onclick = loadFillStatus; return; }
     var c = f.counts || {};
+    h += '<p class="pb-note" style="margin-bottom:6px">' + (f.source === 'lagmp'
+           ? '명단 = <b>성장관리 플랫폼 등재 기업</b>(INNO 선정·조건부선정 · 제외 아님). 이 명단에 없는 기업은 피치빌더에 로그인할 수 없습니다.'
+           : '<b style="color:var(--pb-warn-deep)">성장관리 플랫폼 명단을 받지 못해 옛 명부로 보여 드립니다.</b> 잠시 뒤 다시 불러오십시오.') +
+         (c.off ? ' · 명단 밖(탈락 등) ' + c.off + '곳은 맨 아래 흐리게' : '') + '</p>';
     h += '<p class="pb-note">전체 ' + (c.total || 0) + '곳 · 1차 채움 실행 ' + (c.filled || 0) + '곳 · <b>리셋 요청 대기 ' + (c.resetPending || 0) + '곳</b> · <b>AI 추가 요청 대기 ' + (c.quotaPending || 0) + '곳</b>. ' +
          '검토 완료는 그 기업 원고를 열어 결과·덱 화면에서 누릅니다 — 원고를 고치면 기업 화면에서 표식이 다시 붙습니다.</p>' +
          '<table class="pb-tbl pb-fstbl"><thead><tr><th>접수번호</th><th>기업</th><th>1차 채움</th><th>리셋 요청</th><th>AI 사용</th><th>검토</th></tr></thead><tbody>';
@@ -4264,7 +4268,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         (qr && !qr.done ? '<br><b style="color:var(--pb-warn-deep)">추가 요청</b> ' + esc(String(qr.at || '').slice(0, 10)) + (qr.note ? '<br><span class="pb-note">' + esc(qr.note) + '</span>' : '') +
                           '<br><button class="pb-cta sub" style="margin-top:6px;width:auto;padding:6px 12px" data-qapprove="' + esc(r.cid) + '">추가 승인</button>'
          : (qr && qr.done ? '<br><span class="pb-note">추가 승인됨 ' + esc(String(qr.approvedAt || '').slice(0, 10)) + '</span>' : ''));
-      h += '<tr' + ((rq && !rq.done) || (qr && !qr.done) ? ' class="is-pending"' : '') + '><td>' + esc(r.cid) + '</td><td>' + esc(r.company || '') + '</td><td>' + fillWho(st) + '</td><td>' + req + '</td><td>' + qcell + '</td>' +
+      h += '<tr' + (r.off ? ' style="opacity:.5"' : '') + ((rq && !rq.done) || (qr && !qr.done) ? ' class="is-pending"' : '') + '><td>' + esc(r.cid) + '</td><td>' + esc(r.company || '') + (r.off ? ' <span class="pb-note">· 명단 밖</span>' : '') + '</td><td>' + fillWho(st) + '</td><td>' + req + '</td><td>' + qcell + '</td>' +
            '<td>' + (rv && rv.done ? '✓ ' + esc(reviewWhen(rv)) : '<span class="pb-note">검토 전</span>') + '</td></tr>';
     });
     h += '</tbody></table><button class="pb-cta sub" style="margin-top:12px;width:auto;padding:9px 16px" id="fsReload">다시 불러오기</button></div>';
