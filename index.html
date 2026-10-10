@@ -5247,6 +5247,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         e.classList.remove('hidden');
         return;
       }
+      if(d.role === 'viewer'){ openViewer(); return; }   // 멘토·컨설턴트·평가위원 = 열람 전용 화면(ⅩⅣ-B)
       llm.reviewer = !!d.reviewer;
       quotaTake(d);                      // 남은 AI 사용 횟수(기업에게만 내려온다)
       state.cid = d.cid || id;
@@ -5267,6 +5268,65 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       $('btnLogin').disabled = false; $('btnLogin').textContent = '들어가기';
     });
   }
+  // ══ 열람자(멘토·컨설턴트·평가위원) — ⅩⅣ-B G14~G17 (2026-10-10 민부장) ══
+  //  배정 기업의 원고를 읽기만 한다. 고치기·내려받기·AI 없음.
+  //  ★작성 화면을 읽기 전용으로 잠그지 않고 따로 그린다 — 작성 화면엔 자동저장·AI·덱/PDF/PPT 버튼이 많아
+  //    하나라도 새면 G16·G17 위반이다. 서버도 저장·AI·내려받기를 VIEWONLY 로 막는다(이 화면은 버튼을 내주지 않을 뿐).
+  function openViewer(){
+    llm.reviewer = false;
+    $('viewLogin').classList.add('hidden');
+    if(!$('pbViewerCss')){
+      var st = document.createElement('style'); st.id = 'pbViewerCss';
+      st.textContent = '.pb-viewer{max-width:860px;margin:0 auto;padding:20px 16px 60px}' +
+        '.pb-vhead{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-bottom:1px solid #d9dde3;padding-bottom:10px}' +
+        '.pb-vnote{color:var(--pb-text-mute,#667);font-size:13px;margin:8px 0 14px}' +
+        '.pb-vco{display:block;width:100%;text-align:left;padding:10px 12px;margin:0 0 6px;border:1px solid #d9dde3;border-radius:8px;background:transparent;color:inherit;font:inherit;cursor:pointer}' +
+        '.pb-vco small{color:var(--pb-text-mute,#667);margin-left:6px}' +
+        '.pb-vsl{border-top:1px solid #e3e6ea;padding:12px 0}.pb-vsl h3{font-size:15px;margin:0 0 6px}' +
+        '.pb-vsl p{white-space:pre-wrap;word-break:keep-all;margin:4px 0;line-height:1.6}.pb-vempty{color:var(--pb-text-mute,#667)}';
+      document.head.appendChild(st);
+    }
+    var box = $('viewViewer');
+    if(!box){ box = document.createElement('div'); box.id = 'viewViewer'; box.className = 'pb-viewer'; document.body.appendChild(box); }
+    box.classList.remove('hidden');
+    box.innerHTML = '<div class="pb-vhead"><b>IR 피치빌더 · 열람 전용</b><span>' + esc(llm.id) +
+      ' <button type="button" id="vOut" class="pb-hbtn">나가기</button></span></div>' +
+      '<p class="pb-vnote">성장관리 플랫폼에서 배정된 기업의 IR 원고를 읽기만 합니다. 고치기·내려받기·AI 기능은 없습니다.</p>' +
+      '<div id="vList">불러오는 중…</div><div id="vDoc"></div>';
+    $('vOut').onclick = function(){ location.reload(); };
+    apiGet('list', {}).then(function(d){
+      if(!d || !d.ok){ $('vList').textContent = (d && d.error) || '목록을 불러오지 못했습니다.'; return; }
+      var cs = d.companies || [];
+      if(!cs.length){ $('vList').textContent = '배정된 기업 중 IR 원고가 저장된 곳이 아직 없습니다.'; return; }
+      $('vList').innerHTML = cs.map(function(c, i){
+        return '<button type="button" class="pb-vco" data-i="' + i + '">' + esc(c.company) +
+               '<small>' + esc([c.cid, c.status, c.updated].filter(Boolean).join(' · ')) + '</small></button>';
+      }).join('');
+      Array.prototype.forEach.call($('vList').querySelectorAll('.pb-vco'), function(b){
+        b.onclick = function(){ viewerOpen(cs[+b.getAttribute('data-i')].company); };
+      });
+    }).catch(function(){ $('vList').textContent = '서버에 연결하지 못했습니다.'; });
+  }
+  function viewerOpen(name){
+    $('vDoc').textContent = '불러오는 중…';
+    //  멘토 코멘트(comments)는 08-19 화면에서 걷어낸 기능이라 부르지 않는다 — 원고만 읽는다.
+    apiGet('load', { company:name }).then(function(s){
+      if(!s || !s.ok){ $('vDoc').textContent = (s && s.error) || '원고를 불러오지 못했습니다.'; return; }
+      var sn = s.snapshot || {}, sl = sn.slides || {};
+      var p = function(t){ return t ? '<p>' + esc(t) + '</p>' : ''; };
+      var h = '<h2 style="margin:18px 0 4px">' + esc(sn.company || name) + '</h2>' +
+              '<p class="pb-vnote">상태 ' + esc(sn.status || '') + (sn.submittedAt ? ' · 제출 ' + esc(sn.submittedAt) : '') + '</p>';
+      SL.forEach(function(d){
+        var x = sl[d.id];
+        var t = x ? (p(x.title) + p(x.msg) + p(x.body) + p(x.scenario)) : '';
+        h += '<section class="pb-vsl"><h3>' + esc(d.id + ' ' + d.name) + '</h3>' +
+             (t || '<p class="pb-vempty">아직 쓰지 않았습니다.</p>') + '</section>';
+      });
+      $('vDoc').innerHTML = h;
+      $('vDoc').scrollIntoView({ behavior:'smooth', block:'start' });
+    }).catch(function(){ $('vDoc').textContent = '서버에 연결하지 못했습니다.'; });
+  }
+
   //  ── 로그인 안내창 ── 남은 AI 사용 횟수를 처음에 알린다(2026-08-22 민부장 지시).
   //   ★alert 을 쓰지 않는다. 화면 톤과 다르고, 무엇이 1회인지 담을 수 없다.
   //   ★기업에게만 띄운다 — 관리자는 총량을 받지 않으므로 알릴 것이 없다.
