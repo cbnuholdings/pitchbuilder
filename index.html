@@ -4107,8 +4107,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   }
   function renderProgHome(){
     var apps = realApplicants();
-    var h = '<div class="pb-proghero"><div class="ey">PROGRAMS</div><h2>사업별 신청기업</h2>' +
-            '<p>관리할 사업을 고르면 그 사업 신청기업의 IR 작성 현황으로 들어갑니다. 기업별 원고 열람·대리 편집은 리스트 안에서 합니다.</p></div>';
+    var h = '<div class="pb-proghero"><div class="ey">PROGRAMS</div><h2>사업별 등재 기업</h2>' +
+            '<p>성장관리 플랫폼에 등재된 기업(INNO 선정·조건부선정 → 연동 승인)만 보입니다. 관리할 사업을 고르면 그 사업 기업의 IR 작성 현황으로 들어갑니다. 기업별 원고 열람·대리 편집은 리스트 안에서 합니다.</p></div>';
     if(admin.apLoading) h += '<p class="pb-note" style="margin-top:14px">명부를 불러오는 중…</p>';
     h += '<div class="pb-proggrid">';
     progOptions(apps).forEach(function(p){
@@ -4119,7 +4119,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       var reg = progReg(p.code);
       h += '<button class="pb-progcard" data-prog="' + esc(p.code) + '" aria-label="' + esc(p.name) + ' 참여기업 리스트">' +
              '<div><div class="nm">' + esc(p.name) + '</div><div class="ds">' + esc((reg && reg.desc) || p.code) + '</div></div>' +
-             '<div class="st"><div><b>' + list.length + '</b><span>신청기업</span></div>' +
+             '<div class="st"><div><b>' + list.length + '</b><span>등재 기업</span></div>' +
                '<div><b>' + wrote + '</b><span>작성 착수</span></div>' +
                '<div><b>' + sub + '</b><span>제출 완료</span></div></div>' +
              '<div class="go' + (list.length ? '' : ' off') + '">' + (list.length ? '참여기업 리스트 →' : '아직 선정된 기업이 없습니다 →') + '</div>' +
@@ -4451,7 +4451,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     var h = '<div class="pb-progcrumb"><button class="pb-hbtn ghost" id="progBack">← 사업 목록</button>' +
               '<b>' + esc(admin.prog ? progName({ program: admin.prog }) : '전체 기업') + '</b></div>' +
             '<div class="pb-kpi">' +
-              '<div class="k"><b>' + apps.length + '</b><span>신청기업</span></div>' +
+              '<div class="k"><b>' + apps.length + '</b><span>등재 기업</span></div>' +
               '<div class="k"><b>' + wrote + '</b><span>작성 착수</span></div>' +
               '<div class="k"><b>' + sub + '</b><span>제출 완료</span></div>' +
             '</div>';
