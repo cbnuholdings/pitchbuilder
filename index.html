@@ -2038,16 +2038,27 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     return /(다|요|까|죠|함|됨|든다|한다|된다|이다|있다|없다|낸다|든다|간다|온다)$/.test(s)
         || /(을|를|이|가|은|는)\s+\S+(다|한다|된다|이다)/.test(s);
   }
+  //  개조식 결론인가(10-11) — 작성 화면이 제목을 개조식(명사형 종결)으로 쓰라고 안내하므로,
+  //  「~해결 — ~단축」 「~확인」처럼 동작 명사로 끝나거나 수치·흐름(—·→)을 담은 제목은 결론으로 본다.
+  //  「시장 규모와 초기 공략시장」 같은 짧은 항목명은 여전히 걸린다(15자 미만 · 수치·동작 명사 없음).
+  //  🔴 이 판정이 없으면 덱 점검이 개조식 제목 12장 전부를 「명사구」로 잡아, 작성 화면과 반대로 말한다.
+  var GAEJO_END = /(확인|확보|달성|단축|형성|해결|제공|공략|요청|증가|감소|전환|검증|운영|체결|예정|차별|확장|입증|개선|절감|창출|진입|출시|완료|추진|도입|성장|돌파|기록|선점|구축|획득|부담|필요|발생|유지|집중|강화|중)$/;
+  function isGaejoConclusion(s){
+    s = String(s || '').trim().replace(/[.!?]$/, '');
+    if(s.replace(/\s/g, '').length < 12) return false;
+    return GAEJO_END.test(s) || /\d/.test(s) || /[—→]/.test(s);
+  }
+  function isConclusion(s){ return isSentence(s) || isGaejoConclusion(s); }
 
   //  ★덱 = 기업이 쓴 장표 그대로(Q16 · 10-10). d = deckDoc() — 패스 장표는 덱에 없다.
   //  🔴 옛 IR-VIZ-03(덱 수치 ↔ IR 원문 대조)은 뺐다 — 덱이 곧 원문이라 대조할 다른 원문이 없다(늘 통과하는 점검은 정보가 아니다).
   //     그래서 이 문항은 「사람 확인」으로 남는다.
   var DECK_CHECKS = {
     'IR-DCK-01': function(d){
-      var bad = (d.slides || []).filter(function(s){ return s && !isSentence(s.headline); });
+      var bad = (d.slides || []).filter(function(s){ return s && !isConclusion(s.headline); });
       return { ok: !bad.length,
-               note: bad.length ? bad.length + '장의 제목이 명사구이거나 비었습니다(' + bad.map(function(s){ return s.id; }).join('·') + ') — 결론 문장으로 바꾸십시오.'
-                                : '모든 장표 제목이 완결 문장입니다.' };
+               note: bad.length ? bad.length + '장의 제목이 항목 이름이거나 비었습니다(' + bad.map(function(s){ return s.id; }).join('·') + ') — 결론 한 줄(개조식)로 바꾸십시오.'
+                                : '모든 장표 제목이 결론 한 줄입니다.' };
     },
     'IR-DCK-03': function(d){
       //  「왜 지금인가」 = IR-04. 패스했으면 덱에 그 자리가 없다.
