@@ -1243,6 +1243,12 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 .pb-oprole{font-style:normal;font-size:11.5px;color:var(--pb-text-mute);border:1px solid var(--pb-line);border-radius:10px;padding:0 6px;margin-left:4px}
 .pb-opdeck{margin:8px 0 10px;overflow:hidden;border-radius:6px}
 .pb-optxt summary{cursor:pointer;font-size:13px;color:var(--pb-text-mute);margin:6px 0}
+/* 의견 화면 버튼 대비(10-11 민부장 「삭제 글씨가 잘 안 보인다」) — 상단 바용 .pb-hbtn.ghost(밝은 글씨)를 밝은 바탕에서 진하게 */
+.pb-opr .pb-hbtn,.pb-opprog .pb-hbtn,.pb-vhead .pb-hbtn{color:var(--pb-accent-ink);border:1px solid var(--pb-line-input);background:#fff;font-weight:600}
+.pb-opr .pb-hbtn:hover,.pb-opprog .pb-hbtn:hover,.pb-vhead .pb-hbtn:hover{background:var(--pb-accent-soft);color:var(--pb-accent-ink)}
+.pb-opr [data-wd],.pb-opr #opReset{color:var(--pb-warn-deep);border-color:var(--pb-warn-line)}
+.pb-opr [data-wd]:hover,.pb-opr #opReset:hover{background:var(--pb-warn-bg);color:var(--pb-warn-deep)}
+.pb-opr [data-wd]{margin-top:6px;padding:4px 12px}
 </style>
 </head>
 <body>
@@ -5796,6 +5802,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     var h = '<div class="pb-oprhd"><h3>' + esc(sn.company || o.co.company) + '</h3><span>' + esc(o.co.cid || '') +
             (sn.status ? ' · ' + esc(sn.status) : '') + (sn.submittedAt ? ' · 제출 ' + esc(sn.submittedAt) : '') + '</span>' +
             ((o.role === 'admin' || o.role === 'subadmin') ? '<button type="button" class="pb-hbtn ghost" id="opReset">의견 초기화</button>' : '') + '</div>';
+    var RN = { admin:'종합관리자', subadmin:'서브관리자', mentor:'멘토', consultant:'컨설턴트' };
+    h += '<p class="pb-vnote" id="opRoleLine">보는 권한: ' + esc(RN[o.srvRole] || o.srvRole || '-') +
+         (o.canWithdraw ? ' · 의견 삭제·초기화 가능' : (o.canWrite ? ' · 의견 작성' : ' · 원고 열람만')) + '</p>';
     if(!o.snap) h += '<p class="pb-warnbox" style="margin:10px 0">원고 없음 — 기업이 아직 쓰지 않았거나 원고를 초기화했습니다. 받은 의견은 아래에 그대로 남아 있습니다.</p>';
     h += '<div class="pb-optabs" role="tablist">' + SL.map(function(x){
       var mk = '';
@@ -5901,7 +5910,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   function opReload(){
     var o = opr;
     opPost('opList', { cid:o.co.cid }).then(function(d){
-      if(d && d.ok){ o.rows = d.rows || []; o.me = d.me || o.me; o.canWithdraw = !!d.canWithdraw; o.role = d.role || o.role; }
+      if(d && d.ok){ o.rows = d.rows || []; o.me = d.me || o.me; o.canWithdraw = !!d.canWithdraw || isAdmin(); o.role = d.role || o.role; o.srvRole = d.role || o.srvRole; }
       opRender();
     });
   }
@@ -5916,7 +5925,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       var s = r[0], l = r[1];
       if(!s || !s.ok){ o.err = (s && s.error) || '원고를 불러오지 못했습니다.'; opRender(); return; }
       o.snap = s.snapshot || null;
-      if(l && l.ok){ o.canWrite = true; o.rows = l.rows || []; o.me = l.me || ''; o.canWithdraw = !!l.canWithdraw; o.role = l.role || ''; }
+      if(l && l.ok){ o.canWrite = true; o.rows = l.rows || []; o.me = l.me || ''; o.srvRole = l.role || '(없음)';
+        //  10-11 민부장 실측 — 종합관리자 화면에 [삭제]·[의견 초기화]가 안 보였다. 관리자 화면이면 화면 쪽에서도 버튼을 낸다(서버가 다시 막는다).
+        o.canWithdraw = !!l.canWithdraw || isAdmin(); o.role = l.role || (isAdmin() ? 'admin' : ''); }
+      else o.srvRole = l ? ('거부 · ' + (l.code || l.error || '?')) : '평가위원(원고만)';
       opRender();
     }).catch(function(){ o.loading = false; o.err = '서버에 연결하지 못했습니다.'; opRender(); });
   }
