@@ -1228,6 +1228,12 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 .pb-opmk{display:block;font-size:11.5px;margin-top:2px;opacity:.65}.pb-opmk.is-new{opacity:1;font-weight:700;color:var(--pb-accent)}
 .pb-oplist{margin:0;padding-left:18px;line-height:1.7}
 @media (max-width:760px){.pb-opr{grid-template-columns:1fr}}
+/* ══ 떠 있는 창(10-11) — 가리지 않음 · 끌어 옮김 · PDF 저장 ══ */
+.pb-veil.pb-float{background:transparent;pointer-events:none;display:block}
+.pb-float .pb-dlg.pb-dlg-pop{pointer-events:auto;position:fixed;top:72px;right:24px;width:min(760px,calc(100vw - 32px));max-height:calc(100vh - 96px);box-shadow:0 18px 50px rgba(14,17,22,.28)}
+.pb-float .pb-pophd{cursor:move;user-select:none}
+.pb-popbtns{display:flex;gap:6px;flex-shrink:0}
+@media (max-width:760px){.pb-float .pb-dlg.pb-dlg-pop{left:8px!important;right:8px;top:56px!important;width:auto}}
 </style>
 </head>
 <body>
@@ -2502,12 +2508,12 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       var cs = (state.second || {}).consent || {};
       var secTxt = (cs.lagmp || cs.rnd)
         ? '동의하신 ' + [cs.lagmp ? '성장관리 확정 멘토링 종합' : '', cs.rnd ? 'R&D 기획보고서' : ''].filter(Boolean).join('·') + '도 함께 읽습니다.'
-        : '성장관리 멘토링 종합·R&D 기획 결과도 넣으시려면 먼저 [보완 자료 동의]에서 동의해 주십시오.';
+        : '성장관리 멘토링 종합·R&D 기획 결과도 넣으시려면 먼저 [추가 자료 동의]에서 동의해 주십시오.';
       return '<div class="pb-stalebar pb-slbar pb-slbar-go"><b>제출하신 자료로 1차 초안을 채울 수 있습니다(1회).</b>' +
              '<p>신청서·아이템분석(기업용)·사업계획서·IR자료를 읽어 12장표 초안을 만듭니다. ' + esc(secTxt) + ' 자료에 없는 숫자는 [__]로 남깁니다. ' +
              '<b>한 번 실행하면 잠기고</b>, 쓰시던 장표는 덮지 않습니다. AI 사용 횟수는 줄지 않습니다. ' +
              '멘토링·R&D 사전기획 컨설팅을 받으신 뒤라면 그 결과가 초안에 함께 들어가므로, 컨설팅을 마친 뒤 실행하시는 편이 좋습니다.</p>' +
-             (isAdmin() ? '' : '<button class="pb-cta sub" id="slFillSec" style="width:auto;padding:9px 16px">보완 자료 동의</button> ') +
+             (isAdmin() ? '' : '<button class="pb-cta sub" id="slFillSec" style="width:auto;padding:9px 16px">추가 자료 동의</button> ') +
              '<button class="pb-cta" id="slFill" style="width:auto;padding:9px 16px">자료로 1차 초안 채우기</button></div>';
     }
     if(f.running) return '<div class="pb-stalebar pb-slbar"><b>1차 채움이 진행 중입니다.</b><p>몇 분 걸릴 수 있습니다. 잠시 뒤 새로 고쳐 보십시오.</p></div>';
@@ -2618,7 +2624,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     //   문항 = 매핑표 45문항(SLIDE_ITEMS · P4). 신청서 재료(b1RefBlock)만 가까운 옛 단계(SLIDE_GUIDE_STEP)를 쓴다.
     //  10-10 민부장 지시 — 오른쪽 열에서 펼치지 않고 [열기]로 별도 창(팝업)에 보인다. 쓰면서 옆에 띄워 두고 볼 수 있게.
     var nItems = brainItemsFor('slide:' + x.id).length;
-    h += '<button class="pb-slopen" id="slGuideOpen"><span>지식 문항 · 무엇을 갖춰야 하나<small>' +
+    h += '<button class="pb-slopen" id="slGuideOpen"><span>외부 검증 자료 활용<small>' +
          (nItems ? '이 장표 문항 ' + nItems + '개 · 요구 증거 · 처방' : '검토 기준 · 있어야 할 자료') + ' · AI 0회</small></span><i>열기 ↗</i></button>';
     h += secondPanel();
     h += DISCLAIMER + '</div>';
@@ -2633,34 +2639,62 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   }
 
   //  팝업 공용 — 이미 떠 있으면 내용만 바꾼다(다시 그려도 창이 깜빡이지 않게). Esc·바깥·[닫기]로 닫는다.
-  function slPop(vid, title, body, bind){
+  //  ★10-11 민부장 — 팝업은 화면을 가리지 않는 창이다(옆에 띄워 두고 원고를 고친다) · 머리를 끌어 옮긴다 ·
+  //    opts.pdf 가 있으면 [PDF 저장] = 창 내용만 PDF(exportFlowPdf — 버튼은 빠진다). 위치는 창마다 기억한다(내용을 다시 그려도 그 자리).
+  var popPos = {};
+  function slPop(vid, title, body, bind, opts){
+    opts = opts || {};
     var v = $(vid), fresh = !v;
-    if(fresh){ v = document.createElement('div'); v.className = 'pb-veil'; v.id = vid; }
-    v.innerHTML = '<div class="pb-dlg pb-dlg-pop" role="dialog" aria-modal="true" aria-labelledby="' + vid + 'T">' +
-      '<div class="pb-pophd"><h4 id="' + vid + 'T">' + title + '</h4><button class="pb-cta sub" data-pop-close style="width:auto;padding:8px 14px">닫기</button></div>' +
+    if(fresh){ v = document.createElement('div'); v.className = 'pb-veil pb-float'; v.id = vid; }
+    v.innerHTML = '<div class="pb-dlg pb-dlg-pop" role="dialog" aria-labelledby="' + vid + 'T">' +
+      '<div class="pb-pophd" title="머리를 끌어서 옮길 수 있습니다"><h4 id="' + vid + 'T">' + title + '</h4><span class="pb-popbtns">' +
+      (opts.pdf ? '<button class="pb-cta sub" data-pop-pdf style="width:auto;padding:8px 14px">PDF 저장</button>' : '') +
+      '<button class="pb-cta sub" data-pop-close style="width:auto;padding:8px 14px">닫기</button></span></div>' +
       '<div class="pb-popbd">' + body + '</div></div>';
+    var dlg = v.firstChild, ps = popPos[vid];
+    if(ps){ dlg.style.left = ps.x + 'px'; dlg.style.top = ps.y + 'px'; dlg.style.right = 'auto'; }
     if(fresh){
       document.body.appendChild(v);
       var close = function(){ if(v.parentNode) v.parentNode.removeChild(v); document.removeEventListener('keydown', esc_); };
       var esc_ = function(e){ if(e.key === 'Escape') close(); };
-      v.onclick = function(e){ if(e.target === v || (e.target.closest && e.target.closest('[data-pop-close]'))) close(); };
+      v.onclick = function(e){ if(e.target.closest && e.target.closest('[data-pop-close]')) close(); };
       document.addEventListener('keydown', esc_);
     }
+    popDrag(v, vid);
+    var pb = v.querySelector('[data-pop-pdf]');
+    if(pb) pb.onclick = function(){ exportFlowPdf([v.querySelector('.pb-popbd')], opts.pdf, pb); };
     if(bind) bind(v);
     return v;
   }
-  function closePops(){ ['slGuideVeil', 'slSecVeil'].forEach(function(k){ var v = $(k); if(v && v.parentNode) v.parentNode.removeChild(v); }); }
+  function popDrag(v, vid){
+    var hd = v.querySelector('.pb-pophd'), dlg = v.firstChild;
+    if(!hd || !dlg) return;
+    hd.onmousedown = function(e){
+      if(e.button !== 0 || (e.target.closest && e.target.closest('button'))) return;
+      var r = dlg.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+      var mv = function(ev){
+        var x = Math.max(0, Math.min(window.innerWidth - 120, ev.clientX - dx));
+        var y = Math.max(0, Math.min(window.innerHeight - 48, ev.clientY - dy));
+        dlg.style.left = x + 'px'; dlg.style.top = y + 'px'; dlg.style.right = 'auto';
+        popPos[vid] = { x:x, y:y };
+      };
+      var up = function(){ document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
+      document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+      e.preventDefault();
+    };
+  }
+  function closePops(){ ['slGuideVeil', 'slSecVeil', 'auditVeil'].forEach(function(k){ var v = $(k); if(v && v.parentNode) v.parentNode.removeChild(v); }); }
   function openGuidePop(){
     if(state.cur >= 12) return;
     var x = SL[state.cur], gs = IR_STEPS.filter(function(st){ return st.id === SLIDE_GUIDE_STEP[x.id]; })[0];
-    slPop('slGuideVeil', x.id + ' · 지식 문항 · 무엇을 갖춰야 하나',
+    slPop('slGuideVeil', x.id + ' · 외부 검증 자료 활용',
       '<p class="pb-note" style="margin-bottom:12px">' + esc(x.name) + ' — 투자자 질문: ' + esc(x.q) + '</p>' +
       '<div class="pb-coach"><div class="pb-panel">' +
       guideBlock({ id:'slide:' + x.id, coachTips:[x.check, '있어야 할 자료 — ' + x.need] }) + b1RefBlock(gs) + '</div></div>',
-      function(){ if($('btnB1Ref')) $('btnB1Ref').onclick = reloadB1Ref; bindGuideToggles(); });
+      function(){ if($('btnB1Ref')) $('btnB1Ref').onclick = reloadB1Ref; bindGuideToggles(); }, { pdf:'외부검증자료_' + x.id });
   }
   function openSecondPop(){
-    slPop('slSecVeil', '보완 자료 · 성장관리 플랫폼 · R&amp;D 기획', secondBody(), function(){ bindSecond(); });
+    slPop('slSecVeil', '추가 자료(성장관리 멘토링 및 R&amp;D 사업계획서)', secondBody(), function(){ bindSecond(); }, { pdf:'추가자료' });
   }
 
   // ── 2차자료(Q8) — 출처별 동의 · 기업이 원래 볼 수 있는 확정 종합·공개 R&D 만 · 본문 자동 반영 없음 ──
@@ -2671,7 +2705,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     var sc = state.second || {}, c = sc.consent || {}, n = secondItems().length;
     var sub = !(c.lagmp || c.rnd) ? '아직 동의한 출처가 없습니다 — 열어서 고르십시오'
             : (sc.loading ? '불러오는 중…' : (sc.error ? esc(sc.error) : '동의한 자료 ' + n + '건 · AI 멘토가 참고합니다'));
-    return '<button class="pb-slopen" id="slSecOpen"><span>보완 자료 · 성장관리 · R&amp;D<small>' + sub + '</small></span><i>열기 ↗</i></button>';
+    return '<button class="pb-slopen" id="slSecOpen"><span>추가 자료(성장관리 멘토링 및 R&amp;D 사업계획서)<small>' + sub + '</small></span><i>열기 ↗</i></button>';
   }
   function secondBody(){
     var sc = state.second || {}, c = sc.consent || {};
@@ -3670,6 +3704,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     els.forEach(function(el){
       var c = el.cloneNode(true);
       Array.prototype.forEach.call(c.querySelectorAll('.pb-noprint,.s-fig-regen,button'), function(x){ x.remove(); });
+      Array.prototype.forEach.call(c.querySelectorAll('details'), function(x){ x.open = true; });   // 창 PDF — 접힌 칸도 찍는다(10-11)
       if(c.classList.contains('pb-ir')){
         var head = document.createElement('div'); head.className = 'pb-ir';
         head.style.cssText = 'width:794px;margin:0;border:none;border-radius:0;padding:38px 42px 6px';
@@ -4835,6 +4870,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         state.auditHash = irHash();               // 무엇을 보고 한 진단인지 기억한다
         writeLocal();
         renderAuditBox(); renderMeta(); syncToServer();
+        openAuditWin();                                    // 10-11 민부장 — 진단을 누르면 결과가 별도 창으로 뜬다
         if(state.view === 'result') renderResultRight();   // 우측 투자자 점검표도 같이 갱신(2026-08-20)
         syncGateUI();                                      // ②가 열렸으니 ③ 카드도 함께 갱신(2026-08-22)
       })
@@ -4949,7 +4985,16 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       h += '</div>';
     }
     h += '</div>';
-    box.innerHTML = h;
+    box.innerHTML = '<button class="pb-cta sub" id="btnAuditWin" style="margin-top:14px;width:auto;padding:9px 16px">결과를 별도 창으로 보기 · PDF</button>' + h;
+    $('btnAuditWin').onclick = openAuditWin;
+    if($('auditVeil')) openAuditWin();                   // 열어 둔 창은 새 결과로 바꾼다
+  }
+  //  ★10-11 민부장 — 진단 결과를 별도 창에 띄운다(옮길 수 있고, 결과만 PDF). 창을 옆에 두고 작성 화면에서 원고를 고친다.
+  function openAuditWin(){
+    var box = $('auditBox'); if(!box || !state.lastAudit) return;
+    var c = box.cloneNode(true), b = c.querySelector('#btnAuditWin'); if(b) b.remove();
+    c.removeAttribute('id');
+    slPop('auditVeil', '통합 논리 진단 결과 · ' + esc(companyName() || ''), c.innerHTML, null, { pdf:'통합논리진단' });
   }
 
   // ── ④ 최종 산출물 보관 ──
