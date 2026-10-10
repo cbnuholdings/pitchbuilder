@@ -4941,7 +4941,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     });
     // 12장표 — 서버에 장표가 있으면 그것이 정본, 없으면 옛 칸에서 옮긴다(기계 이전 전 기업 · 다른 PC)
     var srvSl = (s && s.slides && typeof s.slides === 'object') ? s.slides : null;
-    state.slides = (srvSl && Object.keys(srvSl).length) ? normSlides(srvSl) : legacyToSlides(state.formData);
+    //  ★1차 채움 상태가 생긴 기업(noLegacy)은 빈 장표가 정답이다 — 옛 칸에서 되살리면 초기화·리셋 뒤 옛 원고가 돌아온다(10-10)
+    state.slides = (srvSl && Object.keys(srvSl).length) ? normSlides(srvSl) : ((s && s.noLegacy) ? normSlides({}) : legacyToSlides(state.formData));
     if(s && s.tone && toneOf(s.tone).key === s.tone){ state.tone = s.tone; state.toneSet = true; }
     state.cur = 0;
     state.cid        = s.cid || '';
