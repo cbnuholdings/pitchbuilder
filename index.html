@@ -5825,7 +5825,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
              (o.canWithdraw && r.status === '전달됨' ? '<button type="button" class="pb-hbtn ghost" data-wd="' + esc(r.id) + '">삭제</button>' : '') + '</div>';
     };
     h += '<section class="pb-opsec"><h4>내가 보낸 의견</h4>' + (mineS.length ? mineS.map(item).join('') : '<p class="pb-vempty">이 장표에 보낸 의견이 없습니다.</p>') + '</section>';
-    if(others.length) h += '<details class="pb-opsec"><summary>다른 담당자 의견 ' + others.length + '건</summary>' + others.map(item).join('') + '</details>';
+    //  종합·서브관리자는 펼친 채로 연다 — [삭제] 버튼이 접힌 칸 안에 숨어 보이지 않았다(10-11 민부장 실측)
+    if(others.length) h += '<details class="pb-opsec"' + (o.canWithdraw ? ' open' : '') + '><summary>다른 담당자 의견 ' + others.length + '건' +
+                           (o.canWithdraw ? ' · 삭제 가능' : '') + '</summary>' + others.map(item).join('') + '</details>';
     var dr = opDraftOf(o.cur);
     h += '<section class="pb-opsec"><h4>이번 의견 · v' + opNextV() + ' <span class="pb-vnote" id="opSt">' + esc(o.saving || '작성 중 · 기업에게 아직 보이지 않습니다 · 자동 저장') + '</span></h4>' +
          '<textarea id="opDraft" maxlength="3000" rows="5" placeholder="이 장표에 대한 의견을 적으십시오. [기업 전달]을 누르기 전에는 기업에게 보이지 않습니다.">' + esc(dr ? dr.body : '') + '</textarea></section>';
