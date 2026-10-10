@@ -1051,7 +1051,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 .pb-slsug small{font:400 11px var(--pb-font-mono);color:var(--pb-text-mute)}
 .pb-slpassai ul{margin:2px 0 0;padding-left:18px;line-height:1.65}
 .pb-slside .pb-inkbtn{min-height:44px}
-.pb-slside .pb-inkbtn:disabled{opacity:.5;cursor:default}
+.pb-slside .pb-inkbtn:disabled{opacity:1;cursor:default;background:#E4E8F0;color:var(--pb-text-mute)}
 .pb-slchk{display:flex;gap:8px;align-items:center;font-size:13px;min-height:32px}
 .pb-sl2{border:1px solid var(--pb-line);border-radius:10px;padding:8px 10px;background:#fff;font-size:13px}
 .pb-sl2 summary{cursor:pointer} .pb-sl2 small{display:block;font:400 11px var(--pb-font-mono);color:var(--pb-text-mute)}
@@ -1068,6 +1068,30 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 .pb-slguide summary{cursor:pointer;font-weight:700;font-size:15px;color:var(--pb-text);min-height:32px;display:flex;justify-content:space-between;align-items:center}
 .pb-slguide summary span{font:400 11px var(--pb-font-mono);color:var(--pb-text-mute)}
 .pb-slguide .pb-coach{margin-top:10px}
+/* 팝업으로 여는 칸(10-10 민부장 지시) — 지식 문항·보완 자료는 오른쪽 열에서 펼치지 않고 별도 창으로 */
+.pb-slopen{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:52px;padding:12px 16px;border:1px solid var(--pb-line);
+  border-radius:14px;background:var(--pb-surface);cursor:pointer;text-align:left;font:700 15px var(--pb-font-sans,inherit);color:var(--pb-text)}
+.pb-slopen:hover{border-color:var(--pb-accent)} .pb-slopen small{display:block;font:400 12px/1.5 inherit;color:var(--pb-text-mute);margin-top:2px}
+.pb-slopen i{font-style:normal;font:600 12px var(--pb-font-mono);color:var(--pb-accent-ink);white-space:nowrap}
+.pb-dlg.pb-dlg-pop{max-width:760px;max-height:calc(100vh - 48px);display:flex;flex-direction:column;padding:0}
+.pb-dlg-pop .pb-pophd{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid var(--pb-line)}
+.pb-dlg-pop .pb-pophd h4{margin:0}
+.pb-dlg-pop .pb-popbd{overflow:auto;padding:18px 22px 22px}
+.pb-dlg-pop .pb-popbd .pb-coach{margin-top:0}
+.pb-dlg-pop .pb-sl2 p{white-space:pre-wrap}
+/* AI 멘토 진행 표시 — 다시 그려도 남는다(state.mentorBusy) */
+.pb-slrun{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;background:var(--pb-accent-soft,#EEF3FF);font-size:13.5px;line-height:1.6}
+.pb-slrun .sp{width:16px;height:16px;border-radius:50%;border:2px solid var(--pb-accent);border-right-color:transparent;animation:pbspin .8s linear infinite;flex:none}
+@keyframes pbspin{to{transform:rotate(360deg)}}
+/* 장표 아래 저장 상태 — 위 저장 칩과 같은 내용 */
+.pb-mreq{cursor:pointer;border:1px solid var(--pb-accent)!important;color:var(--pb-accent-ink)!important;background:var(--pb-accent-soft,#EEF3FF)!important;font:inherit}
+.pb-slsave{font:400 12px var(--pb-font-mono);color:var(--pb-text-mute);white-space:nowrap}
+.pb-slsave.is-saving{color:var(--pb-accent-ink)} .pb-slsave.is-fail{color:var(--pb-warn-deep)}
+/* 왼쪽 열 — IR 피칭 자료 받는 길(10-10) */
+.pb-sldeck{margin:0 0 18px;padding:14px;border-radius:12px;border:1px solid var(--pb-on-ink-line);background:rgba(255,255,255,.04)}
+.pb-sldeck h4{margin:0 0 8px}
+.pb-sldeck ol{margin:0 0 10px;padding-left:18px;font-size:12.5px;line-height:1.75;color:var(--pb-on-ink-2)}
+.pb-sldeck li.ok{color:var(--pb-on-ink-1)} .pb-sldeck li.ok::marker{content:'✔ '}
 @media (max-width:1100px){ .pb-shell.is-slides{grid-template-columns:var(--pb-col-left) minmax(0,1fr)} .pb-shell.is-slides .pb-right{grid-column:1 / -1} }
 @media (max-width:820px){ .pb-slcard{padding:18px 16px} .pb-tonebtn{margin:6px 0}
   /* 휴대폰 — 레일·편집기·코치를 세로로 쌓고, 레일은 가로로 넘기는 띠로 */
@@ -1876,7 +1900,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         ? '<div class="m"' + (quotaLeft() === 0
             ? ' style="background:var(--pb-warn-bg);border-color:var(--pb-warn-line);color:var(--pb-warn-deep)"' : '') +
           '>AI 사용<b' + (quotaLeft() === 0 ? ' style="color:var(--pb-warn-deep)"' : '') + '>' +
-          llm.quota.used + ' / ' + llm.quota.limit + '회</b></div>'
+          llm.quota.used + ' / ' + llm.quota.limit + '회</b></div>' + quotaReqHtml()
         : '') +
       '<div class="sp"></div>' +
       '<div class="note">자동저장 켜짐 · ' + (sl ? '장표 이동마다' : '단계 이동마다') + '</div>' + (sl ? tonePanelHtml() : '');
@@ -1886,6 +1910,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       b.onclick = function(){ state.tone = b.dataset.tone; state.toneSet = true; saveLocal(); syncToServer(); render(); };
     });
     if($('slAudit')) $('slAudit').onclick = function(){ if(slideCounts().closed === 12){ syncToServer(); goResult(); } };
+    if($('mtQuotaReq')) $('mtQuotaReq').onclick = quotaRequest;
   }
 
   // 오늘 이 계정이 부른 LLM 횟수 — 안내용(강제는 서버 DAILY_LIMIT가 한다)
@@ -1900,8 +1925,26 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   function quotaTake(d){
     if(d && d.quota && typeof d.quota.limit === 'number' && d.quota.limit > 0){
       llm.quota = { used: +d.quota.used || 0, limit: +d.quota.limit };
+      if('req' in d.quota){ llm.quotaReq = d.quota.req || null; llm.quotaReqLeft = +d.quota.reqLeft || 5; }   // ping 만 싣는다 — AI 응답은 건드리지 않는다
       try{ renderMeta(); }catch(e){}
     }
+  }
+  //  AI 횟수 추가 요청(10-10 민부장) — 남은 횟수가 5회 이하일 때 한 번. 관리자가 승인하면 쓴 횟수가 0 으로(25 + 25 = 50)
+  function quotaReqHtml(){
+    if(!llm.quota || isAdmin()) return '';
+    var r = llm.quotaReq;
+    if(r && r.done) return '<div class="m">AI 추가<b>승인됨</b></div>';
+    if(r) return '<div class="m">AI 추가<b>승인 대기</b></div>';
+    if(quotaLeft() > (llm.quotaReqLeft || 5)) return '';
+    return '<button class="m pb-mreq" id="mtQuotaReq" title="관리자 승인 뒤 AI 사용 횟수가 처음부터 다시 셉니다(한 번만)">AI 횟수 추가 요청<b>1회 가능</b></button>';
+  }
+  function quotaRequest(){
+    var note = prompt('AI 사용 횟수 추가를 요청합니다(한 번만 가능).\n관리자가 승인하면 횟수가 처음부터 다시 셉니다.\n\n요청 이유를 적어 주십시오(선택).', '');
+    if(note === null) return;
+    apiGet('quotareq', { note:note }).then(function(d){
+      if(d && d.ok){ llm.quotaReq = d.quotaReq; renderMeta(); alert('요청을 보냈습니다. 관리자가 승인하면 AI 사용 횟수가 다시 채워집니다.'); }
+      else alert((d && d.error) || '요청하지 못했습니다.');
+    }).catch(function(err){ alert('요청하지 못했습니다 — ' + (err.message || '오류')); });
   }
   function quotaLeft(){ return llm.quota ? Math.max(0, llm.quota.limit - llm.quota.used) : null; }
   //  자리마다 다르게 적으면 기업이 서로 다른 숫자로 읽는다 — 문장은 하나로 둔다.
@@ -2163,7 +2206,15 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
             '</div>' +
             //  누구의 원고인지 늘 보인다(관리자 대리 편집 때 특히) — 회사명은 서버가 정한다(로그인·대리 편집)
             '<div class="pb-slco" id="slCo">' + esc(state.formData.companyName || '') + '</div>' +
-            '<h4>12장표</h4><p class="pb-sllg">● 완료 ◐ 작성중 ○ 미작성 ⊘ 패스</p><nav aria-label="장표 목록">';
+            '';
+    //  IR 피칭 자료(PDF·PPT) 받는 길 — 10-10 민부장 「다운로드 위치가 직관적이지 않다」. 작성 화면에서 늘 보이게 세 단계를 적는다.
+    var g = deckGate(), c2 = slideCounts();
+    h += '<div class="pb-sldeck"><h4>IR 피칭 자료 받기</h4><ol>' +
+           '<li' + (g.closed ? ' class="ok"' : '') + '>12장표 모두 저장(완료) 또는 패스 — ' + c2.closed + ' / 12</li>' +
+           '<li' + (g.audit ? ' class="ok"' : '') + '>① 통합 논리 진단 받기' + (g.auditStale ? ' (원고가 바뀌어 다시 받기 권장)' : '') + '</li>' +
+           '<li>② PDF · PPT 다운로드</li></ol>' +
+           '<button class="pb-inkbtn" id="slDeckGo">' + (g.ok ? 'IR 피칭 자료 열기 · PDF·PPT' : (g.closed ? '① 통합 논리 진단으로' : 'PDF·PPT 받는 방법')) + '</button></div>';
+    h += '<h4>12장표</h4><p class="pb-sllg">● 완료 ◐ 작성중 ○ 미작성 ⊘ 패스</p><nav aria-label="장표 목록">';
     SL.forEach(function(x, i){
       var st = SLIDE_ST[state.slides[x.id].status], on = i === state.cur;
       h += '<button class="pb-sl' + (on ? ' is-on' : '') + ' st-' + state.slides[x.id].status + '" data-sl="' + i + '"' + (on ? ' aria-current="step"' : '') + '>' +
@@ -2184,6 +2235,12 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     Array.prototype.forEach.call($('pbLeft').querySelectorAll('.pb-sl'), function(b){
       b.onclick = function(){ goSlide(+b.dataset.sl); };
     });
+    $('slDeckGo').onclick = function(){
+      var gg = deckGate();
+      if(gg.ok){ syncToServer(); goDeck(); return; }
+      if(gg.closed){ syncToServer(); goResult(); return; }
+      deckBlocked(gg);
+    };
   }
 
   function fillBanner(){
@@ -2204,9 +2261,15 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
                                               : '<button class="pb-cta sub" id="slFillReset" style="width:auto;padding:9px 16px">리셋 요청</button>') + '</div>';
     }
     if(!f.locked && !f.running){
+      var cs = (state.second || {}).consent || {};
+      var secTxt = (cs.lagmp || cs.rnd)
+        ? '동의하신 ' + [cs.lagmp ? '성장관리 확정 멘토링 종합' : '', cs.rnd ? 'R&D 기획보고서' : ''].filter(Boolean).join('·') + '도 함께 읽습니다.'
+        : '성장관리 멘토링 종합·R&D 기획 결과도 넣으시려면 먼저 [보완 자료 동의]에서 동의해 주십시오.';
       return '<div class="pb-stalebar pb-slbar pb-slbar-go"><b>제출하신 자료로 1차 초안을 채울 수 있습니다(1회).</b>' +
-             '<p>신청서·아이템분석(기업용)·사업계획서·IR자료를 읽어 12장표 초안을 만듭니다. 자료에 없는 숫자는 [__]로 남깁니다. ' +
-             '<b>한 번 실행하면 잠기고</b>, 쓰시던 장표는 덮지 않습니다. AI 사용 횟수는 줄지 않습니다.</p>' +
+             '<p>신청서·아이템분석(기업용)·사업계획서·IR자료를 읽어 12장표 초안을 만듭니다. ' + esc(secTxt) + ' 자료에 없는 숫자는 [__]로 남깁니다. ' +
+             '<b>한 번 실행하면 잠기고</b>, 쓰시던 장표는 덮지 않습니다. AI 사용 횟수는 줄지 않습니다. ' +
+             '멘토링·R&D 사전기획 컨설팅을 받으신 뒤라면 그 결과가 초안에 함께 들어가므로, 컨설팅을 마친 뒤 실행하시는 편이 좋습니다.</p>' +
+             (isAdmin() ? '' : '<button class="pb-cta sub" id="slFillSec" style="width:auto;padding:9px 16px">보완 자료 동의</button> ') +
              '<button class="pb-cta" id="slFill" style="width:auto;padding:9px 16px">자료로 1차 초안 채우기</button></div>';
     }
     if(f.running) return '<div class="pb-stalebar pb-slbar"><b>1차 채움이 진행 중입니다.</b><p>몇 분 걸릴 수 있습니다. 잠시 뒤 새로 고쳐 보십시오.</p></div>';
@@ -2271,7 +2334,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
            (s.status === 'pass'
              ? '<button class="pb-cta sub" id="slUnpass" style="width:auto;padding:11px 18px">패스 해제</button>'
              : '<button class="pb-cta sub" id="slPass" style="width:auto;padding:11px 18px">패스</button>') +
-           '<button class="pb-cta" id="slDone" style="width:auto;padding:11px 22px">' + (s.status === 'done' ? '완료됨 · 다음 장표' : '완료') + '</button>' +
+           '<span class="pb-slsave' + (state.saveCls ? ' ' + state.saveCls : '') + '" id="slSave" aria-live="polite">' + esc(state.saveTxt || '') + '</span>' +
+           //  10-10 민부장 지시 — [완료] → [저장하기]. 누르면 서버에 저장하고 이 장표를 「완료」로 표시한 뒤 다음 장표로 간다
+           '<button class="pb-cta" id="slDone" style="width:auto;padding:11px 22px" title="서버에 저장하고 이 장표를 완료로 표시한 뒤 다음 장표로 갑니다">' + (s.status === 'done' ? '저장됨 · 다음 장표' : '저장하기') + '</button>' +
          '</div>';
     $('pbCenter').innerHTML = h;
     bindSlideCenter(x.id);
@@ -2313,45 +2378,79 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     h += mentorPanel(x, s);
     // 지식 문항(가이드 · AI 0회) — 민부장 결정 10-10: 옛 가이드 탭을 코치 열로 옮긴다.
     //   문항 = 매핑표 45문항(SLIDE_ITEMS · P4). 신청서 재료(b1RefBlock)만 가까운 옛 단계(SLIDE_GUIDE_STEP)를 쓴다.
-    var gs = IR_STEPS.filter(function(st){ return st.id === SLIDE_GUIDE_STEP[x.id]; })[0];
-    h += '<details class="pb-slguide"><summary>지식 문항 · 무엇을 갖춰야 하나 <span>AI 0회</span></summary>' +
-         '<div class="pb-coach"><div class="pb-panel">' +
-         guideBlock({ id:'slide:' + x.id, coachTips:[x.check, '있어야 할 자료 — ' + x.need] }) + b1RefBlock(gs) + '</div></div></details>';
+    //  10-10 민부장 지시 — 오른쪽 열에서 펼치지 않고 [열기]로 별도 창(팝업)에 보인다. 쓰면서 옆에 띄워 두고 볼 수 있게.
+    var nItems = brainItemsFor('slide:' + x.id).length;
+    h += '<button class="pb-slopen" id="slGuideOpen"><span>지식 문항 · 무엇을 갖춰야 하나<small>' +
+         (nItems ? '이 장표 문항 ' + nItems + '개 · 요구 증거 · 처방' : '검토 기준 · 있어야 할 자료') + ' · AI 0회</small></span><i>열기 ↗</i></button>';
     h += secondPanel();
     h += DISCLAIMER + '</div>';
     $('pbRight').innerHTML = h;
     Array.prototype.forEach.call($('pbRight').querySelectorAll('.pb-slwarn'), function(b){
       b.onclick = function(){ var ta = $('slf-' + b.dataset.fk); if(ta){ ta.focus(); ta.scrollIntoView({ block:'center' }); } };
     });
-    var gd = $('pbRight').querySelector('.pb-slguide');
-    if(gd){
-      if(state.guideOpen) gd.open = true;                  // 입력할 때마다 다시 그려도 펼침을 지킨다
-      gd.ontoggle = function(){ state.guideOpen = gd.open; };
-    }
-    if($('btnB1Ref')) $('btnB1Ref').onclick = reloadB1Ref;
-    bindGuideToggles();
-    bindSecond();
+    if($('slGuideOpen')) $('slGuideOpen').onclick = openGuidePop;
+    if($('slSecOpen')) $('slSecOpen').onclick = openSecondPop;
     bindMentor(x.id);
+  }
+
+  //  팝업 공용 — 이미 떠 있으면 내용만 바꾼다(다시 그려도 창이 깜빡이지 않게). Esc·바깥·[닫기]로 닫는다.
+  function slPop(vid, title, body, bind){
+    var v = $(vid), fresh = !v;
+    if(fresh){ v = document.createElement('div'); v.className = 'pb-veil'; v.id = vid; }
+    v.innerHTML = '<div class="pb-dlg pb-dlg-pop" role="dialog" aria-modal="true" aria-labelledby="' + vid + 'T">' +
+      '<div class="pb-pophd"><h4 id="' + vid + 'T">' + title + '</h4><button class="pb-cta sub" data-pop-close style="width:auto;padding:8px 14px">닫기</button></div>' +
+      '<div class="pb-popbd">' + body + '</div></div>';
+    if(fresh){
+      document.body.appendChild(v);
+      var close = function(){ if(v.parentNode) v.parentNode.removeChild(v); document.removeEventListener('keydown', esc_); };
+      var esc_ = function(e){ if(e.key === 'Escape') close(); };
+      v.onclick = function(e){ if(e.target === v || (e.target.closest && e.target.closest('[data-pop-close]'))) close(); };
+      document.addEventListener('keydown', esc_);
+    }
+    if(bind) bind(v);
+    return v;
+  }
+  function closePops(){ ['slGuideVeil', 'slSecVeil'].forEach(function(k){ var v = $(k); if(v && v.parentNode) v.parentNode.removeChild(v); }); }
+  function openGuidePop(){
+    if(state.cur >= 12) return;
+    var x = SL[state.cur], gs = IR_STEPS.filter(function(st){ return st.id === SLIDE_GUIDE_STEP[x.id]; })[0];
+    slPop('slGuideVeil', x.id + ' · 지식 문항 · 무엇을 갖춰야 하나',
+      '<p class="pb-note" style="margin-bottom:12px">' + esc(x.name) + ' — 투자자 질문: ' + esc(x.q) + '</p>' +
+      '<div class="pb-coach"><div class="pb-panel">' +
+      guideBlock({ id:'slide:' + x.id, coachTips:[x.check, '있어야 할 자료 — ' + x.need] }) + b1RefBlock(gs) + '</div></div>',
+      function(){ if($('btnB1Ref')) $('btnB1Ref').onclick = reloadB1Ref; bindGuideToggles(); });
+  }
+  function openSecondPop(){
+    slPop('slSecVeil', '보완 자료 · 성장관리 플랫폼 · R&amp;D 기획', secondBody(), function(){ bindSecond(); });
   }
 
   // ── 2차자료(Q8) — 출처별 동의 · 기업이 원래 볼 수 있는 확정 종합·공개 R&D 만 · 본문 자동 반영 없음 ──
   //   장표별 [반영|무시] 제안 카드는 AI 멘토(P4)가 이 재료로 만든다. 여기서는 동의와 원문 열람까지.
+  //  오른쪽 열에는 [열기] 버튼과 요약만 — 동의·원문은 팝업(secondBody)에서(10-10 민부장 지시)
   function secondPanel(){
     if(isAdmin()) return '';
+    var sc = state.second || {}, c = sc.consent || {}, n = secondItems().length;
+    var sub = !(c.lagmp || c.rnd) ? '아직 동의한 출처가 없습니다 — 열어서 고르십시오'
+            : (sc.loading ? '불러오는 중…' : (sc.error ? esc(sc.error) : '동의한 자료 ' + n + '건 · AI 멘토가 참고합니다'));
+    return '<button class="pb-slopen" id="slSecOpen"><span>보완 자료 · 성장관리 · R&amp;D<small>' + sub + '</small></span><i>열기 ↗</i></button>';
+  }
+  function secondBody(){
     var sc = state.second || {}, c = sc.consent || {};
-    var h = '<section><div class="hd"><h3>보완 자료</h3><span>2차자료 · 동의한 것만</span></div>' +
+    var h = '<p class="pb-note" style="margin-bottom:10px">다른 시스템에 있는 귀사 자료 가운데 <b>귀사가 원래 볼 수 있는 것</b>만, 동의한 출처만 보여 드립니다. ' +
+            '<b>1차 초안 채우기(1회)를 아직 안 하셨다면</b> 동의한 자료가 초안 재료로 함께 들어갑니다. ' +
+            '그 뒤에는 장표에 자동으로 들어가지 않습니다 — 장표마다 [AI 멘토]를 받으면 이 자료를 참고한 <b>보완 제안</b>이 함께 나오고, [본문에 반영]을 누르실 때만 원고에 들어갑니다.</p>' +
             '<label class="pb-slchk"><input type="checkbox" id="slCLag"' + (c.lagmp ? ' checked' : '') + '> 성장관리 플랫폼 확정 멘토링 종합</label>' +
             '<label class="pb-slchk"><input type="checkbox" id="slCRnd"' + (c.rnd ? ' checked' : '') + '> R&amp;D 기획보고서(공개본)</label>';
     if(sc.loading) h += '<p class="pb-note">불러오는 중…</p>';
     else if(sc.error) h += '<p class="pb-note">' + esc(sc.error) + '</p>';
     // 동의한 출처만 — 서버가 잘못 내려도 화면이 한 번 더 거른다(secondItems)
     var items = secondItems().map(function(e){ return { src: e.src === 'lagmp' ? e.label.replace('성장관리 확정 멘토링 종합', '성장관리 · 확정 종합') : e.label.replace('R&D 기획보고서 ', 'R&D 기획보고서 · '), at:e.at, text:e.text }; });
-    items.forEach(function(it){
-      h += '<details class="pb-sl2"><summary><small>' + esc(it.src) + (it.at ? ' · ' + esc(it.at) : '') + '</small>' + esc(String(it.text).slice(0, 60)) + '…</summary>' +
-           '<p>' + esc(it.text).replace(/\n/g, '<br>') + '</p></details>';
+    items.forEach(function(it, k){
+      h += '<details class="pb-sl2"' + (k === 0 ? ' open' : '') + ' style="margin-top:8px"><summary><small>' + esc(it.src) + (it.at ? ' · ' + esc(it.at) : '') + '</small>' + esc(String(it.text).slice(0, 60)) + '…</summary>' +
+           '<p>' + esc(it.text) + '</p></details>';
     });
     if((c.lagmp || c.rnd) && !sc.loading && !sc.error && !items.length) h += '<p class="pb-note">아직 보실 수 있는 확정 자료가 없습니다.</p>';
-    return h + '<p class="pb-note">자료는 장표에 자동으로 들어가지 않습니다. 동의는 언제든 끌 수 있습니다.</p></section>';
+    return h + '<p class="pb-note" style="margin-top:10px">동의는 언제든 끌 수 있습니다.</p>';
   }
   function loadSecond(){
     if(!serverOn() || isAdmin()) return;
@@ -2361,7 +2460,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       state.second = { consent:(d && d.consent) || {}, lagmp:(d && d.lagmp) || [], rnd:(d && d.rnd) || [],
                        error: (d && d.ok) ? '' : ((d && d.error) || '불러오지 못했습니다.') };
     }).catch(function(){ state.second = { consent:(state.second || {}).consent || {}, error:'불러오지 못했습니다.' }; })
-      .then(function(){ if(state.view === 'write') renderSlideRight(); });
+      .then(function(){ if(state.view === 'write'){ renderSlideRight(); if(state.fill && !state.fill.locked) renderSlideCenter(); } if($('slSecVeil')) openSecondPop(); });
   }
   function bindSecond(){
     var set = function(key, on){
@@ -2477,21 +2576,41 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     });
     return out;
   }
+  //  🔴 10-10 민부장 「AI 멘토 받기를 눌러도 내용이 안 나온다」 — 원인: 글자를 칠 때마다 오른쪽 열을 다시 그려
+  //    「정리하는 중」 표시가 사라지고 버튼이 다시 켜진 것처럼 보였다. 그때 다시 누르면 busy 라 아무 반응이 없었다.
+  //    → 진행 상태를 state.mentorBusy 에 두고 오른쪽 열이 다시 그려져도 진행 띠·경과 초를 그대로 그린다.
+  var mentorTick = null;
   function runMentor(){
-    var id = curSlideId(); if(!id || busy) return;
+    var id = curSlideId(); if(!id) return;
+    if(state.mentorBusy){ alert(state.mentorBusy.id + ' 장표의 AI 멘토 의견을 정리하는 중입니다. 끝나면 다시 눌러 주십시오.'); return; }
+    if(busy){ alert('다른 작업(AI·불러오기)이 진행 중입니다. 끝난 뒤 다시 눌러 주십시오.'); return; }
     var s = state.slides[id];
     if(!(s.title + s.msg + s.body).trim()){ alert('먼저 이 장표를 써 주십시오. 빈 장표에는 멘토 의견을 드리지 않습니다.'); return; }
-    if(llm.quota && quotaLeft() === 0){ alert('AI 사용 횟수를 모두 쓰셨습니다. 더 필요하시면 운영사에 요청하십시오.'); return; }
+    if(llm.quota && quotaLeft() === 0){ alert('AI 사용 횟수를 모두 쓰셨습니다.' + (llm.quotaReq ? (llm.quotaReq.done ? ' 추가 횟수도 모두 쓰셨습니다.' : ' 추가 요청이 승인되면 다시 쓰실 수 있습니다.') : ' 상단 [AI 횟수 추가 요청]으로 한 번 더 받으실 수 있습니다.')); return; }
     busy = true;
-    var b = $('slMentor'); if(b){ b.disabled = true; b.textContent = '의견을 정리하는 중…'; }
-    callLLM(MENTOR_SYSTEM, mentorPrompt(id), 'mentor')
-      .then(function(d){
+    state.mentorBusy = { id:id, t0:Date.now() };
+    if(state.view === 'write') renderSlideRight();
+    clearInterval(mentorTick);
+    mentorTick = setInterval(function(){
+      var el = $('slMentorSec');
+      if(el && state.mentorBusy) el.textContent = Math.round((Date.now() - state.mentorBusy.t0) / 1000) + '초';
+    }, 1000);
+    var finish = function(){
+      busy = false; state.mentorBusy = null; clearInterval(mentorTick);
+      if(state.view === 'write'){ renderSlideLeft(); renderSlideRight(); renderMeta(); if($('slLine')) $('slLine').textContent = stateLine(s, slideWarns(s)); }
+    };
+    var who = skey(), p;
+    try{ p = callLLM(MENTOR_SYSTEM, mentorPrompt(id), 'mentor'); }
+    catch(e){ finish(); alert('AI 멘토 의견을 받지 못했습니다 — ' + (e.message || '오류')); return; }
+    p.then(function(d){
+        if(skey() !== who){ busy = false; state.mentorBusy = null; clearInterval(mentorTick); return; }   // 그사이 나가거나 다른 기업으로 바꿨다 — 남의 원고에 붙이지 않는다
         state.mentorRes[id] = mentorNormalize(id, d);
         s.mentor = { ran:true, edited:false };
         slideChanged();
+        finish();
+        if(curSlideId() !== id) alert(id + ' 장표의 AI 멘토 의견이 도착했습니다. 그 장표에서 보실 수 있습니다.');
       })
-      .catch(function(err){ alert('AI 멘토 의견을 받지 못했습니다 — ' + (err.message || '오류')); })
-      .then(function(){ busy = false; if(state.view === 'write'){ renderSlideLeft(); renderSlideRight(); renderMeta(); if($('slLine')) $('slLine').textContent = stateLine(s, slideWarns(s)); } });
+      .catch(function(err){ finish(); alert('AI 멘토 의견을 받지 못했습니다 — ' + (err.message || '오류')); });
   }
   //  패스 멘토링(Q2) — 패스하면 IR 자료로서 무엇이 비는지, 무엇을 준비할지를 이 장표 원고 기준으로
   function passPrompt(id, reason){
@@ -2523,9 +2642,13 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       if(r.questions.length) h += '<div class="pb-slq2"><b>투자자가 물을 질문</b><ul>' + r.questions.map(function(q){ return '<li>' + esc(q) + '</li>'; }).join('') + '</ul></div>';
       h += '<p class="pb-note">' + esc(String(r.at).slice(0, 16).replace('T', ' ')) + ' 받음</p>';
     }
-    var off = !(s.title + s.msg + s.body).trim();
-    h += '<button class="pb-inkbtn" id="slMentor"' + (off ? ' disabled title="먼저 이 장표를 써 주십시오"' : '') + '>' +
-         (m.ran ? 'AI 멘토 다시 받기 · 1회' : 'AI 멘토 받기 · 1회') + '</button>' +
+    var off = !(s.title + s.msg + s.body).trim(), mb = state.mentorBusy, run = mb && mb.id === x.id;
+    if(run) h += '<div class="pb-slrun" role="status"><span class="sp" aria-hidden="true"></span><span><b>AI 멘토가 의견을 정리하는 중입니다</b> · <span id="slMentorSec">' +
+                 Math.round((Date.now() - mb.t0) / 1000) + '초</span><br>보통 20초~1분 걸립니다. 그동안 계속 쓰셔도 됩니다 — 받는 기준은 누른 순간의 원고입니다.</span></div>';
+    else if(mb) h += '<p class="pb-note">' + esc(mb.id) + ' 장표의 AI 멘토 의견을 정리하는 중입니다.</p>';
+    h += '<button class="pb-inkbtn" id="slMentor"' + (off ? ' disabled title="먼저 이 장표를 써 주십시오"' : (mb ? ' disabled' : '')) + '>' +
+         (run ? '의견을 정리하는 중…' : (m.ran ? 'AI 멘토 다시 받기 · 1회' : 'AI 멘토 받기 · 1회')) + '</button>' +
+         (off ? '<p class="pb-note">이 장표에 제목·메시지·근거 중 하나라도 쓰시면 버튼이 켜집니다.</p>' : '') +
          (llm.quota ? '<p class="pb-note">' + esc(quotaText()) + '</p>' : '') + '</section>';
     // 보완 제안 카드(Q8) — 동의한 2차자료에서 · [반영]해야 본문에 들어간다
     var sug = (r && r.suggestions || []).filter(function(g){ return !g.done; });
@@ -2580,6 +2703,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       slideChanged(); render();
     };
     if($('slFill')) $('slFill').onclick = runFill;
+    if($('slFillSec')) $('slFillSec').onclick = openSecondPop;
     if($('slFillLoad')) $('slFillLoad').onclick = function(){ loadFillDoc(true); };
     if($('slFillAck')) $('slFillAck').onclick = function(){
       apiGet('fillget', { ack:true }).then(function(d){ if(d && d.ok) state.fill = d.state; render(); });
@@ -2615,7 +2739,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     if(was !== s.status){
       var chipEl = $('pbCenter').querySelector('.pb-slst');
       if(chipEl){ chipEl.className = 'pb-slst st-' + s.status; chipEl.textContent = SLIDE_ST[s.status].label; }
-      if($('slDone')) $('slDone').textContent = '완료';
+      if($('slDone')) $('slDone').textContent = '저장하기';
     }
     if(s.mentor.ran) s.mentor.edited = true;
     var f = SLIDE_FIELDS.filter(function(x){ return x.k === k; })[0];
@@ -2638,6 +2762,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     state.cur = i;
     syncToServer();                      // 장표를 넘길 때마다 서버에 올린다(옛 단계 이동과 같다)
     render();
+    if($('slGuideVeil')){ if(i < 12) openGuidePop(); else closePops(); }   // 열어 둔 지식 문항은 새 장표 것으로 바꾼다
     window.scrollTo(0, 0);
   }
   function slideComplete(){
@@ -3003,6 +3128,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         state.b1At = new Date().toISOString();
         writeLocal();
         render();                                  // 참고자료 블록을 다시 그린다
+        if($('slGuideVeil')) openGuidePop();      // 팝업으로 보고 있었다면 그 자리에서 새로 그린다
       })
       .catch(function(err){ alert('받지 못했습니다 — ' + (err.message || '오류')); })
       .then(function(){
@@ -3087,6 +3213,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   // ── 저장 상태칩 ── 실패는 자동으로 사라지지 않는다
   function chip(mode){
     var c = $('hdChip'), t = $('hdChipTxt');
+    try{ chipBelow(mode); }catch(e){}
     c.classList.toggle('is-fail', mode === 'fail');
     if(mode === 'saving'){ t.textContent = '저장중…'; }
     else if(mode === 'fail'){
@@ -3097,6 +3224,15 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       var d = new Date();
       t.textContent = '저장됨 ' + ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
     }
+  }
+
+  //  장표 아래 [저장하기] 옆에도 같은 저장 상태를 보인다(10-10 민부장 — 위 칩만으로는 누른 뒤 저장되는지 안 보인다)
+  function chipBelow(mode){
+    var d = new Date(), hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    state.saveTxt = mode === 'saving' ? '저장 중…' : (mode === 'fail' ? '저장 실패 — 위 [다시 저장]' : '저장됨 ' + hm);
+    state.saveCls = mode === 'saving' ? 'is-saving' : (mode === 'fail' ? 'is-fail' : '');
+    var el = $('slSave');
+    if(el){ el.textContent = state.saveTxt; el.className = 'pb-slsave' + (state.saveCls ? ' ' + state.saveCls : ''); }
   }
 
   function notYet(what){
@@ -4115,20 +4251,36 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     if(f.err){ $('pbCenter').innerHTML = h + '<p class="pb-note">' + esc(f.err) + '</p><button class="pb-cta sub" style="margin-top:12px;width:auto;padding:9px 16px" id="fsReload">다시 불러오기</button></div>';
       $('fsReload').onclick = loadFillStatus; return; }
     var c = f.counts || {};
-    h += '<p class="pb-note">전체 ' + (c.total || 0) + '곳 · 1차 채움 실행 ' + (c.filled || 0) + '곳 · <b>리셋 요청 대기 ' + (c.resetPending || 0) + '곳</b>. ' +
+    h += '<p class="pb-note">전체 ' + (c.total || 0) + '곳 · 1차 채움 실행 ' + (c.filled || 0) + '곳 · <b>리셋 요청 대기 ' + (c.resetPending || 0) + '곳</b> · <b>AI 추가 요청 대기 ' + (c.quotaPending || 0) + '곳</b>. ' +
          '검토 완료는 그 기업 원고를 열어 결과·덱 화면에서 누릅니다 — 원고를 고치면 기업 화면에서 표식이 다시 붙습니다.</p>' +
-         '<table class="pb-tbl pb-fstbl"><thead><tr><th>접수번호</th><th>기업</th><th>1차 채움</th><th>리셋 요청</th><th>검토</th></tr></thead><tbody>';
+         '<table class="pb-tbl pb-fstbl"><thead><tr><th>접수번호</th><th>기업</th><th>1차 채움</th><th>리셋 요청</th><th>AI 사용</th><th>검토</th></tr></thead><tbody>';
     (f.rows || []).forEach(function(r){
       var st = r.state || {}, rq = st.resetReq, rv = r.review;
       var req = (rq && !rq.done) ? '<b style="color:var(--pb-warn-deep)">대기</b> ' + esc(String(rq.at || '').slice(0, 10)) + (rq.note ? '<br><span class="pb-note">' + esc(rq.note) + '</span>' : '') +
                                    '<br><button class="pb-cta sub" style="margin-top:6px;width:auto;padding:6px 12px" data-approve="' + esc(r.cid) + '">리셋 승인</button>'
               : (rq && rq.done ? '<span class="pb-note">승인됨</span>' : '—');
-      h += '<tr' + ((rq && !rq.done) ? ' class="is-pending"' : '') + '><td>' + esc(r.cid) + '</td><td>' + esc(r.company || '') + '</td><td>' + fillWho(st) + '</td><td>' + req + '</td>' +
+      var qu = r.quota || {}, qr = qu.req;
+      var qcell = (qu.limit ? esc(qu.used + ' / ' + qu.limit) : '—') +
+        (qr && !qr.done ? '<br><b style="color:var(--pb-warn-deep)">추가 요청</b> ' + esc(String(qr.at || '').slice(0, 10)) + (qr.note ? '<br><span class="pb-note">' + esc(qr.note) + '</span>' : '') +
+                          '<br><button class="pb-cta sub" style="margin-top:6px;width:auto;padding:6px 12px" data-qapprove="' + esc(r.cid) + '">추가 승인</button>'
+         : (qr && qr.done ? '<br><span class="pb-note">추가 승인됨 ' + esc(String(qr.approvedAt || '').slice(0, 10)) + '</span>' : ''));
+      h += '<tr' + ((rq && !rq.done) || (qr && !qr.done) ? ' class="is-pending"' : '') + '><td>' + esc(r.cid) + '</td><td>' + esc(r.company || '') + '</td><td>' + fillWho(st) + '</td><td>' + req + '</td><td>' + qcell + '</td>' +
            '<td>' + (rv && rv.done ? '✓ ' + esc(reviewWhen(rv)) : '<span class="pb-note">검토 전</span>') + '</td></tr>';
     });
     h += '</tbody></table><button class="pb-cta sub" style="margin-top:12px;width:auto;padding:9px 16px" id="fsReload">다시 불러오기</button></div>';
     $('pbCenter').innerHTML = h;
     $('fsReload').onclick = loadFillStatus;
+    Array.prototype.forEach.call($('pbCenter').querySelectorAll('[data-qapprove]'), function(b){
+      b.onclick = function(){
+        var cid = b.dataset.qapprove;
+        if(!confirm(cid + ' 의 AI 사용 횟수 추가 요청을 승인합니다.\n\n· 쓴 횟수가 0 으로 돌아가 한도만큼 다시 쓸 수 있습니다.\n· 기업당 한 번만 승인됩니다.\n\n계속할까요?')) return;
+        b.disabled = true; b.textContent = '승인 중…';
+        apiGet('quotaapprove', { cid: cid }).then(function(d){
+          if(!d || !d.ok){ alert('승인하지 못했습니다 — ' + ((d && d.error) || '오류')); b.disabled = false; b.textContent = '추가 승인'; return; }
+          loadFillStatus();
+        }).catch(function(err){ alert('승인하지 못했습니다 — ' + (err.message || '오류')); b.disabled = false; b.textContent = '추가 승인'; });
+      };
+    });
     Array.prototype.forEach.call($('pbCenter').querySelectorAll('[data-approve]'), function(b){
       b.onclick = function(){
         var cid = b.dataset.approve;
@@ -5199,6 +5351,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     render();
   };
   $('hdExit').onclick = function(){
+    closePops();                                   // 팝업(지식 문항·보완 자료)에 앞 기업 자료가 남지 않게
+    if($('pbMeta')) $('pbMeta').innerHTML = '';     // 상단 줄(AI 사용·추가 요청 상태)도 앞 기업 것을 남기지 않는다
+    state.saveTxt = ''; state.saveCls = '';
     // ★나가기 전에 서버로 한 번 보낸다(2026-09-04). 마지막 단계 이동 뒤 타이핑분은 로컬에만 있었다.
     //   snapshot()은 동기라 아래에서 비우기 전의 상태가 실린다.
     // ★서버가 받았을 때만 이 계정의 로컬 원고를 지운다(2026-09-04 L-2). 공용 PC 에서 다음 사람이
@@ -5239,7 +5394,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     // ★제출 상태·연동 결과·잔여 횟수도 앞 계정의 것이다 — 남기면 다음 계정 결과 화면에
     //   「이미 제출하셨습니다(앞 기업 일시)」와 앞 기업의 「AI 사용 n/30회」가 뜬다(2026-09-04).
     state.status = ''; state.submittedAt = ''; state.lastLagmp = null; state.serverDraft = null; state.review = null;
-    llm.quota = null;
+    llm.quota = null; llm.quotaReq = null;
     // ★판단도 함께 비운다 — 칸만 갈라두면 메모리 경로로 샌다(로그인 시 loadLocal이 또 비운다: 두 겹)
     state.diags = {};
     state.auditHash = '';
