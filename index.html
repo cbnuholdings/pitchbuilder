@@ -1413,7 +1413,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         <p>접속부터 장표 작성, 도식·피칭 덱 생성, 성장관리로 보내기까지 화면을 캡처해 순서대로 정리했습니다.</p>
         <a class="lp-btn" href="guide.pdf" target="_blank" rel="noopener" title="IR 피치빌더 활용서 (PDF · 새 탭)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"></path><path d="m7 11 5 5 5-5"></path><path d="M4 20h16"></path></svg>IR 피치빌더 활용서 받기 · PDF</a>
-        <a class="more" href="#edu" data-edu-open>IR이 처음이라면 — 교육 웹툰 3편 · 핵심 인포그래픽 보기 (팝업)</a>
+        <a class="more" href="#edu" data-edu-open>IR이 처음이라면 — 교육 웹툰 3편 · 핵심 인포그래픽 · 기초 교육 영상 보기 (팝업)</a>
         <ul><li>1 접속과 첫 화면</li><li>2 신청서 내용 가져오기</li><li>3 장표 작성</li><li>4 실시간 점검·AI 멘토</li><li>5 도식·피칭 덱</li><li>6 성장관리로 보내기</li></ul>
         <!-- guide-1.pdf 는 LAGMP 배포명 · 인증 없이 열린다(2026-09-18 실측 200) -->
         <a class="more" href="https://growth-platform.cbnuholdings.com/manuals/guide-1.pdf" target="_blank" rel="noopener">성장프로그램 통합 설명서 (PDF · 56쪽 · 새 탭)</a>
@@ -1471,11 +1471,17 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M12 3v12"></path><path d="m7 11 5 5 5-5"></path><path d="M4 20h16"></path>
     </svg>가이드 다운로드</a>
-  <a class="pb-hbtn" href="#edu" data-edu-open title="IR 교육자료 (웹툰 · 인포그래픽 · 영상 · 팝업)">
+  <a class="pb-hbtn" href="#edu" data-edu-open title="IR 기초 교육자료 (웹툰 · 인포그래픽 · 영상 · 팝업)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2z"></path><path d="M22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"></path>
     </svg>IR 교육자료</a>
+  <!-- 12장표 작성 가이드 영상 — 접속한 기업에게만 보이는 자리(민부장 10-12). 첫 화면엔 두지 않는다. -->
+  <a class="pb-hbtn" href="#" data-edu-open="guide" title="12장표 작성 가이드 영상 (9분 · 팝업)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="m10 9 5 3-5 3z"></path>
+    </svg>작성 가이드 영상</a>
   <div class="pb-who" id="hdWho"></div>
   <div class="sp"></div>
   <button class="pb-toggle" id="hdTips">R&amp;D 대응<span class="sw"></span></button>
@@ -6316,7 +6322,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 })();
 </script>
 <!-- ══ IR 교육자료 팝업 (2026-10-12 민부장 지시) ══════════════════
-     웹툰 3편 + 핵심 인포그래픽 + 작성 가이드 영상 자리. 열기 = [data-edu-open] 아무 요소 · 주소 끝 #edu.
+     묶음 2개 — basic(웹툰 3편·인포그래픽·기초 교육 영상 · 첫 화면) / guide(12장표 작성 가이드 영상 · 로그인 후 머리). 열기 = [data-edu-open="" | "guide"] · 주소 끝 #edu = basic.
      🔴 내용 목록은 아래 EDU 배열 하나가 정본 — 탭·이전/다음·쪽수가 전부 여기서 나온다.
      🔴 영상은 src 를 비워 두면 「제작 중」 안내가 뜬다. 완성 파일을 edu/ 에 넣고 src 한 줄만 채운다.
      🔴 미디어는 열 때 처음 불러온다(첫 화면 무게를 늘리지 않는다). 파일은 edu/ → deploy_edu.sh 로 올린다. -->
@@ -6328,6 +6334,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   box-shadow:0 24px 64px rgba(0,0,0,.35);overflow:hidden}
 .edu-dlg[open]{display:flex;flex-direction:column}
 .edu-hd,.edu-tabs,.edu-ft{flex:0 0 auto}
+/* hidden 속성이 display:flex 에 지지 않게(한 편짜리 묶음에서 탭 줄이 남던 결함 · 10-12 실측) */
+.edu-dlg [hidden]{display:none!important}
 .edu-dlg::backdrop{background:rgba(22,24,29,.62)}
 .edu-hd{display:flex;align-items:flex-start;gap:16px;padding:20px 24px 14px;background:var(--ed-ink);color:#fff}
 .edu-hd .k{font:600 12px 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.14em;color:#F2925F}
@@ -6361,7 +6369,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 </style>
 <dialog id="eduDlg" class="edu-dlg" aria-labelledby="eduTitle">
   <div class="edu-hd">
-    <div><div class="k">IR EDUCATION</div><h2 id="eduTitle">투자자의 질문으로 이해하는 IR</h2></div>
+    <div><div class="k" id="eduK">IR EDUCATION</div><h2 id="eduTitle">투자자의 질문으로 이해하는 IR</h2></div>
     <button class="edu-x" type="button" id="eduClose" aria-label="교육자료 닫기">✕</button>
   </div>
   <div class="edu-tabs" role="tablist" aria-label="교육자료 목록" id="eduTabs"></div>
@@ -6371,45 +6379,72 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     <span class="pg" id="eduPg"></span>
     <button type="button" id="eduNext">다음 ▶</button>
     <a id="eduOrig" href="#" target="_blank" rel="noopener">원본 크게 보기 (새 탭)</a>
-    <p class="note">웹툰 속 「설비 이상 감지 AI 솔루션」은 설명용 가상 사례입니다. 특허·실증은 구매와 매출을 보장하지 않으며, 투자유치는 시장 상황·투자자 적합성·사업 성과의 영향을 받습니다.</p>
+    <p class="note" id="eduNote">웹툰 속 「설비 이상 감지 AI 솔루션」은 설명용 가상 사례입니다. 특허·실증은 구매와 매출을 보장하지 않으며, 투자유치는 시장 상황·투자자 적합성·사업 성과의 영향을 받습니다.</p>
   </div>
 </dialog>
 <script>
 (function(){
-  var EDU = [
-    { tab:'1편 · 고객과 문제', title:'1편 · IR의 의미와 고객 문제', type:'img', src:'edu/webtoon1.jpg',
-      desc:'회사소개서와 투자유치용 IR의 차이, 고객 문제와 해결책, 효과를 수치로 말할 때 필요한 측정 조건을 다룹니다.',
-      alt:'IR의 의미와 고객 문제를 설명하는 여섯 컷 교육 웹툰' },
-    { tab:'2편 · 사업과 검증', title:'2편 · 시장 · 수익모델 · 경쟁 · 검증', type:'img', src:'edu/webtoon2.jpg',
-      desc:'접근 가능한 시장과 첫 고객, 지불 구조, 고객이 쓰는 기존 대안, 관심과 거래의 차이를 다룹니다.',
-      alt:'시장과 수익모델, 경쟁과 검증을 설명하는 여섯 컷 교육 웹툰' },
-    { tab:'3편 · 투자와 점검', title:'3편 · 팀 · 재무 · 투자 요청 · 좋은 IR', type:'img', src:'edu/webtoon3.jpg',
-      desc:'팀의 역할과 보완 계획, 재무 전망의 가정, 투자금과 다음 성과의 연결, 좋은 IR의 다섯 기준을 다룹니다.',
-      alt:'팀과 재무, 투자 요청과 점검 질문을 설명하는 여섯 컷 교육 웹툰' },
-    { tab:'핵심 지도', title:'인포그래픽 · 좋은 IR을 만드는 핵심 지도', type:'img', src:'edu/infographic.jpg',
-      desc:'IR의 정의, 담아야 할 핵심 내용, 좋은 IR의 다섯 기준과 내 IR 점검 질문을 한 장으로 정리했습니다.',
-      alt:'IR의 핵심 구성과 다섯 가지 점검 질문 인포그래픽' },
-    // 영상 — src 가 비어 있으면 「제작 중」. 완성되면 'edu/파일명.mp4' 만 채운다.
-    // 원본 = D:\00_기타\51_피치빌더_작성가이드영상 (9:00 · 자막 화면 삽입 · 10-12 확정)
-    { tab:'작성 가이드 영상', title:'IR 피치빌더 12장표 작성 가이드 (9분)', type:'video', src:'edu/guide_video.mp4',
-      desc:'IR-01부터 IR-12까지 장표마다 투자자 질문, 제목 문장 틀, 권장 도식과 함께 피할 쓰기와 바른 쓰기(근거 줄 예시)를 안내합니다. 예시는 설명용 가상 사례입니다.' }
-  ];
+  // 묶음 두 개(민부장 10-12) — basic = 기초 교육(첫 화면 · 누구나) / guide = 12장표 작성 가이드(로그인 후 머리 버튼).
+  // 🔴 guide 는 「접속한 기업에게 보이는 자리」에 둔 것이지 파일을 잠근 것이 아니다 — edu/ 는 Pages 정적 파일이라 주소를 알면 열린다.
+  // 영상 src 가 비어 있으면 「제작 중」. 완성되면 'edu/파일명.mp4' 만 채운다.
+  var SETS = {
+    basic: {
+      k:'IR EDUCATION · 기초 교육', title:'투자자의 질문으로 이해하는 IR',
+      note:'웹툰 속 「설비 이상 감지 AI 솔루션」은 설명용 가상 사례입니다. 특허·실증은 구매와 매출을 보장하지 않으며, 투자유치는 시장 상황·투자자 적합성·사업 성과의 영향을 받습니다.',
+      items:[
+        { tab:'1편 · 고객과 문제', title:'1편 · IR의 의미와 고객 문제', type:'img', src:'edu/webtoon1.jpg',
+          desc:'회사소개서와 투자유치용 IR의 차이, 고객 문제와 해결책, 효과를 수치로 말할 때 필요한 측정 조건을 다룹니다.',
+          alt:'IR의 의미와 고객 문제를 설명하는 여섯 컷 교육 웹툰' },
+        { tab:'2편 · 사업과 검증', title:'2편 · 시장 · 수익모델 · 경쟁 · 검증', type:'img', src:'edu/webtoon2.jpg',
+          desc:'접근 가능한 시장과 첫 고객, 지불 구조, 고객이 쓰는 기존 대안, 관심과 거래의 차이를 다룹니다.',
+          alt:'시장과 수익모델, 경쟁과 검증을 설명하는 여섯 컷 교육 웹툰' },
+        { tab:'3편 · 투자와 점검', title:'3편 · 팀 · 재무 · 투자 요청 · 좋은 IR', type:'img', src:'edu/webtoon3.jpg',
+          desc:'팀의 역할과 보완 계획, 재무 전망의 가정, 투자금과 다음 성과의 연결, 좋은 IR의 다섯 기준을 다룹니다.',
+          alt:'팀과 재무, 투자 요청과 점검 질문을 설명하는 여섯 컷 교육 웹툰' },
+        { tab:'핵심 지도', title:'인포그래픽 · 좋은 IR을 만드는 핵심 지도', type:'img', src:'edu/infographic.jpg',
+          desc:'IR의 정의, 담아야 할 핵심 내용, 좋은 IR의 다섯 기준과 내 IR 점검 질문을 한 장으로 정리했습니다.',
+          alt:'IR의 핵심 구성과 다섯 가지 점검 질문 인포그래픽' },
+        // 원본 = D:\00_기타\50_IR교육영상\IR교육영상_좋은IR의기준.mp4 (9:58 · 자막 화면 삽입)
+        { tab:'기초 교육 영상', title:'좋은 IR의 기준 (10분)', type:'video', src:'edu/basic_video.mp4',
+          desc:'IR이 무엇이고 투자자가 무엇을 보는지, 좋은 IR의 기준을 처음부터 설명합니다. 웹툰·인포그래픽과 함께 보시면 됩니다.' }
+      ]
+    },
+    guide: {
+      k:'WRITING GUIDE · 작성 가이드', title:'IR 피치빌더 12장표 작성 가이드',
+      note:'영상 속 예시(설비 이상 감지 AI)는 설명용 가상 사례입니다. 장표 문구는 작성 화면의 안내와 같습니다.',
+      items:[
+        // 원본 = D:\00_기타\51_피치빌더_작성가이드영상 (9:00 · 자막 화면 삽입 · 10-12 확정)
+        { tab:'작성 가이드 영상', title:'12장표 작성 가이드 (9분)', type:'video', src:'edu/guide_video.mp4',
+          desc:'IR-01부터 IR-12까지 장표마다 투자자 질문, 제목 문장 틀, 권장 도식과 함께 피할 쓰기와 바른 쓰기(근거 줄 예시)를 안내합니다.' }
+      ]
+    }
+  };
   var dlg = document.getElementById('eduDlg');
   if(!dlg || typeof dlg.showModal !== 'function') return;
   var tabs = document.getElementById('eduTabs'), body = document.getElementById('eduBody');
   var prev = document.getElementById('eduPrev'), next = document.getElementById('eduNext');
   var pg = document.getElementById('eduPg'), orig = document.getElementById('eduOrig');
-  var cur = 0;
+  var EDU = [], cur = 0;
 
-  EDU.forEach(function(e, i){
-    var b = document.createElement('button');
-    b.type = 'button'; b.setAttribute('role','tab'); b.id = 'eduTab' + i;
-    b.textContent = e.tab;
-    if(e.type === 'video' && !e.src){ var s = document.createElement('span'); s.className = 'soon'; s.textContent = '제작 중'; b.appendChild(s); }
-    b.addEventListener('click', function(){ show(i); });
-    tabs.appendChild(b);
-  });
-
+  function useSet(name){
+    var S = SETS[name] || SETS.basic;
+    EDU = S.items;
+    document.getElementById('eduK').textContent = S.k;
+    document.getElementById('eduTitle').textContent = S.title;
+    document.getElementById('eduNote').textContent = S.note;
+    tabs.innerHTML = '';
+    EDU.forEach(function(e, i){
+      var b = document.createElement('button');
+      b.type = 'button'; b.setAttribute('role','tab'); b.id = 'eduTab' + i;
+      b.textContent = e.tab;
+      if(e.type === 'video' && !e.src){ var s = document.createElement('span'); s.className = 'soon'; s.textContent = '제작 중'; b.appendChild(s); }
+      b.addEventListener('click', function(){ show(i); });
+      tabs.appendChild(b);
+    });
+    // 한 편짜리 묶음은 탭·이전/다음을 숨긴다
+    var single = EDU.length < 2;
+    tabs.hidden = single; prev.hidden = single; next.hidden = single; pg.hidden = single;
+  }
   function stopVideo(){ var v = body.querySelector('video'); if(v) v.pause(); }
   function show(i){
     stopVideo();
@@ -6419,8 +6454,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       b.setAttribute('aria-selected', j === cur ? 'true' : 'false');
       b.tabIndex = j === cur ? 0 : -1;
     });
-    tabs.children[cur].scrollIntoView({block:'nearest', inline:'nearest'});
-    body.setAttribute('aria-labelledby', 'eduTab' + cur);
+    if(!tabs.hidden) tabs.children[cur].scrollIntoView({block:'nearest', inline:'nearest'});
+    body.setAttribute('aria-labelledby', tabs.hidden ? 'eduTitle' : 'eduTab' + cur);
     body.innerHTML = '';
     var h = document.createElement('h3'); h.textContent = e.title; body.appendChild(h);
     var d = document.createElement('p'); d.className = 'd'; d.textContent = e.desc; body.appendChild(d);
@@ -6439,7 +6474,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     prev.disabled = cur === 0; next.disabled = cur === EDU.length - 1;
     if(e.src){ orig.href = e.src; orig.hidden = false; } else { orig.hidden = true; }
   }
+  // key = '' | 'basic' → 기초 교육 · 'guide' → 작성 가이드 · 'video' → 기초 교육의 영상 탭
   function open(key){
+    useSet(key === 'guide' ? 'guide' : 'basic');
     var i = 0;
     if(key === 'video'){ for(var j = 0; j < EDU.length; j++){ if(EDU[j].type === 'video'){ i = j; break; } } }
     show(i);
