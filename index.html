@@ -2681,10 +2681,13 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     if(!r) return '';
     var none = r.numsNone, pdf = r.numsPdf;
     if(!none && !pdf){ none = []; pdf = r.uncheckedNums || []; }
-    if(!r.needCheck && !none.length && !pdf.length) return '';
+    if(!r.needCheck && !r.conflict && !none.length && !pdf.length) return '';
     var NM = { '멘토링종합':'성장관리 멘토링 종합', 'R&D기획':'R&D 기획보고서', '아이템분석':'아이템분석' };
     var h = '<section><div class="hd"><h3>1차 초안 확인</h3><span>AI 0회</span></div>';
-    if(r.needCheck){
+    //  10-12 자료끼리 값이 다른 항목 — AI 는 고르지 않고 [__] 로 둔다. 어느 값이 맞는지는 기업만 안다.
+    if(r.conflict) h += '<p class="pb-slstale"><b>자료끼리 값이 다릅니다.</b> ' + esc(String(r.conflict).replace(/^자료\s*간\s*(불일치|차이)\s*:\s*/, '')) +
+                        '<br><small>어느 값이 맞는지 확인해 [__] 자리를 채워 주십시오. 원가와 판매가처럼 서로 다른 값일 수도 있습니다.</small></p>';
+    if(r.needCheck && (r.second && r.second.length || r.copied)){
       var who = (r.second || []).map(function(k){ return NM[k] || k; });
       h += '<p class="pb-slstale">' + (who.length ? esc(who.join('·')) + ' 자료를 쓴 장표입니다.' : '의견·목표 자료(멘토링·R&amp;D·아이템분석)의 문장이 옮겨진 장표입니다.') +
            ' 멘토 의견이나 개발 목표가 <b>이미 한 일(실적)처럼</b> 쓰이지 않았는지 확인해 주십시오.' +
