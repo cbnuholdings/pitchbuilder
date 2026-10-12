@@ -2541,7 +2541,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       var cs = (state.second || {}).consent || {};
       var secTxt = (cs.lagmp || cs.rnd)
         ? '동의하신 ' + [cs.lagmp ? '성장관리 확정 멘토링 종합' : '', cs.rnd ? 'R&D 기획보고서' : ''].filter(Boolean).join('·') + '도 함께 읽습니다.'
-        : '성장관리 멘토링 종합·R&D 기획 결과도 넣으시려면 먼저 [추가 자료 동의]에서 동의해 주십시오.';
+        : '성장관리 멘토링 종합·R&D 기획 결과를 함께 읽을지는 버튼을 누를 때 묻습니다.';
       return '<div class="pb-stalebar pb-slbar pb-slbar-go"><b>제출하신 자료로 1차 초안을 채울 수 있습니다(1회).</b>' +
              '<p>신청서·아이템분석(기업용)·사업계획서·IR자료를 읽어 12장표 초안을 만듭니다. ' + esc(secTxt) + ' 자료에 없는 숫자는 [__]로 남깁니다. ' +
              '<b>한 번 실행하면 잠기고</b>, 쓰시던 장표는 덮지 않습니다. AI 사용 횟수는 줄지 않습니다. ' +
@@ -2652,6 +2652,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
              esc(SLIDE_FIELDS.filter(function(f){ return f.k === w.k; })[0].label) + '</small>' + esc(w.t) + '</span></button>';
     }).join('') : '<p class="pb-slok">명세 규칙에 걸린 문장이 없습니다.</p>';
     h += '</section>';
+    h += fillCheckPanel(x, s);
     h += mentorPanel(x, s);
     // 지식 문항(가이드 · AI 0회) — 민부장 결정 10-10: 옛 가이드 탭을 코치 열로 옮긴다.
     //   문항 = 매핑표 45문항(SLIDE_ITEMS · P4). 신청서 재료(b1RefBlock)만 가까운 옛 단계(SLIDE_GUIDE_STEP)를 쓴다.
@@ -2669,6 +2670,29 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     if($('slGuideOpen')) $('slGuideOpen').onclick = openGuidePop;
     if($('slSecOpen')) $('slSecOpen').onclick = openSecondPop;
     bindMentor(x.id);
+  }
+
+  //  ★10-12 1차 초안 확인 — 1차 채움으로 들어온 장표에만. 서버(fillNormalize_)가 코드로 판정한 표시를 보인다.
+  //   · needCheck = 멘토링·R&D·아이템분석(의견·목표 자료)을 썼거나 그 문장이 옮겨짐 → 실적처럼 쓰이지 않았는지 확인
+  //   · numsNone = 어느 자료에서도 못 찾은 숫자(지어냈을 수 있음) · numsPdf = PDF 자료에서 온 숫자(원문 대조)
+  //   10-12 이전에 채운 원고는 uncheckedNums 만 있다 — 그것은 구분 없이 「원문 대조」로 보인다.
+  function fillCheckPanel(x, s){
+    var r = s.from === 'fill' && state.fillDoc && state.fillDoc.result && state.fillDoc.result.slides && state.fillDoc.result.slides[x.id];
+    if(!r) return '';
+    var none = r.numsNone, pdf = r.numsPdf;
+    if(!none && !pdf){ none = []; pdf = r.uncheckedNums || []; }
+    if(!r.needCheck && !none.length && !pdf.length) return '';
+    var NM = { '멘토링종합':'성장관리 멘토링 종합', 'R&D기획':'R&D 기획보고서', '아이템분석':'아이템분석' };
+    var h = '<section><div class="hd"><h3>1차 초안 확인</h3><span>AI 0회</span></div>';
+    if(r.needCheck){
+      var who = (r.second || []).map(function(k){ return NM[k] || k; });
+      h += '<p class="pb-slstale">' + (who.length ? esc(who.join('·')) + ' 자료를 쓴 장표입니다.' : '의견·목표 자료(멘토링·R&amp;D·아이템분석)의 문장이 옮겨진 장표입니다.') +
+           ' 멘토 의견이나 개발 목표가 <b>이미 한 일(실적)처럼</b> 쓰이지 않았는지 확인해 주십시오.' +
+           (r.copied ? '<br><small>겹친 구절 — 「' + esc(r.copied) + '…」</small>' : '') + '</p>';
+    }
+    if(none.length) h += '<p class="pb-slstale">어느 자료에서도 찾지 못한 숫자 — <b>' + esc(none.slice(0, 6).join(' · ')) + '</b><br><small>AI 가 지어냈을 수 있습니다. 근거가 없으면 지우거나 [__]로 바꿔 주십시오.</small></p>';
+    if(pdf.length) h += '<p class="pb-note">PDF 자료에서 온 숫자 — ' + esc(pdf.slice(0, 6).join(' · ')) + ' · PDF 원문과 대조해 주십시오.</p>';
+    return h + '</section>';
   }
 
   //  팝업 공용 — 이미 떠 있으면 내용만 바꾼다(다시 그려도 창이 깜빡이지 않게). Esc·바깥·[닫기]로 닫는다.
@@ -3208,25 +3232,80 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     if(state.fillDoc) return go(state.fillDoc);
     apiGet('fillget', {}).then(function(d){ if(d && d.ok){ state.fillDoc = d.doc; go(d.doc); } });
   }
+  //  ★10-12 민부장(가) — [1차 초안 채우기]를 누를 때 성장관리 멘토링 종합·R&D 기획보고서를 함께 읽을지 그 자리에서 묻는다.
+  //   전에는 [추가 자료 동의]를 먼저 눌러야 했고, 10-11 스크립트 속성 소실로 동의 기록도 사라져 사실상 아무도 읽히지 않았다.
+  //   동의 원칙(Q8)은 그대로 — 체크를 풀면 읽지 않는다. 바뀐 것만 consent 로 저장한 뒤 채운다.
   function runFill(){
-    if(busy) return;
-    if(!confirm('제출하신 자료로 12장표 1차 초안을 만듭니다.\n\n' +
-                '· 한 번만 실행할 수 있습니다(실행하면 잠깁니다)\n' +
-                '· 쓰시던 장표는 덮지 않고, 빈 장표에만 넣습니다\n' +
-                '· 자료에 없는 숫자는 [__]로 남깁니다\n· 몇 분 걸릴 수 있습니다\n\n계속할까요?')) return;
-    busy = true;
-    var b = $('slFill'); if(b){ b.disabled = true; b.textContent = '자료를 읽는 중… (몇 분)'; }
-    callProxy({ action:'fill', id:llm.id, code:llm.code })
-      .then(function(d){
-        state.fill = { locked:true, by:d.by, at:d.at, sector:d.result && d.result.sector, sources:d.sources };
-        var n = applyFillResult(d.result);
-        var miss = Object.keys((d.result && d.result.missing) || {}).length;
-        syncToServer();
-        alert(n + '개 장표에 초안을 넣었습니다.' + (miss ? '\n자료가 없어 비워 둔 장표가 ' + miss + '개 있습니다.' : '') +
-              '\n\n[__] 자리와 숫자는 원문과 대조해 고쳐 주십시오.');
-      })
-      .catch(function(err){ alert('1차 채움을 하지 못했습니다 — ' + (err.message || '오류')); })
-      .then(function(){ busy = false; loadFillState(); render(); });
+    if(busy || document.getElementById('fillVeil')) return;
+    var cs = (state.second || {}).consent || {};
+    var known = !!(state.second && state.second.consent && (cs.at || cs.lagmp || cs.rnd));
+    var v = document.createElement('div');
+    v.className = 'pb-veil'; v.id = 'fillVeil';
+    v.innerHTML = '<div class="pb-dlg pb-dlg-wide" role="dialog" aria-modal="true" aria-labelledby="flT">' +
+      '<span class="pb-slno">1차 초안 채우기 · 1회</span><h4 id="flT">제출하신 자료로 12장표 1차 초안을 만듭니다</h4>' +
+      '<p>신청서·아이템분석(기업용)·사업계획서·회사소개서/IR자료를 읽습니다. 아래 자료도 함께 읽을지 정해 주십시오.</p>' +
+      '<label class="pb-slchk"><input type="checkbox" id="flLag"' + (!known || cs.lagmp ? ' checked' : '') + '> 성장관리 플랫폼 확정 멘토링 종합</label>' +
+      '<label class="pb-slchk"><input type="checkbox" id="flRnd"' + (!known || cs.rnd ? ' checked' : '') + '> R&amp;D 기획보고서(공개본)</label>' +
+      '<p class="pb-note">체크를 풀면 그 자료는 읽지 않습니다. 멘토링·R&amp;D 내용은 「무엇을 보강할지」와 「목표」로만 쓰고, 실적처럼 옮겨진 장표에는 확인 표시가 붙습니다.</p>' +
+      '<ul><li><b>한 번만 실행할 수 있습니다(실행하면 잠깁니다).</b></li><li>쓰시던 장표는 덮지 않고 빈 장표에만 넣습니다.</li>' +
+      '<li>자료에 없는 숫자는 [__]로 남깁니다.</li><li>1~3분 걸립니다. 창을 닫지 말고 기다려 주십시오.</li></ul>' +
+      '<div class="pb-sldlgbtn"><button class="pb-cta sub" id="flNo" style="width:auto;padding:11px 18px">취소</button>' +
+      '<button class="pb-cta" id="flGo" style="width:auto;padding:11px 18px">채우기 시작</button></div></div>';
+    document.body.appendChild(v);
+    var close = function(){ if(v.parentNode) v.parentNode.removeChild(v); };
+    v.querySelector('#flNo').onclick = close;
+    v.querySelector('#flGo').onclick = function(){
+      var want = { lagmp: v.querySelector('#flLag').checked, rnd: v.querySelector('#flRnd').checked };
+      close();
+      var pre = (want.lagmp === !!cs.lagmp && want.rnd === !!cs.rnd && known) ? Promise.resolve()
+              : apiGet('consent', want).then(function(d){
+                  if(!d || !d.ok) throw new Error((d && d.error) || '추가 자료 동의를 저장하지 못했습니다');
+                  state.second = { consent:d.consent };
+                });
+      busy = true;
+      var b = $('slFill'); if(b){ b.disabled = true; b.textContent = '자료를 읽는 중… (1~3분)'; }
+      pre.then(function(){ return callProxy({ action:'fill', id:llm.id, code:llm.code }); })
+        .then(function(d){ fillDone(d.result, d.at, d.by, d.sources); })
+        .catch(function(err){ return fillRecover(err); })
+        .then(function(){ busy = false; loadFillState(); loadSecond(); render(); });
+    };
+    try{ v.querySelector('#flGo').focus(); }catch(e){}
+  }
+  function fillDone(result, at, by, sources){
+    state.fill = { locked:true, by:by, at:at, sector:result && result.sector, sources:sources };
+    state.fillDoc = { result:result, at:at, by:by, sources:sources };
+    var n = applyFillResult(result);
+    var miss = Object.keys((result && result.missing) || {}).length;
+    var chk = SL.filter(function(x){ var r = result && result.slides && result.slides[x.id]; return r && (r.needCheck || (r.numsNone || []).length); }).length;
+    syncToServer();
+    alert(n + '개 장표에 초안을 넣었습니다.' + (miss ? '\n자료가 없어 비워 둔 장표가 ' + miss + '개 있습니다.' : '') +
+          (chk ? '\n확인 표시가 붙은 장표가 ' + chk + '개 있습니다 — 장표 오른쪽 「1차 초안 확인」을 봐 주십시오.' : '') +
+          '\n\n[__] 자리와 숫자는 원문과 대조해 고쳐 주십시오.');
+  }
+  //  ★10-12 — 화면이 오류를 받아도 서버는 끝까지 돌아 채움을 마쳤을 수 있다(긴 요청 중 연결이 끊긴 경우).
+  //   그대로 두면 기업은 초안을 못 받았는데 다시 누르면 「이미 실행」으로 막힌다 → 서버 상태를 다시 읽어 결과를 찾는다.
+  //   서버가 아직 진행 중이면 15초 간격으로 최대 6분(GAS 실행 상한) 기다린다. 서버가 「확정」한 실패(잠김·한도 등)는 바로 알린다.
+  var FILL_FINAL = { LOCKED:1, INNO:1, NOAPP:1, QUOTA:1, FORBIDDEN:1, NOCID:1, RUNNING:1 };
+  function fillRecover(err){
+    var why = (err && err.message) || '오류';
+    if(err && FILL_FINAL[err.code]){ alert('1차 채움을 하지 못했습니다 — ' + why); return Promise.resolve(); }
+    var b = $('slFill'); if(b) b.textContent = '서버 결과를 확인하는 중…';
+    var t0 = Date.now();
+    var look = function(){
+      return apiGet('fillget', {}).then(function(d){
+        var st = d && d.ok && d.state;
+        if(st && st.locked && d.doc && d.doc.result){
+          fillDone(d.doc.result, d.doc.at, d.doc.by, d.doc.sources);
+          return;
+        }
+        if(st && st.running && Date.now() - t0 < 360000){
+          return new Promise(function(res){ setTimeout(res, 15000); }).then(look);
+        }
+        alert('1차 채움을 하지 못했습니다 — ' + why + '\n\n잠기지 않았으니 잠시 뒤 다시 누르셔도 됩니다.' +
+              (/시간 초과|닿지 못했/.test(why) ? '\n같은 오류가 반복되면 운영사에 알려 주십시오(자료가 커서 AI 응답이 늦은 경우입니다).' : ''));
+      }).catch(function(){ alert('1차 채움 결과를 확인하지 못했습니다 — ' + why + '\n화면을 새로 고쳐 상태를 확인해 주십시오.'); });
+    };
+    return look();
   }
 
   function renderSlideView(){
