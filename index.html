@@ -6146,6 +6146,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   //  활용서 — 서버가 로그인 계정에게만 준다(2026-10-12 민부장 「주소로도 못 열게」).
   //   🔴 새 탭은 클릭 순간에 연다. 응답을 기다린 뒤 window.open 하면 팝업 차단에 걸린다.
   //   🔴 Blob 주소는 그 탭이 PDF 를 보여 주는 동안 살아 있어야 저장이 된다 — 바로 revoke 하지 않는다.
+  //   🔴 긴 setTimeout 으로 지우지 않는다 — 10-12 30분 타이머가 시험(jsdom)을 30분 붙잡아 배포가 멈췄다.
+  //      다음에 누를 때 이전 주소만 정리한다(한 번에 하나만 남는다).
+  var guideUrl = null;
   function openGuide(){
     var w = null;
     try{ w = window.open('', '_blank'); }catch(e){}
@@ -6162,14 +6165,14 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       if(!d || !d.ok || !d.data) throw new Error((d && d.error) || '활용서를 받지 못했습니다.');
       var bin = atob(d.data), u8 = new Uint8Array(bin.length);
       for(var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-      var url = URL.createObjectURL(new Blob([u8], { type:'application/pdf' }));
+      if(guideUrl){ try{ URL.revokeObjectURL(guideUrl); }catch(e){} }
+      var url = guideUrl = URL.createObjectURL(new Blob([u8], { type:'application/pdf' }));
       if(w && !w.closed){ w.location.href = url; }
       else {   // 팝업이 막혔으면 내려받기로
         var a = document.createElement('a');
         a.href = url; a.download = d.name || 'IR피치빌더_활용서.pdf';
         document.body.appendChild(a); a.click(); a.remove();
       }
-      setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(e){} }, 30 * 60 * 1000);
     }).catch(function(e){
       var m = '활용서를 열지 못했습니다 — ' + ((e && e.message) || e) + ' 잠시 뒤 다시 눌러 주십시오.';
       if(w && !w.closed) say(m); else window.alert(m);
