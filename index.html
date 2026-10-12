@@ -1285,8 +1285,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         <p>장표마다 투자자의 질문과 결론형 문장 틀, 필요한 근거 자료를 안내합니다. 작성한 내용으로 IR 본문과 도식, 피칭 덱을 함께 만듭니다. 점수는 매기지 않고, 아직 말하지 않은 근거만 짚어 드립니다.</p>
         <div class="acts">
           <a class="lp-btn" href="#lpAccess">접속하기</a>
-          <a class="lp-btn ghost" href="guide.pdf" target="_blank" rel="noopener">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"></path><path d="m7 11 5 5 5-5"></path><path d="M4 20h16"></path></svg>활용서 PDF 받기</a>
+          <!-- 활용서 PDF 버튼은 10-12 민부장 지시로 첫 화면에서 뺐다 — 로그인 뒤 머리 [가이드 다운로드](hdGuide)로만 받는다 -->
           <!-- IR 교육자료 팝업(웹툰·인포그래픽·영상) — 맨 아래 eduDlg -->
           <a class="lp-btn ghost" href="#edu" data-edu-open>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2z"></path><path d="M22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"></path></svg>IR 교육자료 보기</a>
@@ -1407,14 +1406,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         <button class="pb-solid" id="btnLogin">들어가기</button>
         <div id="loginErr" class="pb-err hidden"></div>
       </div>
-      <!-- 활용서 — 헤더 「가이드 다운로드」와 같은 guide.pdf. 🔴 새 탭(target=_blank) 필수: 보던 화면이 교체되지 않게. -->
+      <!-- 로그인 아래 안내 — 활용서(guide.pdf) 받기는 10-12 민부장 지시로 뺐다(로그인 뒤 머리 hdGuide 로만).
+           남은 것 = 교육자료 팝업 링크(data-edu-open · 팝업 실측 스크립트가 누름)와 성장프로그램 통합 설명서. -->
       <div class="lp-guide" id="lpGuide">
-        <div class="t">처음 쓰신다면 활용서를 먼저 받아 보십시오</div>
-        <p>접속부터 장표 작성, 도식·피칭 덱 생성, 성장관리로 보내기까지 화면을 캡처해 순서대로 정리했습니다.</p>
-        <a class="lp-btn" href="guide.pdf" target="_blank" rel="noopener" title="IR 피치빌더 활용서 (PDF · 새 탭)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"></path><path d="m7 11 5 5 5-5"></path><path d="M4 20h16"></path></svg>IR 피치빌더 활용서 받기 · PDF</a>
         <a class="more" href="#edu" data-edu-open>IR이 처음이라면 — 교육 웹툰 3편 · 핵심 인포그래픽 · 기초 교육 영상 보기 (팝업)</a>
-        <ul><li>1 접속과 첫 화면</li><li>2 신청서 내용 가져오기</li><li>3 장표 작성</li><li>4 실시간 점검·AI 멘토</li><li>5 도식·피칭 덱</li><li>6 성장관리로 보내기</li></ul>
         <!-- guide-1.pdf 는 LAGMP 배포명 · 인증 없이 열린다(2026-09-18 실측 200) -->
         <a class="more" href="https://growth-platform.cbnuholdings.com/manuals/guide-1.pdf" target="_blank" rel="noopener">성장프로그램 통합 설명서 (PDF · 56쪽 · 새 탭)</a>
       </div>
