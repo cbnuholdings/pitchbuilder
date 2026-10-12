@@ -693,10 +693,16 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 .pb-axmissing{margin-top:8px;padding:9px 12px;border-left:3px solid var(--pb-line);font-size:13.5px;color:var(--pb-text-mute)}
 .pb-axmissing b{font-size:12px;letter-spacing:.08em;color:var(--pb-text-faint)}
 .pb-axmissing ul{margin-top:4px;padding-left:16px}
-.pb-axedges td{font-size:13.5px;padding:8px 8px}
-.pb-axedges td.id{font:500 12px var(--pb-font-mono);color:var(--pb-text-faint);white-space:nowrap}
-.pb-axedges td.nm{white-space:nowrap;color:var(--pb-text-body)}
-.pb-axedges td.st{font-weight:600;white-space:nowrap}
+/* 🔴 10-12 민부장 PDF 잘림 — 이름 칸이 nowrap 이라 지식 번들의 긴 8문항 이름(「덱 전체에서 고객·시장 정의·…」)이
+      표를 794px(PDF 폭) 밖으로 밀어 상태·이유 칸이 잘리고, 좁아진 칸에서 한 행이 한 쪽 높이로 늘어났다.
+      → 고정 폭 표 · 이름 칸 줄바꿈 허용. 번호·상태 칸만 줄바꿈 금지(폭을 정해 둔다). */
+.pb-axedges{table-layout:fixed;width:100%}
+.pb-axedges td{font-size:13.5px;padding:8px 8px;overflow-wrap:anywhere;word-break:keep-all}
+.pb-axedges td.id{font:500 12px var(--pb-font-mono);color:var(--pb-text-faint);white-space:nowrap;width:64px}
+.pb-axinteg td.id{width:92px}                         /* 「의견」 배지가 붙는다 */
+.pb-axedges td.nm{white-space:normal;color:var(--pb-text-body);width:28%}
+.pb-axinteg td.nm{width:34%}
+.pb-axedges td.st{font-weight:600;white-space:nowrap;width:72px}
 .pb-axedges tr.is-connected td.st{color:var(--pb-ok)}
 .pb-axedges tr.is-partial td.st{color:var(--pb-accent-ink)}
 .pb-axedges tr.is-broken td.st{color:var(--pb-warn-deep)}
@@ -1458,10 +1464,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 <header id="pbHead" class="pb-head hidden">
   <div class="pb-brand" id="hdHome" role="button" tabindex="0" title="처음 화면으로"><b>PitchBuilder</b><span>IR DRAFTING</span></div>
   <!-- 사용 안내(PDF) — 로고 옆 왼쪽 상단(2026-08-22 민부장 지시).
-       ★새 탭으로 연다. 브라우저 PDF 뷰어에서 보고 그 자리에서 저장할 수 있다.
-       ★파일명을 영문 guide.pdf 로 둔다 — 한글 파일명은 주소에서 인코딩이 갈려 링크가 깨진다. -->
-  <a class="pb-hbtn" id="hdGuide" href="guide.pdf" target="_blank" rel="noopener"
-     title="PitchBuilder 사용 안내 (PDF · 새 탭)">
+       ★2026-10-12 민부장: 주소로도 못 열게 — PDF 는 Pages 정적 파일이 아니라 서버(GAS action=guide)가
+         로그인한 계정에게만 내려준다. 누르면 새 탭을 먼저 열고(팝업 차단 회피) 받은 PDF 를 그 탭에 띄운다(openGuide). -->
+  <a class="pb-hbtn" id="hdGuide" href="#" role="button"
+     title="PitchBuilder 사용 안내 (PDF · 새 탭 · 로그인 계정만)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M12 3v12"></path><path d="m7 11 5 5 5-5"></path><path d="M4 20h16"></path>
@@ -6136,6 +6142,40 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   }
   $('hdHome').onclick = goHome;
   $('hdHome').onkeydown = function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); goHome(); } };
+
+  //  활용서 — 서버가 로그인 계정에게만 준다(2026-10-12 민부장 「주소로도 못 열게」).
+  //   🔴 새 탭은 클릭 순간에 연다. 응답을 기다린 뒤 window.open 하면 팝업 차단에 걸린다.
+  //   🔴 Blob 주소는 그 탭이 PDF 를 보여 주는 동안 살아 있어야 저장이 된다 — 바로 revoke 하지 않는다.
+  function openGuide(){
+    var w = null;
+    try{ w = window.open('', '_blank'); }catch(e){}
+    var say = function(t){
+      if(w && !w.closed){
+        try{ w.document.title = 'IR 피치빌더 활용서';
+             w.document.body.innerHTML = '<p style="font:16px/1.6 sans-serif;padding:32px;color:#1b2433"></p>';
+             w.document.body.firstChild.textContent = t; }catch(e){}
+      }
+    };
+    say('IR 피치빌더 활용서를 불러오는 중입니다… (몇 초 걸릴 수 있습니다)');
+    if(LOCAL){ say('로컬 검수 모드에서는 활용서를 받지 않습니다.'); return; }
+    apiGet('guide').then(function(d){
+      if(!d || !d.ok || !d.data) throw new Error((d && d.error) || '활용서를 받지 못했습니다.');
+      var bin = atob(d.data), u8 = new Uint8Array(bin.length);
+      for(var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      var url = URL.createObjectURL(new Blob([u8], { type:'application/pdf' }));
+      if(w && !w.closed){ w.location.href = url; }
+      else {   // 팝업이 막혔으면 내려받기로
+        var a = document.createElement('a');
+        a.href = url; a.download = d.name || 'IR피치빌더_활용서.pdf';
+        document.body.appendChild(a); a.click(); a.remove();
+      }
+      setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(e){} }, 30 * 60 * 1000);
+    }).catch(function(e){
+      var m = '활용서를 열지 못했습니다 — ' + ((e && e.message) || e) + ' 잠시 뒤 다시 눌러 주십시오.';
+      if(w && !w.closed) say(m); else window.alert(m);
+    });
+  }
+  $('hdGuide').onclick = function(e){ e.preventDefault(); openGuide(); };
 
   $('hdTips').onclick = function(){
     llm.tipsMode = !llm.tipsMode;
