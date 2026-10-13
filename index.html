@@ -4695,7 +4695,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     }).join('') + '</div>';
     h += '<p class="pb-note" style="margin-bottom:6px">' + (f.source === 'lagmp'
            ? '명단 = <b>성장관리 플랫폼 등재 기업</b>(INNO 선정·조건부선정 · 제외 아님). 이 명단에 없는 기업은 피치빌더에 로그인할 수 없습니다.'
-           : '<b style="color:var(--pb-warn-deep)">성장관리 플랫폼 명단을 받지 못해 옛 명부로 보여 드립니다.</b> 잠시 뒤 다시 불러오십시오.') +
+           : '<b style="color:var(--pb-warn-deep)">성장관리 플랫폼 명단을 받지 못해 이전 명부로 보여 드립니다.</b> 잠시 뒤 다시 불러오십시오.') +
          (c.off ? ' · 명단 밖(탈락 등) ' + c.off + '곳은 맨 아래 흐리게' : '') + '</p>';
     h += '<p class="pb-note">전체 ' + (c.total || 0) + '곳 · 1차 채움 실행 ' + (c.filled || 0) + '곳 · <b>리셋 요청 대기 ' + (c.resetPending || 0) + '곳</b> · <b>AI 추가 요청 대기 ' + (c.quotaPending || 0) + '곳</b>. ' +
          '검토 완료는 그 기업 원고를 열어 결과·덱 화면에서 누릅니다 — 원고를 고치면 기업 화면에서 표식이 다시 붙습니다.</p>' +
@@ -5051,7 +5051,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     h += '<div class="pb-card pb-ax' + (stale ? ' pb-faded' : '') + '" style="margin-top:14px">';
     if(a.kind !== 'axis' || a.v !== 2){
       // 옛 감수·옛 16칸 진단 결과(로컬에 남은 것) — 형식이 달라 새로 받으라고만 한다
-      h += '<p class="pb-note">이전 형식(옛 16칸 원고)의 결과입니다. 12장표 통합 논리 진단으로 바뀌었으니 [통합 논리 진단]을 다시 눌러 주십시오.</p>';
+      h += '<p class="pb-note">이전 형식(16칸 원고)의 결과입니다. 12장표 통합 논리 진단으로 바뀌었으니 [통합 논리 진단]을 다시 눌러 주십시오.</p>';
       if(a.verdict) h += '<p style="margin-top:8px;font-size:15px;color:var(--pb-text-body)">' + esc(a.verdict) + '</p>';
       h += '</div>'; box.innerHTML = h; return;
     }
