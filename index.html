@@ -3141,36 +3141,56 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       '<div class="pb-sldlgbtn"><button class="pb-cta sub" id="psNo" style="width:auto;padding:11px 18px">돌아가서 작성</button>' +
         '<button class="pb-cta pb-cta-warn" id="psYes" style="width:auto;padding:11px 18px">AI 패스 멘토링 받고 패스 · 1회</button></div></div>';
     document.body.appendChild(v);
-    var close = function(){ if(v.parentNode) v.parentNode.removeChild(v); };
+    //  ★10-13 — AI 의견을 기다리는 중에는 닫지 않는다. 전에는 [돌아가서 작성]·바깥 클릭으로 닫혀
+    //    1회는 깎이고 결과는 볼 곳이 없었다(다시 열면 또 1회). 받은 의견은 장표에 남겨 다시 열 때 그대로 보여 준다.
+    var close = function(){
+      if(phase === 'busy'){ box.hidden = false; box.innerHTML = '<b>AI 패스 멘토링</b><span>의견을 정리하는 중입니다(1회 사용됨). 받은 뒤 닫을 수 있습니다.</span>'; return; }
+      if(v.parentNode) v.parentNode.removeChild(v);
+    };
     v.querySelector('#psNo').onclick = close;
     v.onclick = function(e){ if(e.target === v) close(); };
     //  Q2 — AI 가 이 장표 기준으로 한계·준비할 것을 알려 준 **뒤** 패스가 확정된다(두 번 누름).
     //   AI 를 못 부르면(한도·통신) 위 기본 안내로 확정할 수 있다 — 패스를 막지 않는다.
-    var phase = 'ask', yes = v.querySelector('#psYes'), box = v.querySelector('#psAI');
+    var phase = 'ask', yes = v.querySelector('#psYes'), box = v.querySelector('#psAI'), no = v.querySelector('#psNo');
     var reasonOf = function(){ var r = v.querySelector('input[name="psR"]:checked'); return PASS_REASONS[r ? +r.value : 0]; };
-    var toConfirm = function(html){ box.hidden = false; box.innerHTML = html; phase = 'confirm'; yes.disabled = false; yes.textContent = '패스 확정'; };
-    yes.onclick = function(){
-      if(phase === 'busy') return;
-      if(phase === 'ask'){
-        if(LOCAL || !serverOn() || (llm.quota && quotaLeft() === 0)){
-          toConfirm('<b>AI 패스 멘토링</b><span>' + (llm.quota && quotaLeft() === 0 ? 'AI 사용 횟수를 모두 쓰셨습니다.' : 'AI 를 부를 수 없는 환경입니다.') +
-                    ' 위 기본 안내로 판단해 주십시오.</span>');
-          return;
-        }
-        phase = 'busy'; yes.disabled = true; yes.textContent = '의견을 정리하는 중…';
-        callLLM(MENTOR_SYSTEM, passPrompt(x.id, reasonOf()), 'pass').then(function(d){
-          d = (d && typeof d === 'object') ? d : {};
-          var lim = String(d.limits || '').trim().slice(0, 400), prep = arr(d.prepare).map(function(p){ return String(p || '').trim().slice(0, 150); })
-                     .filter(function(p){ return p && !MENTOR_JUDGE_RE.test(p); }).slice(0, 3);
-          if(MENTOR_JUDGE_RE.test(lim)) lim = '';
-          state.mentorRes[x.id] = Object.assign(state.mentorRes[x.id] || {}, { pass:{ at:new Date().toISOString(), reason:reasonOf(), limits:lim, prepare:prep } });
-          toConfirm('<b>AI 패스 멘토링 · 이 장표 원고 기준</b><span>' + esc(lim || '추가로 짚을 한계를 찾지 못했습니다.') + '</span>' +
-                    (prep.length ? '<b>앞으로 준비·확인할 것</b><ul>' + prep.map(function(p){ return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>' : ''));
-        }).catch(function(err){
-          toConfirm('<b>AI 패스 멘토링</b><span>의견을 받지 못했습니다(' + esc(err.message || '오류') + '). 위 기본 안내로 판단해 주십시오.</span>');
-        });
+    var toConfirm = function(html){ box.hidden = false; box.innerHTML = html; phase = 'confirm'; yes.disabled = false; no.disabled = false; yes.textContent = '패스 확정'; };
+    var passHtml = function(p, head){
+      return '<b>' + head + '</b><span>' + esc(p.limits || '추가로 짚을 한계를 찾지 못했습니다.') + '</span>' +
+             (p.prepare.length ? '<b>앞으로 준비·확인할 것</b><ul>' + p.prepare.map(function(q){ return '<li>' + esc(q) + '</li>'; }).join('') + '</ul>' : '');
+    };
+    var ask = function(){
+      if(LOCAL || !serverOn() || (llm.quota && quotaLeft() === 0)){
+        toConfirm('<b>AI 패스 멘토링</b><span>' + (llm.quota && quotaLeft() === 0 ? 'AI 사용 횟수를 모두 쓰셨습니다.' : 'AI 를 부를 수 없는 환경입니다.') +
+                  ' 위 기본 안내로 판단해 주십시오.</span>');
         return;
       }
+      phase = 'busy'; yes.disabled = true; no.disabled = true; yes.textContent = '의견을 정리하는 중…';
+      var who = skey(), why = reasonOf();
+      callLLM(MENTOR_SYSTEM, passPrompt(x.id, why), 'pass').then(function(d){
+        if(skey() !== who){ phase = 'ask'; return; }   // 그사이 나가거나 다른 기업으로 바꿨다 — 남의 장표에 붙이지 않는다
+        d = (d && typeof d === 'object') ? d : {};
+        var lim = String(d.limits || '').trim().slice(0, 400), prep = arr(d.prepare).map(function(p){ return String(p || '').trim().slice(0, 150); })
+                   .filter(function(p){ return p && !MENTOR_JUDGE_RE.test(p); }).slice(0, 3);
+        if(MENTOR_JUDGE_RE.test(lim)) lim = '';
+        var p = { at:new Date().toISOString(), reason:why, limits:lim, prepare:prep };
+        state.mentorRes[x.id] = Object.assign(state.mentorRes[x.id] || {}, { pass:p });
+        toConfirm(passHtml(p, 'AI 패스 멘토링 · 이 장표 원고 기준'));
+      }).catch(function(err){
+        toConfirm('<b>AI 패스 멘토링</b><span>의견을 받지 못했습니다(' + esc(err.message || '오류') + '). 위 기본 안내로 판단해 주십시오.</span>');
+      });
+    };
+    //  이미 받은 의견이 있으면 AI 를 다시 부르지 않고 보여 준다 — 다시 받기는 기업이 고른다(1회)
+    var prev = (state.mentorRes[x.id] || {}).pass;
+    if(prev && typeof prev === 'object'){
+      prev = { at:String(prev.at || ''), reason:String(prev.reason || ''), limits:String(prev.limits || ''), prepare:arr(prev.prepare) };
+      toConfirm(passHtml(prev, '이전에 받은 AI 패스 멘토링 · ' + esc(prev.at.slice(0, 16).replace('T', ' '))) +
+                (prev.reason ? '<small>받을 때 사유: ' + esc(prev.reason) + '</small>' : '') +
+                '<button class="pb-cta sub" id="psAgain" style="width:auto;padding:8px 14px;margin-top:8px">AI 의견 다시 받기 · 1회</button>');
+      v.querySelector('#psAgain').onclick = ask;
+    }
+    yes.onclick = function(){
+      if(phase === 'busy') return;
+      if(phase === 'ask'){ ask(); return; }
       var s = state.slides[x.id];
       s.status = 'pass'; s.passReason = reasonOf();
       close();
