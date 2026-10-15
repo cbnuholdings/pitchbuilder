@@ -2547,20 +2547,26 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     if(f.locked && f.noticeCompany){
       return '<div class="pb-stalebar pb-slbar"><b>운영자가 제출 자료로 1차 초안을 채웠습니다(' + esc(String(f.at || '').slice(0, 10)) + ').</b>' +
              '<p>' + (f.applied ? '빈 장표에 넣었습니다. 쓰시던 장표는 그대로 두었습니다.' : '불러와 빈 장표에 넣을 수 있습니다. 쓰시던 장표는 그대로 둡니다.') +
-             ' 다시 채우고 싶으시면 [리셋 요청]을 보내 주십시오.</p>' +
+             ' 필요하시면 [다시 채우기]로 언제든 다시 실행할 수 있습니다.</p>' +
              (f.applied ? '' : '<button class="pb-cta" id="slFillLoad" style="width:auto;padding:9px 16px">초안 불러오기</button> ') +
              '<button class="pb-cta sub" id="slFillAck" style="width:auto;padding:9px 16px">확인</button> ' +
-             (f.resetReq && !f.resetReq.done ? '<span class="pb-note">리셋 요청을 보냈습니다 — 운영자 승인 대기</span>'
-                                              : '<button class="pb-cta sub" id="slFillReset" style="width:auto;padding:9px 16px">리셋 요청</button>') + '</div>';
+             '<button class="pb-cta sub" id="slFill" style="width:auto;padding:9px 16px">다시 채우기</button></div>';
     }
-    if(!f.locked && !f.running){
+    //  ★10-15 민부장 지시 — 1회 제한 해제. 채운 뒤에도 배너를 남겨 다시 실행할 수 있게 한다(빈 장표에만 넣는다).
+    if(!f.running){
+      if(f.locked){
+        return '<div class="pb-stalebar pb-slbar"><b>1차 초안을 채운 적이 있습니다(' + esc(String(f.at || '').slice(0, 10)) + ').</b>' +
+               '<p>자료가 늘었거나 장표를 비우셨다면 다시 채울 수 있습니다. 다시 채워도 <b>쓰시던 장표는 덮지 않고 빈 장표에만</b> 넣습니다. 횟수 제한은 없습니다.</p>' +
+               (isAdmin() ? '' : '<button class="pb-cta sub" id="slFillSec" style="width:auto;padding:9px 16px">추가 자료 동의</button> ') +
+               '<button class="pb-cta sub" id="slFill" style="width:auto;padding:9px 16px">자료로 다시 채우기</button></div>';
+      }
       var cs = (state.second || {}).consent || {};
       var secTxt = (cs.lagmp || cs.rnd)
         ? '동의하신 ' + [cs.lagmp ? '성장관리 확정 멘토링 종합' : '', cs.rnd ? 'R&D 기획보고서' : ''].filter(Boolean).join('·') + '도 함께 읽습니다.'
         : '성장관리 멘토링 종합·R&D 기획 결과를 함께 읽을지는 버튼을 누를 때 묻습니다.';
-      return '<div class="pb-stalebar pb-slbar pb-slbar-go"><b>제출하신 자료로 1차 초안을 채울 수 있습니다(1회).</b>' +
+      return '<div class="pb-stalebar pb-slbar pb-slbar-go"><b>제출하신 자료로 1차 초안을 채울 수 있습니다.</b>' +
              '<p>신청서·아이템분석(기업용)·사업계획서·IR자료를 읽어 12장표 초안을 만듭니다. ' + esc(secTxt) + ' 자료에 없는 숫자는 [__]로 남깁니다. ' +
-             '<b>한 번 실행하면 잠기고</b>, 쓰시던 장표는 덮지 않습니다. AI 사용 횟수는 줄지 않습니다. ' +
+             '쓰시던 장표는 덮지 않고, 필요하면 다시 실행할 수 있습니다. AI 사용 횟수는 줄지 않습니다. ' +
              '멘토링·R&D 사전기획 컨설팅을 받으신 뒤라면 그 결과가 초안에 함께 들어가므로, 컨설팅을 마친 뒤 실행하시는 편이 좋습니다.</p>' +
              (isAdmin() ? '' : '<button class="pb-cta sub" id="slFillSec" style="width:auto;padding:9px 16px">추가 자료 동의</button> ') +
              '<button class="pb-cta" id="slFill" style="width:auto;padding:9px 16px">자료로 1차 초안 채우기</button></div>';
@@ -2786,8 +2792,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   function secondBody(){
     var sc = state.second || {}, c = sc.consent || {};
     var h = '<p class="pb-note" style="margin-bottom:10px">다른 시스템에 있는 귀사 자료 가운데 <b>귀사가 원래 볼 수 있는 것</b>만, 동의한 출처만 보여 드립니다. ' +
-            '<b>1차 초안 채우기(1회)를 아직 안 하셨다면</b> 동의한 자료가 초안 재료로 함께 들어갑니다. ' +
-            '그 뒤에는 장표에 자동으로 들어가지 않습니다 — 장표마다 [AI 멘토]를 받으면 이 자료를 참고한 <b>보완 제안</b>이 함께 나오고, [본문에 반영]을 누르실 때만 원고에 들어갑니다.</p>' +
+            '<b>[1차 초안 채우기]를 실행하시면</b> 동의한 자료가 초안 재료로 함께 들어갑니다(다시 실행할 때도 마찬가지). ' +
+            '그 밖에는 장표에 자동으로 들어가지 않습니다 — 장표마다 [AI 멘토]를 받으면 이 자료를 참고한 <b>보완 제안</b>이 함께 나오고, [본문에 반영]을 누르실 때만 원고에 들어갑니다.</p>' +
             '<label class="pb-slchk"><input type="checkbox" id="slCLag"' + (c.lagmp ? ' checked' : '') + '> 성장관리 플랫폼 확정 멘토링 종합</label>' +
             '<label class="pb-slchk"><input type="checkbox" id="slCRnd"' + (c.rnd ? ' checked' : '') + '> R&amp;D 기획보고서(공개본)</label>';
     if(sc.loading) h += '<p class="pb-note">불러오는 중…</p>';
@@ -2809,7 +2815,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       state.second = { consent:(d && d.consent) || {}, lagmp:(d && d.lagmp) || [], rnd:(d && d.rnd) || [],
                        error: (d && d.ok) ? '' : ((d && d.error) || '불러오지 못했습니다.') };
     }).catch(function(){ state.second = { consent:(state.second || {}).consent || {}, error:'불러오지 못했습니다.' }; })
-      .then(function(){ if(state.view === 'write'){ renderSlideRight(); if(state.fill && !state.fill.locked) renderSlideCenter(); } if($('slSecVeil')) openSecondPop(); });
+      .then(function(){ if(state.view === 'write'){ renderSlideRight(); if(state.fill) renderSlideCenter(); } if($('slSecVeil')) openSecondPop(); });
   }
   function bindSecond(){
     var set = function(key, on){
@@ -3281,12 +3287,12 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     var v = document.createElement('div');
     v.className = 'pb-veil'; v.id = 'fillVeil';
     v.innerHTML = '<div class="pb-dlg pb-dlg-wide" role="dialog" aria-modal="true" aria-labelledby="flT">' +
-      '<span class="pb-slno">1차 초안 채우기 · 1회</span><h4 id="flT">제출하신 자료로 12장표 1차 초안을 만듭니다</h4>' +
+      '<span class="pb-slno">1차 초안 채우기</span><h4 id="flT">제출하신 자료로 12장표 1차 초안을 만듭니다</h4>' +
       '<p>신청서·아이템분석(기업용)·사업계획서·회사소개서/IR자료를 읽습니다. 아래 자료도 함께 읽을지 정해 주십시오.</p>' +
       '<label class="pb-slchk"><input type="checkbox" id="flLag"' + (!known || cs.lagmp ? ' checked' : '') + '> 성장관리 플랫폼 확정 멘토링 종합</label>' +
       '<label class="pb-slchk"><input type="checkbox" id="flRnd"' + (!known || cs.rnd ? ' checked' : '') + '> R&amp;D 기획보고서(공개본)</label>' +
       '<p class="pb-note">체크를 풀면 그 자료는 읽지 않습니다. 멘토링·R&amp;D 내용은 「무엇을 보강할지」와 「목표」로만 쓰고, 실적처럼 옮겨진 장표에는 확인 표시가 붙습니다.</p>' +
-      '<ul><li><b>한 번만 실행할 수 있습니다(실행하면 잠깁니다).</b></li><li>쓰시던 장표는 덮지 않고 빈 장표에만 넣습니다.</li>' +
+      '<ul><li>횟수 제한 없이 다시 실행할 수 있습니다.</li><li>쓰시던 장표는 덮지 않고 빈 장표에만 넣습니다.</li>' +
       '<li>자료에 없는 숫자는 [__]로 남깁니다.</li><li>1~3분 걸립니다. 창을 닫지 말고 기다려 주십시오.</li></ul>' +
       '<div class="pb-sldlgbtn"><button class="pb-cta sub" id="flNo" style="width:auto;padding:11px 18px">취소</button>' +
       '<button class="pb-cta" id="flGo" style="width:auto;padding:11px 18px">채우기 시작</button></div></div>';
@@ -3302,10 +3308,11 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
                   state.second = { consent:d.consent };
                 });
       busy = true;
+      var prevAt = (state.fill && state.fill.at) || '';   // 10-15 — 다시 채우기에서 이전 결과를 새 결과로 오인하지 않게
       var b = $('slFill'); if(b){ b.disabled = true; b.textContent = '자료를 읽는 중… (1~3분)'; }
       pre.then(function(){ return callProxy({ action:'fill', id:llm.id, code:llm.code }); })
         .then(function(d){ fillDone(d.result, d.at, d.by, d.sources); })
-        .catch(function(err){ return fillRecover(err); })
+        .catch(function(err){ return fillRecover(err, prevAt); })
         .then(function(){ busy = false; loadFillState(); loadSecond(); render(); });
     };
     try{ v.querySelector('#flGo').focus(); }catch(e){}
@@ -3325,7 +3332,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   //   그대로 두면 기업은 초안을 못 받았는데 다시 누르면 「이미 실행」으로 막힌다 → 서버 상태를 다시 읽어 결과를 찾는다.
   //   서버가 아직 진행 중이면 15초 간격으로 최대 6분(GAS 실행 상한) 기다린다. 서버가 「확정」한 실패(잠김·한도 등)는 바로 알린다.
   var FILL_FINAL = { LOCKED:1, INNO:1, NOAPP:1, QUOTA:1, FORBIDDEN:1, NOCID:1, RUNNING:1 };
-  function fillRecover(err){
+  function fillRecover(err, prevAt){
     var why = (err && err.message) || '오류';
     if(err && FILL_FINAL[err.code]){ alert('1차 채움을 하지 못했습니다 — ' + why); return Promise.resolve(); }
     var b = $('slFill'); if(b) b.textContent = '서버 결과를 확인하는 중…';
@@ -3333,7 +3340,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     var look = function(){
       return apiGet('fillget', {}).then(function(d){
         var st = d && d.ok && d.state;
-        if(st && st.locked && d.doc && d.doc.result){
+        if(st && st.locked && d.doc && d.doc.result && (!prevAt || String(d.doc.at || '') !== String(prevAt))){
           fillDone(d.doc.result, d.doc.at, d.doc.by, d.doc.sources);
           return;
         }
