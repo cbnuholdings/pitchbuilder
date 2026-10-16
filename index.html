@@ -3817,8 +3817,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     });
   }
 
-  // 덱 → PPTX (2026-08-20 민부장 지시 · grilling Q8=(a) 이미지 기반).
-  //  ★슬라이드는 고해상 PNG 한 장으로 넣는다 — 글꼴(Noto Sans KR·Archivo)이 없는 PC에서도 디자인이 안 깨진다.
+  // 덱 → PPTX (2026-08-20 민부장 지시 · grilling Q8=(a) 이미지 기반 → 2026-10-16 도식은 도형·글상자로 바뀜 · pptDomShapes).
+  //  ★(옛) 슬라이드는 고해상 PNG 한 장으로 넣는다 — 글꼴(Noto Sans KR·Archivo)이 없는 PC에서도 디자인이 안 깨진다.
   //  ★대신 제목·본문 텍스트를 발표자 노트에 함께 넣는다 — 고칠 재료는 글자로 준다.
   //  ★pptxgenjs 도 PDF 라이브러리처럼 **누를 때만** 불러온다(평소 script CDN 0 유지).
   //  🔴 2026-08-22 실측 — **cdnjs 에는 pptxgenjs 가 없다.** 종전 주소
@@ -4334,6 +4334,181 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     }
     return L.join('\n');
   }
+  /* PPTDOM:BEGIN — 도식(HTML) → PPT 도형·글상자 (2026-10-16 민부장 지시)
+   *  ★종전에는 도식을 html2canvas 로 찍은 PNG 한 장으로 넣었다(grilling Q8=(a)) → PPT 에서 글자·도형을 못 고쳤다.
+   *  ★지금은 도식의 DOM 을 그대로 읽어 요소마다 PPT 개체를 만든다 — 상자=사각형·둥근 사각형, 원=타원,
+   *    clip-path·CSS 삼각형=자유형(custGeom), 테두리=선, 글자=글상자(배경이 있는 상자는 도형 안 글자).
+   *  ★17종 도식 템플릿마다 따로 그리지 않는다 — 템플릿이 바뀌어도 이 변환기는 그대로 쓴다.
+   *  ★아이콘(svg)만 작은 그림으로 넣는다. 글꼴은 맑은 고딕(PPT 를 여는 PC 에 있는 글꼴).
+   *  base = 슬라이드(960×540px) 요소 · root = 도식 요소. 화면 축소(transform)는 실제 크기 비율로 되돌려 잰다. */
+  function pptDomShapes(sl, root, base, font){
+    var B = base.getBoundingClientRect(), R = root.getBoundingClientRect();
+    var IN = function(v){ return v / 96; }, PT = function(v){ return Math.round(v * 0.75 * 10) / 10; };
+    var col = function(c){
+      var m = String(c || '').match(/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+%?))?/);
+      if(!m) return null;
+      var a = m[4] == null ? 1 : (/%$/.test(m[4]) ? parseFloat(m[4]) / 100 : +m[4]);
+      if(a <= 0.02) return null;
+      var h = [m[1], m[2], m[3]].map(function(v){ return ('0' + Math.round(+v).toString(16)).slice(-2); }).join('').toUpperCase();
+      return { hex: h, tr: Math.round((1 - a) * 100) };
+    };
+    var fillOf = function(c){ return c.tr ? { color: c.hex, transparency: c.tr } : { color: c.hex }; };
+    var box = function(r){ return { x: IN(r.left - B.left), y: IN(r.top - B.top), w: IN(r.width), h: IN(r.height) }; };
+    var used = [], imgs = [];
+    var inside = function(r){ return r.width > 0.5 && r.height > 0.5 && r.right > R.left + 1 && r.left < R.right - 1 && r.bottom > R.top + 1 && r.top < R.bottom - 1; };
+    var INLINE = { B:1, STRONG:1, I:1, EM:1, BR:1, SMALL:1, U:1 };
+    var ownText = function(el){
+      for(var n = el.firstChild; n; n = n.nextSibling) if(n.nodeType === 3 && n.nodeValue.trim()) return true;
+      return false;
+    };
+    //  글자 덩어리 — 직접 글자를 가진 요소 + 그 안의 굵게·기울임·줄바꿈(인라인)만. 그 밖의 자식은 따로 처리한다.
+    var runsOf = function(el, k){
+      var out = [];
+      (function walk(node){
+        for(var n = node.firstChild; n; n = n.nextSibling){
+          if(n.nodeType === 3){
+            var t = n.nodeValue.replace(/\s+/g, ' ');
+            if(!t.trim() && !out.length) continue;
+            var cs = getComputedStyle(n.parentNode), c = col(cs.color) || { hex:'1F2537' };
+            out.push({ text: t, options: { fontSize: PT(parseFloat(cs.fontSize) * k), bold: (+cs.fontWeight || 400) >= 600,
+                                           italic: cs.fontStyle === 'italic', color: c.hex } });
+          } else if(n.nodeType === 1 && n.tagName === 'BR'){
+            if(out.length) out[out.length - 1].options.breakLine = true;
+          } else if(n.nodeType === 1 && INLINE[n.tagName]){ used.push(n); walk(n); }
+        }
+      })(el);
+      if(out.length){ out[0].text = out[0].text.replace(/^\s+/, ''); out[out.length - 1].text = out[out.length - 1].text.replace(/\s+$/, ''); }
+      return out.filter(function(r){ return r.text || r.options.breakLine; });
+    };
+    var poly = function(cp, w, h){
+      var m = String(cp).match(/polygon\(([^)]*)\)/); if(!m) return null;
+      var pts = m[1].split(',').map(function(p){
+        var v = p.trim().split(/\s+/), f = function(s, L){ return /%$/.test(s) ? parseFloat(s) / 100 * L : parseFloat(s) || 0; };
+        return { x: IN(f(v[0], w)), y: IN(f(v[1], h)) };
+      });
+      pts.push({ close: true });
+      return pts;
+    };
+    var sides = ['Top', 'Right', 'Bottom', 'Left'];
+    Array.prototype.forEach.call([root].concat(Array.prototype.slice.call(root.querySelectorAll('*'))), function(el){
+      if(used.indexOf(el) >= 0) return;
+      if(el.closest && el.closest('svg') && el.tagName.toLowerCase() !== 'svg') return;
+      var cs = getComputedStyle(el), r = el.getBoundingClientRect();
+      if(cs.display === 'none' || cs.visibility === 'hidden' || !inside(r)) return;
+      var k = el.offsetWidth ? r.width / el.offsetWidth : (el.getBBox ? 1 : 1);
+      if(!isFinite(k) || k <= 0) k = 1;
+      if(el.tagName.toLowerCase() === 'svg'){ imgs.push({ el: el, b: box(r) }); return; }
+      var b = box(r), bw = {}, bc = {}, bs = {};
+      sides.forEach(function(s){ bw[s] = parseFloat(cs['border' + s + 'Width']) || 0; bc[s] = col(cs['border' + s + 'Color']); bs[s] = cs['border' + s + 'Style']; });
+      var bg = col(cs.backgroundColor), o = null, shape = null;
+      var cw = r.width - (bw.Left + bw.Right) * k, ch = r.height - (bw.Top + bw.Bottom) * k;
+      //  CSS 삼각형(폭·높이 0 + 한쪽 테두리만 색) → 자유형 삼각형
+      if((cw < 1 || ch < 1) && !bg){
+        var on = sides.filter(function(s){ return bw[s] > 0 && bc[s]; });
+        //  (테두리 한 변만 있는 선·점선은 삼각형이 아니다 — 맞닿은 두 변에 투명 테두리 폭이 있어야 삼각형)
+        var tri = on.length === 1 && (/Left|Right/.test(on[0]) ? bw.Top > 0 && bw.Bottom > 0 : bw.Left > 0 && bw.Right > 0);
+        if(tri){
+          var s = on[0], W = r.width, Hh = r.height, P;
+          if(s === 'Left')   P = [[0, 0], [W, Hh / 2], [0, Hh]];
+          if(s === 'Right')  P = [[W, 0], [0, Hh / 2], [W, Hh]];
+          if(s === 'Top')    P = [[0, 0], [W, 0], [W / 2, Hh]];
+          if(s === 'Bottom') P = [[W / 2, 0], [W, Hh], [0, Hh]];
+          sl.addShape('custGeom', Object.assign(b, { fill: fillOf(bc[s]), line: { type: 'none' },
+            points: P.map(function(p){ return { x: IN(p[0]), y: IN(p[1]) }; }).concat([{ close: true }]) }));
+          return;
+        }
+      }
+      var cp = cs.clipPath && cs.clipPath !== 'none' ? poly(cs.clipPath, r.width, r.height) : null;
+      var uni = sides.every(function(s){ return bw[s] === bw.Top && bs[s] === bs.Top && bc[s] && bc.Top && bc[s].hex === bc.Top.hex; }) && bw.Top > 0 && bs.Top !== 'none';
+      if(bg || uni || cp){
+        o = { fill: bg ? fillOf(bg) : { type: 'none' } };
+        o.line = uni ? { color: bc.Top.hex, width: PT(bw.Top * k), dashType: bs.Top === 'dashed' ? 'dash' : bs.Top === 'dotted' ? 'sysDot' : 'solid' } : { type: 'none' };
+        if(cp){ shape = 'custGeom'; o.points = cp; }
+        else {
+          var rad = parseFloat(cs.borderTopLeftRadius) || 0, mn = Math.min(r.width, r.height);
+          if(/%$/.test(cs.borderTopLeftRadius)) rad = rad / 100 * mn;
+          else rad = rad * k;
+          if(rad >= mn / 2 - 0.5 && Math.abs(r.width - r.height) < 2) shape = 'ellipse';
+          else if(rad > 0.5){ shape = 'roundRect'; o.rectRadius = IN(Math.min(rad, mn / 2)); }
+          else shape = 'rect';
+        }
+        if(cs.boxShadow && cs.boxShadow !== 'none') o.shadow = { type: 'outer', angle: 90, blur: 6, offset: 2, color: '1F2637', opacity: 0.18 };
+      }
+      //  한쪽만 있는 테두리(구분선·강조 막대·점선) → 그 변만 선/막대로
+      if(!uni) sides.forEach(function(s){
+        if(!(bw[s] > 0 && bc[s] && bs[s] !== 'none')) return;
+        var t = bw[s] * k, X = r.left - B.left, Y = r.top - B.top, ln;
+        if(bs[s] === 'dashed' || bs[s] === 'dotted'){
+          ln = { color: bc[s].hex, width: PT(t), dashType: bs[s] === 'dashed' ? 'dash' : 'sysDot' };
+          if(s === 'Top' || s === 'Bottom'){ var yy = s === 'Top' ? Y + t / 2 : Y + r.height - t / 2; sl.addShape('line', { x: IN(X), y: IN(yy), w: IN(r.width), h: 0, line: ln }); }
+          else { var xx = s === 'Left' ? X + t / 2 : X + r.width - t / 2; sl.addShape('line', { x: IN(xx), y: IN(Y), w: 0, h: IN(r.height), line: ln }); }
+        } else {
+          var q = s === 'Top' ? [X, Y, r.width, t] : s === 'Bottom' ? [X, Y + r.height - t, r.width, t] : s === 'Left' ? [X, Y, t, r.height] : [X + r.width - t, Y, t, r.height];
+          sl.addShape('rect', { x: IN(q[0]), y: IN(q[1]), w: IN(q[2]), h: IN(q[3]), fill: fillOf(bc[s]), line: { type: 'none' } });
+        }
+      });
+      var runs = ownText(el) ? runsOf(el, k) : [];
+      if(!runs.length){ if(o) sl.addShape(shape, Object.assign(b, o)); return; }
+      //  글자 — 안쪽 여백·정렬은 브라우저가 실제로 놓은 글자 자리(Range)로 정한다
+      var pl = (parseFloat(cs.paddingLeft) + bw.Left) * k, pr = (parseFloat(cs.paddingRight) + bw.Right) * k,
+          pt = (parseFloat(cs.paddingTop) + bw.Top) * k, pb = (parseFloat(cs.paddingBottom) + bw.Bottom) * k;
+      var rg = document.createRange(); rg.selectNodeContents(el);
+      var tr = rg.getBoundingClientRect(), lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.5;
+      var innerH = r.height - pt - pb, innerW = r.width - pl - pr;
+      var cy = (tr.top + tr.bottom) / 2 - r.top, cx = (tr.left + tr.right) / 2 - r.left;
+      var valign = tr.height >= innerH - 2 ? 'top' : Math.abs(cy - (pt + innerH / 2)) < 3 ? 'middle' : (cy > pt + innerH / 2 ? 'bottom' : 'top');
+      var align = /center/.test(cs.textAlign) ? 'center' : /right|end/.test(cs.textAlign) ? 'right'
+                : (tr.width < innerW - 4 && Math.abs(cx - (pl + innerW / 2)) < 3) ? 'center' : 'left';
+      var vert = /vertical/.test(cs.writingMode) ? (/rotate\(180deg\)|matrix\(-1, ?0, ?-?0, ?-1/.test(el.style.transform + ' ' + cs.transform) ? 'vert270' : 'eaVert') : null;
+      var single = vert ? true : tr.height < lh * k * 1.5;
+      var t = Object.assign(b, o || {}, { fontFace: font, align: align, valign: valign, margin: [PT(pl), PT(pr), PT(pb), PT(pt)],
+                                          wrap: !single, lineSpacing: PT(lh * k), lang: 'ko-KR' });
+      //  글자 옆에 배지·동그라미 같은 상자 자식이 있으면 → 상자는 따로 그리고, 글상자는 글자가 실제로 놓인 자리에만 둔다(겹침 방지)
+      var mixed = Array.prototype.some.call(el.children, function(c){ return !INLINE[c.tagName] && used.indexOf(c) < 0; });
+      if(mixed){
+        var U = null;
+        (function walk(node){
+          for(var n = node.firstChild; n; n = n.nextSibling){
+            if(n.nodeType === 3 && n.nodeValue.trim()){
+              var q = document.createRange(); q.selectNodeContents(n);
+              Array.prototype.forEach.call(q.getClientRects(), function(c){
+                U = U ? { l: Math.min(U.l, c.left), t: Math.min(U.t, c.top), r: Math.max(U.r, c.right), b: Math.max(U.b, c.bottom) } : { l: c.left, t: c.top, r: c.right, b: c.bottom };
+              });
+            } else if(n.nodeType === 1 && INLINE[n.tagName]) walk(n);
+          }
+        })(el);
+        if(U){
+          if(o) sl.addShape(shape, Object.assign(box(r), o));
+          var right = align === 'left' ? Math.max(U.r + 2, r.right - pr) : U.r + 2;
+          t = { x: IN(U.l - B.left - 1), y: IN(U.t - B.top), w: IN(right - U.l + 1), h: IN(U.b - U.t), fontFace: font,
+                align: align === 'right' ? 'right' : 'left', valign: 'middle', margin: 0, wrap: !single, lineSpacing: PT(lh * k), lang: 'ko-KR' };
+        }
+      }
+      if(vert) t.vert = vert;
+      if(shape) t.shape = shape;
+      sl.addText(runs, t);
+    });
+    //  아이콘 — svg 를 그대로 그림으로(작다 · 고칠 일이 거의 없다)
+    return imgs.reduce(function(p, it){
+      return p.then(function(){
+        return new Promise(function(res){
+          var c = it.el.cloneNode(true), cs = getComputedStyle(it.el);
+          c.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+          c.setAttribute('width', Math.round(it.b.w * 96)); c.setAttribute('height', Math.round(it.b.h * 96));
+          var src = new XMLSerializer().serializeToString(c).replace(/currentColor/g, cs.color);
+          var im = new Image();
+          im.onload = function(){
+            var cv = document.createElement('canvas'); cv.width = Math.round(it.b.w * 96 * 3); cv.height = Math.round(it.b.h * 96 * 3);
+            cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+            sl.addImage(Object.assign({ data: cv.toDataURL('image/png') }, it.b)); res();
+          };
+          im.onerror = function(){ res(); };
+          im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(src);
+        });
+      });
+    }, Promise.resolve());
+  }
+  /* PPTDOM:END */
   var PX = function(v){ return v / 96; };          // 960×540px = 10×5.625in
   function exportDeckPpt(btn){
     var list = deckList();
@@ -4380,9 +4555,19 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
             sl.addNotes(pptNotes(it));
             var fig = cl.querySelector('.s-viz');
             if(!fig) return;
-            var fx = fig.offsetLeft, fy = fig.offsetTop, fw = fig.offsetWidth || 848, fh = fig.offsetHeight || 300;
-            return window.html2canvas(fig, { scale:2, backgroundColor:'#ffffff', useCORS:true, logging:false })
-              .then(function(cv){ sl.addImage({ data: cv.toDataURL('image/png'), x:PX(fx), y:PX(fy), w:PX(fw), h:PX(fh) }); });
+            //  도식 = 도형·글상자(고칠 수 있게 · 10-16). 변환이 실패한 장표만 종전처럼 그림 한 장으로 넣는다.
+            var shot = function(){
+              var fx = fig.offsetLeft, fy = fig.offsetTop, fw = fig.offsetWidth || 848, fh = fig.offsetHeight || 300;
+              return window.html2canvas(fig, { scale:2, backgroundColor:'#ffffff', useCORS:true, logging:false })
+                .then(function(cv){ sl.addImage({ data: cv.toDataURL('image/png'), x:PX(fx), y:PX(fy), w:PX(fw), h:PX(fh) }); });
+            };
+            var mark = sl._slideObjects ? sl._slideObjects.length : -1;
+            try { return pptDomShapes(sl, fig, cl, font).catch(function(e){ console.warn('PPT 도식', e); }); }
+            catch(e){
+              console.warn('PPT 도식 → 그림', e);
+              if(mark >= 0) sl._slideObjects.length = mark;
+              return shot();
+            }
           });
         });
         return chain.then(function(){ return pptx.writeFile({ fileName: pdfFileName('IR피칭자료').replace(/\.pdf$/, '.pptx') }); });
