@@ -149,6 +149,7 @@ a{color:inherit}
 .pb-aprow b{font-weight:600;flex:1}
 .pb-aprow span{font:500 12px var(--pb-font-mono);color:var(--pb-ink-3)}
 .pb-aprow em{font-style:normal;font-size:12px;color:var(--pb-ink-3);min-width:64px;text-align:right}
+.pb-aprow em b.pb-apwait{flex:none;font-weight:700;color:var(--pb-accent-ink)}
 
 /* 🔴 어느 탭이든 "의견일 뿐"임을 밝힌다 — 시스템은 판정자가 아니라 쟁점 제기자다 */
 .pb-disclaim{
@@ -846,6 +847,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 
 /* ── 관리자 ────────────────────────────────── */
 .pb-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.pb-kpi.k4{grid-template-columns:repeat(4,1fr)}
 /* ★2026-10-09 신청 프로그램 입구 — 관리자 「사업별 신청기업」 · 기업 「신청 프로그램」 (LAGMP·R&D 와 같은 구성) */
 .pb-proghero{background:var(--pb-ink);color:var(--pb-on-ink-1);border-radius:var(--pb-radius-card);padding:24px 26px;box-shadow:var(--pb-shadow-card)}
 .pb-proghero .ey{font:500 11.5px var(--pb-font-mono);letter-spacing:.14em;color:var(--pb-accent)}
@@ -4747,7 +4749,18 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   }
   //  시험 행(TEST-0001·REF01)은 센 수에서도 뺀다 — 리스트(apFiltered)와 같은 기준
   function realApplicants(){ return admin.applicants.filter(function(x){ return /^ITC\d{4}-\d{3,4}$/.test(String(x.cid || '')); }); }
-  //  그 사업 기업의 ① 원고 행 — 원고는 기업명으로만 잇는다(리스트의 「작성 n/16」과 같은 대조)
+  //  그 사업 기업의 ① 원고 행 — 원고는 기업명으로만 잇는다(리스트의 「장표 n/12」와 같은 대조)
+  //  ★10-20 민부장 지시 — 리스트 진행 표기를 12장표 기준으로(종전 「작성 n/16」 = 옛 16칸 · 12장표를 다 써도 16/16).
+  //   「제출 대기」 = 12장표 + 통합 진단을 마쳤는데 아직 제출하지 않은 기업 → 관리자가 열어 왼쪽 아래 [성장관리플랫폼 업데이트]로 대리 제출.
+  //   (작성 완성도 = 내용 있는 장표 수/12 · 실제 관문은 doSubmit 의 deckGate 가 다시 본다)
+  function slideCount(r){ return Math.round((+(r && r.filled) || 0) * 12); }
+  function submitWaiting(r){ return !!r && r.status !== '제출' && slideCount(r) >= 12 && !!r.audit; }
+  function apRowState(w){
+    if(!w) return '미작성';
+    if(w.status === '제출') return '장표 ' + slideCount(w) + '/12 · 제출';
+    if(submitWaiting(w)) return '<b class="pb-apwait">제출 대기</b>';
+    return '장표 ' + slideCount(w) + '/12' + (slideCount(w) >= 12 ? ' · 진단 전' : '');
+  }
   function rowsOf(apps){
     var nm = {}; apps.forEach(function(x){ nm[normName(x.company)] = 1; });
     return admin.rows.filter(function(r){ return r.company && nm[normName(r.company)]; });
@@ -4863,7 +4876,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       h += '<button class="pb-aprow" data-nm="' + esc(x.company) + '" data-cid="' + esc(x.cid || '') + '">' +
              '<b>' + esc(x.company || '(이름 없음)') + '</b>' +
              '<span>' + esc(x.cid || '') + '</span>' +
-             '<em>' + (w ? '작성 ' + (w.filled != null ? Math.round((+w.filled || 0) * 16) + '/16' : '있음') + (w.status === '제출' ? ' · 제출' : '') : '미작성') + '</em>' +
+             '<em>' + apRowState(w) + '</em>' +
            '</button>';
     });
     if(list.length > 200) h += '<p class="pb-note">' + (list.length - 200) + '곳 더 있습니다 — 검색어를 좁히십시오.</p>';
@@ -5098,13 +5111,15 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     var rows = admin.prog ? rowsOf(apps) : admin.rows;
     var sub = rows.filter(function(r){ return r.status === '제출'; }).length;
     var wrote = rows.filter(function(r){ return (r.filled || 0) > 0; }).length;
+    var wait = rows.filter(submitWaiting).length;
 
     var h = '<div class="pb-progcrumb"><button class="pb-hbtn ghost" id="progBack">← 사업 목록</button>' +
               '<b>' + esc(admin.prog ? progName({ program: admin.prog }) : '전체 기업') + '</b></div>' +
-            '<div class="pb-kpi">' +
+            '<div class="pb-kpi k4">' +
               '<div class="k"><b>' + apps.length + '</b><span>등재 기업</span></div>' +
               '<div class="k"><b>' + wrote + '</b><span>작성 착수</span></div>' +
               '<div class="k"><b>' + sub + '</b><span>제출 완료</span></div>' +
+              '<div class="k"><b>' + wait + '</b><span>제출 대기</span></div>' +
             '</div>';
 
     // ── 신청기업 불러오기 ── B1(이노테크 접수) 명부에서 고른다
@@ -5112,7 +5127,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
            '<h3>참여기업 리스트</h3>' +
            '<p class="pb-note" style="margin-bottom:12px">이노테크 접수 명부입니다. ' +
            '이름을 치거나 목록에서 고르시면 <b>그 기업의 IR 원고가 열립니다</b>(관리자 권한으로 직접 고치는 대리 편집). ' +
-           '(주)·주식회사는 빼고 검색해도 찾습니다. 오른쪽에 작성 진행(작성 n/16 · 제출)이 함께 보입니다.<br>' +
+           '(주)·주식회사는 빼고 검색해도 찾습니다. 오른쪽에 진행(장표 n/12 · 제출 · <b>제출 대기</b> = 12장표·진단을 마쳤는데 미제출 — 열어서 왼쪽 아래 [성장관리플랫폼 업데이트]로 대리 제출)이 함께 보입니다.<br>' +
            '<span style="color:var(--pb-ink-3)">※ 여기는 <b>누구를</b> 작업할지 고르는 곳입니다. ' +
            '기업을 연 뒤 상단 [신청서 내용 가져오기]를 누르면 <b>그 기업이 낸 린캔버스로 작성칸이 채워집니다.</b></span></p>' +
            apProgSelect() +
