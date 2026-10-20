@@ -2523,11 +2523,12 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
                '<span class="tx"><span class="id">부록 R' + (k + 1) + '</span><span class="nm">' + esc(shortTitle(s)) + '</span></span></button>';
       });
     }
-    h += '</nav>';
+    h += '</nav>' + lagmpLeftHtml(true);
     $('pbLeft').innerHTML = h;
     Array.prototype.forEach.call($('pbLeft').querySelectorAll('.pb-sl'), function(b){
       b.onclick = function(){ goSlide(+b.dataset.sl); };
     });
+    bindLagmpLeft();
     $('slDeckGo').onclick = function(){
       var gg = deckGate();
       if(gg.ok){ syncToServer(); goDeck(); return; }
@@ -3749,6 +3750,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     return scriptLoads[src];
   }
   function pdfLibs(){
+    if(window.html2canvas && window.jspdf) return Promise.resolve();   // 이미 있으면 다시 받지 않는다
     return loadScriptOnce(PDF_LIBS[0]).then(function(){ return loadScriptOnce(PDF_LIBS[1]); }).then(function(){
       if(!window.html2canvas || !window.jspdf) throw new Error('pdf libs');
     });
@@ -3770,6 +3772,44 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     return nm.replace(/[\\/:*?"<>|]+/g, '_') + '_' + kind + '_' + localYMD().replace(/-/g, '') + '.pdf';
   }
 
+  //  슬라이드 요소들 → 960×540 쪽 PDF(jsPDF). stage = 화면 밖 960px 무대. [PDF 다운로드]와 성장관리플랫폼 업데이트가 함께 쓴다.
+  function deckToPdf(slides, stage, q){
+    var pdf = new window.jspdf.jsPDF({ orientation:'landscape', unit:'px', format:[960, 540], hotfixes:['px_scaling'] });
+    var chain = Promise.resolve();
+    slides.forEach(function(src, i){
+      chain = chain.then(function(){
+        var cl = src.cloneNode(true);
+        cl.style.transform = 'none'; cl.style.position = 'relative'; cl.style.left = '0'; cl.style.top = '0';
+        flattenFields(cl);
+        stage.innerHTML = ''; stage.appendChild(cl);
+        return window.html2canvas(cl, { scale:2, backgroundColor:'#ffffff', useCORS:true, logging:false, width:960, height:540 })
+          .then(function(cv){
+            if(i > 0) pdf.addPage([960, 540], 'landscape');
+            pdf.addImage(cv.toDataURL('image/jpeg', q), 'JPEG', 0, 0, 960, 540);
+          });
+      });
+    });
+    return chain.then(function(){ return pdf; });
+  }
+  //  ★성장관리플랫폼 업데이트용 IR 피칭 자료 PDF(10-20 민부장 지시 — 종전엔 IR 본문 A4 가 올라가 쪽 크기가 달랐다).
+  //   작성·결과 화면에는 덱이 없으므로 화면 밖에 덱을 그려 찍는다 — [PDF 다운로드]와 같은 960×540 · 같은 장 구성.
+  //   data URI 를 돌려준다. 알림창을 띄우지 않는다(제출 흐름이 판단한다).
+  function deckPdfData(){
+    var host = document.createElement('div'), stage = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:-20000px;top:0;width:960px;z-index:-1';
+    stage.style.cssText = 'position:fixed;left:-20000px;top:600px;width:960px;background:#fff;z-index:-1';
+    var list = deckList(), total = list.length;
+    host.innerHTML = list.map(function(it, i){ return '<div class="pb-slidebox">' + deckSlideHtml(it, i + 1, total) + '</div>'; }).join('');
+    document.body.appendChild(host); document.body.appendChild(stage);
+    Array.prototype.forEach.call(host.querySelectorAll('.s-viz'), fitViz);
+    var slides = Array.prototype.filter.call(host.querySelectorAll('.pb-slide'), function(s){ return !s.classList.contains('is-empty'); });
+    document.body.classList.add('pb-pdfing');
+    var done = function(){ host.remove(); stage.remove(); document.body.classList.remove('pb-pdfing'); };
+    return pdfLibs()
+      .then(function(){ return deckToPdf(slides, stage, 0.9); })
+      .then(function(pdf){ done(); return pdf.output('datauristring'); }, function(err){ done(); throw err; });
+  }
+
   // 덱 → 960×540 장당 한 쪽. 빈 도식 장(is-empty)은 싣지 않는다.
   function exportDeckPdf(btn){
     var slides = Array.prototype.filter.call(document.querySelectorAll('#pbCenter .pb-slide'), function(s){
@@ -3786,22 +3826,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     document.body.appendChild(stage);
 
     pdfLibs().then(function(){
-      var pdf = new window.jspdf.jsPDF({ orientation:'landscape', unit:'px', format:[960, 540], hotfixes:['px_scaling'] });
-      var chain = Promise.resolve();
-      slides.forEach(function(src, i){
-        chain = chain.then(function(){
-          var cl = src.cloneNode(true);
-          cl.style.transform = 'none'; cl.style.position = 'relative'; cl.style.left = '0'; cl.style.top = '0';
-          flattenFields(cl);
-          stage.innerHTML = ''; stage.appendChild(cl);
-          return window.html2canvas(cl, { scale:2, backgroundColor:'#ffffff', useCORS:true, logging:false, width:960, height:540 })
-            .then(function(cv){
-              if(i > 0) pdf.addPage([960, 540], 'landscape');
-              pdf.addImage(cv.toDataURL('image/jpeg', 0.94), 'JPEG', 0, 0, 960, 540);
-            });
-        });
-      });
-      return chain.then(function(){ pdf.save(pdfFileName('IR피칭자료')); });
+      return deckToPdf(slides, stage, 0.94).then(function(pdf){ pdf.save(pdfFileName('IR피칭자료')); });
     }).catch(function(err){
       // 망이 막히면 인쇄 경로로 — 안내만 하고 멈추지 않는다
       console.warn('PDF', err);
@@ -3968,6 +3993,15 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   //  관리자가 그 기업 원고를 열었을 때만 — 지금 화면의 원고를 먼저 서버에 저장한 뒤, 그 원고의 지문으로 표시한다.
   //   (저장 전 지문으로 표시하면 기업이 받는 원고와 지문이 달라 표식이 빠지지 않는다)
   function canReview(){ return isAdmin() && !!(admin.editing && admin.editing.cid); }
+  //  ★관리자 대리 — [성장관리플랫폼 업데이트]를 왼쪽 레일 맨 아래에 둔다(10-20 민부장 지시). 기업을 열어 대리 편집할 때만.
+  //   작성·결과·덱 세 화면 공통. 누르면 기업 화면의 버튼과 같은 doSubmit(IR 피칭 자료 · 덱 관문 확인).
+  //   sp = 위쪽에 여백 칸(레일에 여백 칸이 아직 없을 때만 — 결과·덱 화면은 이미 있다).
+  function lagmpLeftHtml(sp){
+    return canReview() ? (sp ? '<div class="sp"></div>' : '') + '<div class="pb-hr"></div>' +
+      '<button class="pb-cta" id="lfLagmp">성장관리플랫폼 업데이트</button>' +
+      '<p class="fine" style="margin-top:6px">관리자 대리 · IR 피칭 자료(PDF · 16:9)를 새 판으로 올립니다.</p>' : '';
+  }
+  function bindLagmpLeft(){ if($('lfLagmp')) $('lfLagmp').onclick = doSubmit; }
   function setReview(done, btn){
     if(!canReview()) return;
     if(!serverOn()){ alert('서버에 연결돼 있지 않습니다.'); return; }
@@ -4049,8 +4083,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
             '<button class="pb-cta" id="rlDeck"' + (g.ok ? '' : ' disabled') + '>IR 피칭 자료 보기 (PDF·PPT)</button>' +
             (g.ok ? '' : '<p class="fine" style="margin-top:6px;color:var(--pb-warn-deep)">아직 ' + esc(g.need.join(' · ')) + '이(가) 남았습니다.</p>') +
             '<button class="pb-cta sub" style="margin-top:8px" id="rlPrint">IR 본문 PDF 다운로드</button>' +
-            '<button class="pb-cta sub" style="margin-top:8px" id="rlBack">← 작성으로 돌아가기</button>';
+            '<button class="pb-cta sub" style="margin-top:8px" id="rlBack">← 작성으로 돌아가기</button>' +
+            lagmpLeftHtml();
     $('pbLeft').innerHTML = h;
+    bindLagmpLeft();
     var go = function(id){ var el = document.getElementById(id); if(el) el.scrollIntoView({ behavior:'smooth', block:'start' }); };
     $('rlIR').onclick = function(){ go('secIR'); };
     $('rlAudit').onclick = function(){ go('secAudit'); };
@@ -4122,9 +4158,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
              : '작성 중인 원고는 자동 저장만 되고 성장관리플랫폼에는 올라가지 않습니다. 완성되면 아래 버튼으로 올려 주십시오.') +
            '</p>' +
            '<button class="pb-cta" style="margin-top:14px;width:auto;padding:11px 22px" id="btnSubmit">성장관리플랫폼 업데이트</button>' +
-           '<button class="pb-cta sub" style="margin-top:14px;margin-left:8px;width:auto;padding:11px 18px" id="btnKeepIR">이 상태로 보관</button>' +
-           '<p class="pb-note" style="margin-top:10px">보관은 제출과 다릅니다. 지금 원고·진단을 <b>한 벌 통째로</b> 노션에 쌓아 둡니다 — 나중에 되찾아 견줄 수 있습니다.</p>' +
-           '<p class="pb-note" style="margin-top:10px">올리시면 성장관리플랫폼 <b>[② 고도화]</b>에 이번 12장표 원고가 IR 새 판(V번호)으로 쌓입니다(도식 포함 PDF). 올린 판은 지워지지 않습니다.</p>' +
+           '<p class="pb-note" style="margin-top:10px">올리시면 성장관리플랫폼 <b>[② 고도화]</b>에 <b>IR 피칭 자료</b>(PDF · 16:9 · [PDF 다운로드]와 같은 것)가 IR 새 판(V번호)으로 쌓입니다. 12장표를 모두 닫고 ① 통합 논리 진단을 받은 뒤에 올릴 수 있습니다. 올린 판은 지워지지 않습니다.</p>' +
            (state.lastLagmp
              ? '<p class="pb-note" style="margin-top:6px' + (state.lastLagmp.ok ? '' : ';color:var(--pb-warn-deep)') + '">' + esc(lagmpMsg()) + '</p>'
              : '') +
@@ -4134,7 +4168,6 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     $('btnAudit').onclick = runAudit;
     bindDeckGo();
     $('btnSubmit').onclick = doSubmit;
-    $('btnKeepIR').onclick = function(){ saveOutput('IR 완성본', this); };
   }
   function deckGoInner(){
     var g = deckGate(), n = deckSlides().length;
@@ -4237,12 +4270,12 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
          '<div class="sp"></div>' +
          '<button class="pb-cta" id="dkPdf">PDF 다운로드</button>' +
          '<button class="pb-cta sub" style="margin-top:8px" id="dkPpt">PPT 다운로드</button>' +
-         '<button class="pb-cta sub" style="margin-top:8px" id="dkPrint">인쇄로 저장(대체 경로)</button>' +
-         '<button class="pb-cta sub" style="margin-top:8px" id="dkKeep">이 자료 보관</button>' +
          (canReview() ? '<div class="pb-hr"></div>' + reviewButtons().replace(/margin-left:8px;/g, '') : '') +
          '<button class="pb-cta sub" style="margin-top:8px" id="dkEdit">← 작성 화면에서 고치기</button>' +
-         '<button class="pb-cta sub" style="margin-top:8px" id="dkBack">← 결과로 돌아가기</button>';
+         '<button class="pb-cta sub" style="margin-top:8px" id="dkBack">← 결과로 돌아가기</button>' +
+         lagmpLeftHtml();
     $('pbLeft').innerHTML = h;
+    bindLagmpLeft();
     Array.prototype.forEach.call($('pbLeft').querySelectorAll('[data-s]'), function(b){
       b.onclick = function(){
         var el = document.querySelectorAll('#pbCenter .pb-slidebox')[+b.dataset.s];
@@ -4251,12 +4284,6 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     });
     $('dkPdf').onclick = function(){ exportDeckPdf(this); };
     $('dkPpt').onclick = function(){ exportDeckPpt(this); };
-    $('dkPrint').onclick = function(){
-      document.body.classList.add('deck-print');
-      window.print();
-      setTimeout(function(){ document.body.classList.remove('deck-print'); }, 300);
-    };
-    $('dkKeep').onclick = function(){ saveOutput('피칭 덱', this); };
     bindReviewBtns();
     $('dkEdit').onclick = goWrite;
     $('dkBack').onclick = goResult;
@@ -5339,55 +5366,42 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 
   // ── ④ 최종 산출물 보관 ──
   //  ①(단계별 원고)은 덮어쓰지만 ④는 만들 때마다 쌓인다 — 지난 덱을 되찾을 수 있어야 한다.
-  function saveOutput(kind, btn){
-    if(!serverOn()){ alert('서버에 연결돼 있지 않아 보관할 수 없습니다.'); return; }
-    // ★낡은 진단이 한 벌로 묶여 ④에 쌓이면, 나중에 되찾을 때 그것이 '그때의 점수'로 읽힌다.
-    //   보관을 막지는 않는다 — 원고만 보관하려는 경우도 있다. 다만 모르고 넘어가게 두지 않는다.
-    var st = [];
-    if(irStale(state.auditHash)) st.push('통합 논리 진단');
-    if(st.length && !confirm(
-        st.join('·') + '은 지금 원고보다 낡았습니다(고치신 뒤 다시 하지 않았습니다).\n\n' +
-        '이대로 보관하면 낡은 결과가 이 원고의 것으로 함께 쌓입니다.\n\n계속 보관할까요?')) return;
-
-    //  채움 비율 = 12장표 중 완료·패스로 닫힌 장표(P5 · 옛 16칸 기준에서 바꿈)
-    var body = { action:'saveoutput', id:llm.id, code:llm.code,
-                 kind:kind, snapshot:snapshot(),
-                 filledRatio: Math.round(slideCounts().closed / 12 * 100) / 100 };
-
-    if(kind === '피칭 덱'){
-      var dd = deckDoc();
-      body.deck = dd.slides;
-      body.slideCount = dd.slides.length;
-      //  장표마다 고른 도식 — 나중에 이 덱을 다시 볼 때 무엇으로 그렸는지 남긴다
-      body.figureNote = dd.slides.map(function(s){ return s.id + '=' + s.viz; }).join(' / ') +
-                        ' · 색상톤 ' + toneOf(state.tone).key + (passSlides().length ? ' · 패스 ' + passSlides().map(function(x){ return x.id; }).join(',') : '');
-    }
-
-    var label = btn ? btn.textContent : '';
-    if(btn){ btn.disabled = true; btn.textContent = '보관 중…'; }
-    callProxy(body)
-      .then(function(){ alert('노션 ④ 최종 산출물에 보관했습니다.'); })
-      .catch(function(err){ alert('보관하지 못했습니다 — ' + (err.message || '오류')); })
-      .then(function(){ if(btn){ btn.disabled = false; btn.textContent = label; } });
-  }
+  //  ~~saveOutput(노션 ④ 최종 산출물 보관)~~ 10-20 민부장 결정으로 삭제 — 읽는 곳이 없었고(쌓기만) 성장관리플랫폼 판이 같은 역할(④ 기존 10건은 노션에 둔다).
 
   function doSubmit(){
     if(!serverOn()){ alert('서버에 연결돼 있지 않아 제출할 수 없습니다.'); return; }
+    //  ★10-20 민부장 지시 — 성장관리플랫폼에 올라가는 파일 = **IR 피칭 자료**(통합 논리 진단을 마친 뒤의 덱 · 960×540).
+    //   덱이 열리기 전(12장표 미완·진단 전)에는 올리지 않는다 — 종전엔 IR 본문 A4 가 올라가 쪽 크기가 달랐다.
+    var g = deckGate();
+    if(!g.ok){
+      alert('성장관리플랫폼에는 IR 피칭 자료를 올립니다. 12장표를 모두 닫고(완료 또는 패스) ① 통합 논리 진단을 받은 뒤에 올릴 수 있습니다.\n\n' +
+            '아직 남은 것 — ' + g.need.join(' · '));
+      return;
+    }
     var already = state.status === '제출';
     //  2026-10-01 설계결정 1 — 이 버튼이 성장관리플랫폼에 새 판을 만드는 유일한 순간이다(자동 저장은 보내지 않는다).
-    if(!confirm('지금 원고를 성장관리플랫폼에 새 판으로 올리시겠습니까?\n\n' +
+    if(!confirm('지금 IR 피칭 자료(PDF · 16:9)를 성장관리플랫폼에 새 판으로 올리시겠습니까?\n\n' +
                 '· 올린 판은 지워지지 않고 쌓이며, 멘토·컨설턴트·평가위원이 봅니다.\n' +
                 '· 직전에 올린 원고와 같으면 새 판을 만들지 않습니다.' +
+                (g.auditStale ? '\n· 통합 논리 진단 이후 원고를 고치셨습니다 — 진단은 고치기 전 기준입니다.' : '') +
                 (already ? '' : '\n· 올린 뒤에도 계속 고치고 다시 올리실 수 있습니다.'))) return;
     state.lastLagmp = null;
-    var btn = $('btnSubmit'), lab = btn ? btn.textContent : '';
+    //  작성 화면의 버튼(btnSubmit)과 관리자 왼쪽 아래 버튼(lfLagmp)이 함께 부른다 — 누른 버튼에 진행을 적는다
+    var btn = (this && this.nodeType === 1) ? this : $('btnSubmit'), lab = btn ? btn.textContent : '';
     if(btn){ btn.disabled = true; btn.textContent = '올릴 자료 만드는 중…'; }
-    //  ★도식이 든 PDF 를 만들어 함께 보낸다(2026-08-22 민부장 지시).
-    //   서버(GAS)가 만드는 PDF 에는 도식이 없다 — 도식은 브라우저가 그리기 때문이다.
     submitPdf()
-      .then(function(pdf){ return syncToServer({ submit:true, pdf:pdf }); })
+      .then(function(pdf){
+        //  🔴 덱 PDF 를 못 만들면 올리지 않는다 — 서버 대체 PDF 는 A4 텍스트라 다른 쪽 크기의 판이 생긴다.
+        if(!pdf){
+          alert('IR 피칭 자료 PDF 를 만들지 못해 올리지 않았습니다(네트워크 차단 또는 파일이 너무 큼).\n\n' +
+                '원고는 이 브라우저에 저장돼 있습니다. 잠시 후 다시 눌러 주십시오.');
+          return { skip:true };
+        }
+        return syncToServer({ submit:true, pdf:pdf });
+      })
       .then(function(r){
         if(btn){ btn.disabled = false; btn.textContent = lab; }
+        if(r && r.skip) return;
         // ★서버가 받았을 때만 「제출했습니다」(2026-09-04). 전에는 저장 실패·저장 중 드롭에도
         //   성공 알림이 떠서, 기업은 제출됐다고 믿고 창을 닫았다.
         if(!r || !r.ok){
@@ -5396,24 +5410,22 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
                 '원고는 이 브라우저에 저장돼 있습니다. 잠시 후 [성장관리플랫폼 업데이트]를 다시 눌러 주십시오.');
           return;
         }
-        renderResultView();
+        if(state.view === 'result') renderResultView();   // 결과 화면은 반영 결과 문구를 다시 그린다 — 다른 화면은 알림만
         alert(lagmpMsg());
       });
   }
 
-  //  ── 제출과 함께 보낼 PDF ── IR 본문 + 도식(결과 화면의 [IR 본문 PDF 다운로드]와 같은 것).
-  //   🔴 실패해도 null 을 돌려준다. PDF 를 못 만들었다고 제출이 막히면 안 된다 —
-  //     그때는 서버가 만든 텍스트 PDF 가 대신 올라간다.
-  //   🔴 큰 파일은 보내지 않는다. 요청이 통째로 실패하면 제출 자체가 실패한다.
-  var SUBMIT_PDF_MAX = 8000000;                       // base64 글자 수(≈ 6MB 원본)
-  var SUBMIT_PDF_WAIT = 25000;                        // 25초
+  //  ── 제출과 함께 보낼 PDF ── IR 피칭 자료(덱 · 960×540 · [PDF 다운로드]와 같은 장 구성 · 10-20 민부장 지시).
+  //   (~10-19 = IR 본문 A4 — 쪽 크기가 달라 멘토 화면에서 다른 자료로 보였다.)
+  //   🔴 실패하면 null — 호출부(doSubmit)가 올리지 않고 알린다.
+  //   🔴 큰 파일은 보내지 않는다. 성장관리플랫폼 한도 20MB 안쪽(≈ 15MB 원본).
+  var SUBMIT_PDF_MAX = 20000000;                      // base64 글자 수(≈ 15MB 원본)
+  var SUBMIT_PDF_WAIT = 60000;                        // 60초 — 덱은 장마다 찍어 IR 본문보다 오래 걸린다
   function submitPdf(){
-    var els = [$('secIR')].filter(Boolean);
-    if(!els.length) return Promise.resolve(null);
     //  🔴 반드시 시간 제한을 건다. CDN 이 막힌 망에서는 스크립트 로드가 성공도 실패도 하지
-    //    않고 매달릴 수 있고, 그러면 **제출 버튼이 영영 안 끝난다**. 못 만들면 없는 채로 보낸다.
+    //    않고 매달릴 수 있고, 그러면 **제출 버튼이 영영 안 끝난다**.
     var raced = Promise.race([
-      exportFlowPdf(els, 'IR자료', null, { returnData:true }),
+      deckPdfData(),
       new Promise(function(res){ setTimeout(function(){ res(null); }, SUBMIT_PDF_WAIT); })
     ]);
     return raced
@@ -5421,7 +5433,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         var b64 = String(uri || '').split(',')[1] || '';
         if(!b64) return null;
         if(b64.length > SUBMIT_PDF_MAX){ console.warn('제출 PDF 가 너무 큽니다', b64.length); return null; }
-        return { b64: b64 };
+        return { b64: b64, kind: 'deck' };
       })
       .catch(function(err){ console.warn('제출 PDF', err); return null; });
   }
@@ -5720,7 +5732,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     syncPending = callProxy({ action:(opts && opts.submit) ? 'submit' : 'save',
                        id:acct.id, code:acct.code, snapshot:body, submit:!!(opts && opts.submit),
                        // ⑤ 성장관리 플랫폼에 붙일 도식 포함 PDF(제출일 때만·없으면 서버가 대신 만든다)
-                       pdfB64: (opts && opts.pdf && opts.pdf.b64) || '' })
+                       pdfB64: (opts && opts.pdf && opts.pdf.b64) || '',
+                       pdfKind: (opts && opts.pdf && opts.pdf.kind) || '' })
       .then(function(d){
         if(my !== syncSeq) return { ok:true, superseded:true };   // 더 최신 저장이 이미 끝났다 — 무시한다
         if(d.status) state.status = d.status;
