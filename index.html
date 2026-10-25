@@ -1251,6 +1251,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 .pb-oprole{font-style:normal;font-size:11.5px;color:var(--pb-text-mute);border:1px solid var(--pb-line);border-radius:10px;padding:0 6px;margin-left:4px}
 .pb-opdeck{margin:8px 0 10px;overflow:hidden;border-radius:6px}
 .pb-optxt summary{cursor:pointer;font-size:13px;color:var(--pb-text-mute);margin:6px 0}
+.pb-slside.pb-opfill{padding:0;margin-top:12px}
 /* 의견 화면 버튼 대비(10-11 민부장 「삭제 글씨가 잘 안 보인다」) — 상단 바용 .pb-hbtn.ghost(밝은 글씨)를 밝은 바탕에서 진하게 */
 .pb-opr .pb-hbtn,.pb-opprog .pb-hbtn,.pb-vhead .pb-hbtn{color:var(--pb-accent-ink);border:1px solid var(--pb-line-input);background:#fff;font-weight:600}
 .pb-opr .pb-hbtn:hover,.pb-opprog .pb-hbtn:hover,.pb-vhead .pb-hbtn:hover{background:var(--pb-accent-soft);color:var(--pb-accent-ink)}
@@ -1528,7 +1529,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
                 // 12장표(P3) — slides 가 원고의 정본 · cur 0~11 장표 / 12~ R&D 부록
                 slides:null, cur:0, tone:'', toneSet:false, tonePanel:false,
                 fill:null, fillDoc:null, second:null,
-                mentorRes:{} };   // 장표별 AI 멘토 결과(P4) — 판단이므로 로컬에만 둔다(서버 장표 JSON 엔 ran/edited 만)
+                mentorRes:{} };   // 장표별 AI 멘토 결과(P4) — 서버 장표 JSON 엔 ran/edited 만 · 결과 원문은 서버 보관 칸(aiget · 10-25)에서 되찾는다
   var llm = { conn:'byok', key:'', proxy:'', id:'', code:'',
               model:'gemini-flash-latest', reviewer:false, tipsMode:false,
               quota:null };            // 서버가 준 AI 사용 잔여 {used,limit} — 기업만 받는다
@@ -2703,12 +2704,16 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   //   10-12 이전에 채운 원고는 uncheckedNums 만 있다 — 그것은 구분 없이 「원문 대조」로 보인다.
   function fillCheckPanel(x, s){
     var r = s.from === 'fill' && state.fillDoc && state.fillDoc.result && state.fillDoc.result.slides && state.fillDoc.result.slides[x.id];
-    if(!r) return '';
+    return r ? fillCheckHtml(r) : '';
+  }
+  //  표시 본문 — 기업 화면(위)과 담당자 화면(opDetail · 10-25 · op = true)이 같은 판정을 같은 말로 보인다
+  function fillCheckHtml(r, op){
     var none = r.numsNone, pdf = r.numsPdf;
     if(!none && !pdf){ none = []; pdf = r.uncheckedNums || []; }
     if(!r.needCheck && !r.conflict && !none.length && !pdf.length) return '';
     var NM = { '멘토링종합':'성장관리 멘토링 종합', 'R&D기획':'R&D 기획보고서', '아이템분석':'아이템분석' };
-    var h = '<section><div class="hd"><h3>1차 초안 확인</h3><span>AI 0회</span></div>';
+    var h = '<section><div class="hd"><h3>1차 초안 확인</h3><span>AI 0회</span></div>' +
+            (op ? '<p class="pb-note">1차 채움으로 들어온 장표입니다. 아래는 기업 화면에도 같은 내용으로 보이는 확인 표시입니다(코드 판정).</p>' : '');
     //  10-12 자료끼리 값이 다른 항목 — AI 는 고르지 않고 [__] 로 둔다. 어느 값이 맞는지는 기업만 안다.
     if(r.conflict) h += '<p class="pb-slstale"><b>자료끼리 값이 다릅니다.</b> ' + esc(String(r.conflict).replace(/^자료\s*간\s*(불일치|차이)\s*:\s*/, '')) +
                         '<br><small>어느 값이 맞는지 확인해 [__] 자리를 채워 주십시오. 원가와 판매가처럼 서로 다른 값일 수도 있습니다.</small></p>';
@@ -2959,11 +2964,12 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       if(state.view === 'write'){ renderSlideLeft(); renderSlideRight(); renderMeta(); if($('slLine')) $('slLine').textContent = stateLine(s, slideWarns(s)); }
     };
     var who = skey(), p;
-    try{ p = callLLM(MENTOR_SYSTEM, mentorPrompt(id), 'mentor'); }
+    try{ p = callLLM(MENTOR_SYSTEM, mentorPrompt(id), 'mentor', { slot:'mentor:' + id, hash: mentorFp(s) }); }
     catch(e){ finish(); alert('AI 멘토 의견을 받지 못했습니다 — ' + (e.message || '오류')); return; }
     p.then(function(d){
         if(skey() !== who){ busy = false; state.mentorBusy = null; clearInterval(mentorTick); return; }   // 그사이 나가거나 다른 기업으로 바꿨다 — 남의 원고에 붙이지 않는다
-        state.mentorRes[id] = mentorNormalize(id, d);
+        //  패스 멘토링 결과(.pass)는 남긴다 — 전에는 멘토 의견을 받으면 같은 장표의 패스 의견이 지워졌다
+        state.mentorRes[id] = Object.assign({}, (state.mentorRes[id] || {}).pass ? { pass: state.mentorRes[id].pass } : {}, mentorNormalize(id, d));
         s.mentor = { ran:true, edited:false };
         slideChanged();
         finish();
@@ -2980,6 +2986,17 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       '- 앞으로 준비·확인할 것을 최대 3개(구체적 자료 이름으로). 없는 수치를 만들지 마라. 점수·등급을 쓰지 마라.', '',
       '# 출력 JSON', '{"limits":"…","prepare":["…"]}'].join('\n');
   }
+
+  //  패스 멘토링 응답 정리 — 받을 때와 서버 보관분을 되찾을 때(aiRecover) 같은 규칙
+  function passNormalize(d, why, at){
+    d = (d && typeof d === 'object') ? d : {};
+    var lim = String(d.limits || '').trim().slice(0, 400), prep = arr(d.prepare).map(function(p){ return String(p || '').trim().slice(0, 150); })
+               .filter(function(p){ return p && !MENTOR_JUDGE_RE.test(p); }).slice(0, 3);
+    if(MENTOR_JUDGE_RE.test(lim)) lim = '';
+    return { at:at, reason:why, limits:lim, prepare:prep };
+  }
+  //  AI 멘토·패스를 물을 때의 장표 지문(10-25) — 서버가 결과와 함께 보관하고, 되찾을 때 지금 원고와 대조한다
+  function mentorFp(s){ s = s || {}; return hashOf(normTxt([s.title, s.msg, s.body].join('|'))); }
 
   var FIELD_NAME = { title:'결론형 제목', msg:'핵심 메시지', body:'근거·내용' };
   function mentorPanel(x, s){
@@ -3175,13 +3192,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       }
       phase = 'busy'; yes.disabled = true; no.disabled = true; yes.textContent = '의견을 정리하는 중…';
       var who = skey(), why = reasonOf();
-      callLLM(MENTOR_SYSTEM, passPrompt(x.id, why), 'pass').then(function(d){
+      callLLM(MENTOR_SYSTEM, passPrompt(x.id, why), 'pass', { slot:'pass:' + x.id, hash: mentorFp(state.slides[x.id]), meta: why }).then(function(d){
         if(skey() !== who){ phase = 'ask'; return; }   // 그사이 나가거나 다른 기업으로 바꿨다 — 남의 장표에 붙이지 않는다
-        d = (d && typeof d === 'object') ? d : {};
-        var lim = String(d.limits || '').trim().slice(0, 400), prep = arr(d.prepare).map(function(p){ return String(p || '').trim().slice(0, 150); })
-                   .filter(function(p){ return p && !MENTOR_JUDGE_RE.test(p); }).slice(0, 3);
-        if(MENTOR_JUDGE_RE.test(lim)) lim = '';
-        var p = { at:new Date().toISOString(), reason:why, limits:lim, prepare:prep };
+        var p = passNormalize(d, why, new Date().toISOString());
         state.mentorRes[x.id] = Object.assign(state.mentorRes[x.id] || {}, { pass:p });
         toConfirm(passHtml(p, 'AI 패스 멘토링 · 이 장표 원고 기준'));
       }).catch(function(err){
@@ -4272,6 +4285,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
          '<div class="sp"></div>' +
          '<button class="pb-cta" id="dkPdf">PDF 다운로드</button>' +
          '<button class="pb-cta sub" style="margin-top:8px" id="dkPpt">PPT 다운로드</button>' +
+         canvaLeftHtml() +
          (canReview() ? '<div class="pb-hr"></div>' + reviewButtons().replace(/margin-left:8px;/g, '') : '') +
          '<button class="pb-cta sub" style="margin-top:8px" id="dkEdit">← 작성 화면에서 고치기</button>' +
          '<button class="pb-cta sub" style="margin-top:8px" id="dkBack">← 결과로 돌아가기</button>' +
@@ -4286,9 +4300,66 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     });
     $('dkPdf').onclick = function(){ exportDeckPdf(this); };
     $('dkPpt').onclick = function(){ exportDeckPpt(this); };
+    if($('dkCanva')) $('dkCanva').onclick = function(){ canvaMake(this); };
     bindReviewBtns();
     $('dkEdit').onclick = goWrite;
     $('dkBack').onclick = goResult;
+  }
+  // ── Canva 디자인본(10-25 · 관리자 대리만) ── 설계 01_설계정본/설계_Canva변환기_GAS_v1_20261024.md
+  //  ★민부장 10-25 — 기업에게 열기 전에 내용(라이선스 4A 이용 동의 조항)을 확인한다. 그때까지는 관리자가 기업을 연 화면에서만 보인다.
+  //   서버도 기업 계정은 막는다(CANVA_TEAM). 원고가 정본 — 디자인본은 만들 때의 원고 지문을 남긴 파생물이다.
+  var CANVA_TPL = [['purple', '보라 파스텔'], ['teal', '청록 민트']];
+  var CANVA_KIND = { gate:'12장표가 아직 닫히지 않았습니다', altviz:'권장 도식이 아닌 장표(디자인본 미지원)', overflow:'칸 글자 수 넘침', extra:'칸보다 많은 근거 줄' };
+  function canvaAdminOk(){ return !LOCAL && serverOn() && isAdmin() && !!(admin && admin.editing && admin.editing.cid); }
+  function canvaLeftHtml(){
+    if(!canvaAdminOk()) return '';
+    return '<div class="pb-hr"></div><p class="fine"><b>Canva 디자인본 · 관리자 시험</b> — 기업 화면에는 아직 보이지 않습니다. 권장 도식만 지원하고, 패스한 장표는 뺍니다(하루 3회).</p>' +
+           '<select id="dkCanvaTpl" aria-label="Canva 템플릿" style="width:100%;margin-top:6px;padding:8px;border-radius:8px;border:1px solid var(--pb-line)">' +
+           CANVA_TPL.map(function(t){ return '<option value="' + t[0] + '">' + esc(t[1]) + '</option>'; }).join('') + '</select>' +
+           '<button class="pb-cta sub" style="margin-top:8px" id="dkCanva">Canva 디자인본 만들기 (PPTX)</button>';
+  }
+  function canvaProblemText(ps){
+    return ps.map(function(p){
+      var at = p.slide ? p.slide + ' ' : '';
+      if(p.kind === 'gate') return '· ' + CANVA_KIND.gate + ' — ' + (p.slides || []).join(', ');
+      if(p.kind === 'altviz') return '· ' + at + CANVA_KIND.altviz + ' (지금 ' + p.viz + ' · 권장 ' + p.want + ')';
+      if(p.kind === 'overflow') return '· ' + at + CANVA_KIND.overflow + ' (' + p.len + '/' + p.max + '자)';
+      return '· ' + at + CANVA_KIND.extra + ' (' + p.lines + '줄 · 칸 ' + p.fits + '줄)';
+    }).join('\n');
+  }
+  function canvaMake(btn){
+    if(!canvaAdminOk() || busy) return;
+    var tpl = ($('dkCanvaTpl') || {}).value || 'purple', cid = admin.editing.cid, label = btn.textContent;
+    var who0 = skey(), base = { cid:cid, tpl:tpl, snapshot: snapshot() };
+    var done = function(){ busy = false; btn.disabled = false; btn.textContent = label; };
+    busy = true; btn.disabled = true; btn.textContent = '점검 중…';
+    apiGet('canvacheck', base).then(function(c){
+      if(!c || !c.ok) throw new Error((c && c.error) || '점검하지 못했습니다.');
+      var ps = c.problems || [], hard = ps.filter(function(p){ return p.kind === 'gate' || p.kind === 'altviz'; });
+      if(hard.length){ alert('디자인본을 만들 수 없습니다.\n\n' + canvaProblemText(hard) + '\n\n권장 도식으로 바꾸거나 기존 PPT 다운로드를 쓰십시오.'); return null; }
+      var force = false;
+      if(ps.length){
+        if(!confirm('디자인본에서 겹치거나 빠질 수 있는 곳이 있습니다.\n\n' + canvaProblemText(ps) + '\n\n그대로 만들까요? (취소 = 원고를 먼저 고친다)')) return null;
+        force = true;
+      }
+      if(!c.same && !confirm('Canva 디자인본을 만듭니다(오늘 남은 횟수 ' + c.left + '회 · 30초~1분).')) return null;
+      btn.textContent = '만드는 중…(1분 안팎)';
+      return apiGet('canvamake', Object.assign({ force:force }, base));
+    }).then(function(r){
+      if(r == null) return;
+      if(skey() !== who0) return;                           // 그사이 다른 기업으로 바꿨다
+      if(!r.ok) throw new Error(r.error + (r.problems ? '\n\n' + canvaProblemText(r.problems) : ''));
+      var bin = atob(r.pptxB64 || ''), u8 = new Uint8Array(bin.length);
+      for(var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      var url = URL.createObjectURL(new Blob([u8], { type:'application/vnd.openxmlformats-officedocument.presentationml.presentation' }));
+      var a = document.createElement('a');
+      a.href = url; a.download = 'IR_' + cid + '_' + (state.formData.companyName || '') + '_Canva_' + tpl + '.pptx';
+      document.body.appendChild(a); a.click(); a.parentNode.removeChild(a);
+      setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(e){} }, 1000);
+      alert((r.same ? '원고가 바뀌지 않아 지난 디자인본을 그대로 내려받습니다.' : '디자인본을 만들었습니다.') + ' 오늘 남은 횟수 ' + r.left + '회.' +
+            (r.last && r.last.editUrl ? '\n(Canva 원본은 지주회사 계정 폴더 PB_' + cid + ' 에 있습니다.)' : ''));
+    }).catch(function(err){ alert('디자인본을 만들지 못했습니다 — ' + (err.message || '오류')); })
+      .then(done, done);
   }
   function renderDeckCenter(){
     var list = deckList(), total = list.length;
@@ -5178,7 +5249,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         state.stepIndex = 0;
         render();
         window.scrollTo(0, 0);
-        if(cid) loadReview(cid);
+        if(cid){ loadReview(cid); aiRecover(); }
       })
       .catch(function(err){
         admin.editing = null;
@@ -5245,7 +5316,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     if(slideCounts().closed !== 12){ alert('12장표가 모두 완료 또는 패스가 되어야 통합 논리 진단을 받을 수 있습니다.'); return; }
     var btn = $('btnAudit');
     busy = true; btn.disabled = true; btn.textContent = '진단 중…';
-    callLLM(SYSTEM, axisPrompt(), 'axis')
+    callLLM(SYSTEM, axisPrompt(), 'axis', { slot:'axis', hash: irHash() })
       .then(function(d){
         state.lastAudit = axisNormalize(d);        // 코드가 검증한 것만 남는다
         state.lastAudit.kind = 'axis';
@@ -5598,12 +5669,18 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
   //  kind = 무엇을 부르는지(관리자 사용량 화면이 기능별로 센다·2026-08-22).
   //   ★서버는 action=llm 만 보므로 화면이 알려 주지 않으면 구분이 되지 않는다.
-  function callLLM(system, user, kind){
+  //  keep = { slot, hash, meta } — 서버가 성공한 결과를 그 칸에 보관한다(10-25 · aiRecover 가 되찾는다)
+  function callLLM(system, user, kind, keep){
     if(LOCAL) return Promise.reject(new Error('로컬 검수 모드입니다 — AI를 부르지 않습니다.'));
     if(llm.conn === 'proxy'){
-      return callProxy({ action:'llm', id:llm.id, code:llm.code,
-                         system:system, user:user, reviewer: !!llm.reviewer,
-                         kind: kind || 'etc' })
+      var pl = { action:'llm', id:llm.id, code:llm.code,
+                 system:system, user:user, reviewer: !!llm.reviewer,
+                 kind: kind || 'etc' };
+      if(keep && keep.slot){
+        pl.slot = keep.slot; pl.hash = keep.hash || ''; pl.meta = keep.meta || '';
+        if(typeof admin !== 'undefined' && admin && admin.editing && admin.editing.cid) pl.cid = admin.editing.cid;   // 관리자 대리 = 그 기업 칸
+      }
+      return callProxy(pl)
              .then(function(d){ llmBump(); quotaTake(d); return parseJSON(d.text); });
     }
     var url = GEMINI_BASE + encodeURIComponent(llm.model) +
@@ -5665,6 +5742,55 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       if(!localHas){ applySnapshot(d.snapshot, true); state.serverDraft = null; writeLocal(); if(state.view === 'write') render(); return; }
       state.serverDraft = (hashOf(normTxt(JSON.stringify(fd))) === hashOf(normTxt(JSON.stringify(state.formData)))) ? null : d.snapshot;
       if(state.view === 'write') render();
+    }).catch(function(){});
+  }
+
+  //  ★10-25 AI 결과 되찾기(동결 보류 ②⑤) — 서버가 성공한 AI 결과(장표별 멘토·패스·통합 진단)를 칸별로 보관한다(aiget).
+  //   ② 응답 전에 창을 닫아 1회만 깎이고 결과를 못 본 경우 ⑤ 다른 PC·관리자 대리 열람 — 다시 열면 그 결과를 붙인다.
+  //   · 이 브라우저에 이미 있는 결과는 덮지 않는다(통합 진단은 지금 원고 그대로인 것이 있을 때).
+  //   · 원고와 맞을 때만 붙인다 — 멘토는 물을 때 지문이 지금과 같거나 서버 장표에 「받음」이 남은 경우,
+  //     패스는 지문이 같거나 패스한 장표, 통합 진단은 지금 원고 지문(irHash)과 같을 때만. 초기화된 원고에 옛 의견이 붙지 않게.
+  function aiApply(slots){
+    var n = { mentor:0, pass:0, axis:false };
+    SL.forEach(function(x){
+      var s = state.slides && state.slides[x.id]; if(!s) return;
+      var have = state.mentorRes[x.id] || {}, fp = mentorFp(s), m = slots['mentor:' + x.id], p = slots['pass:' + x.id], d;
+      var ran = !!(s.mentor && s.mentor.ran);
+      if(m && !Array.isArray(have.opinions) && slideHas(s) && (m.hash === fp || ran)){
+        try{ d = parseJSON(m.text); }catch(e){ d = null; }
+        if(d){
+          state.mentorRes[x.id] = Object.assign({}, have.pass ? { pass: have.pass } : {}, mentorNormalize(x.id, d));
+          if(!ran) s.mentor = { ran:true, edited: m.hash !== fp };
+          n.mentor++;
+        }
+      }
+      have = state.mentorRes[x.id] || {};
+      if(p && !have.pass && (p.hash === fp || s.status === 'pass')){
+        try{ d = parseJSON(p.text); }catch(e){ d = null; }
+        if(d){ state.mentorRes[x.id] = Object.assign(have, { pass: passNormalize(d, String(p.meta || ''), String(p.at || '')) }); n.pass++; }
+      }
+    });
+    var a = slots.axis, cur = irHash();
+    var localFresh = state.lastAudit && state.lastAudit.kind === 'axis' && state.lastAudit.v === 2 && state.auditHash && !irStale(state.auditHash);
+    if(a && a.hash && a.hash === cur && !localFresh){
+      try{ d = parseJSON(a.text); }catch(e){ d = null; }
+      if(d){ state.lastAudit = axisNormalize(d); state.lastAudit.kind = 'axis'; state.auditHash = cur; n.axis = true; }
+    }
+    return n;
+  }
+  function aiRecover(){
+    if(LOCAL || !serverOn() || llm.conn !== 'proxy') return Promise.resolve();
+    var ed = (typeof admin !== 'undefined' && admin) ? admin.editing : null;
+    if(ed && !ed.cid) return Promise.resolve();               // 접수번호 없는 대리 편집 — 보관 칸이 없다
+    if(!ed && isAdmin()) return Promise.resolve();            // 대리 편집 밖의 관리자 — 자기 칸이 없다
+    var who0 = skey();
+    return apiGet('aiget', ed ? { cid: ed.cid } : {}).then(function(d){
+      if(!d || !d.ok || skey() !== who0) return;               // 그사이 나가거나 다른 기업으로 바꿨다
+      var n = aiApply(d.slots || {});
+      if(!n.mentor && !n.pass && !n.axis) return;
+      writeLocal();
+      if(n.axis){ syncToServer(); syncGateUI(); }             // 진단을 노션 ①「통합진단」에도 남긴다(다른 PC 덱 관문)
+      render();
     }).catch(function(){});
   }
 
@@ -5948,7 +6074,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       openApp(d.company || '');
       // ★openApp 의 loadLocal 이 원고를 비우므로 회사명은 그 뒤에 넣는다(위 줄만으로는 새 PC 에서 빈 채였다 · P3)
       if(d.company && !state.formData.companyName){ state.formData.companyName = d.company; if(state.view === 'write') render(); }
-      pullStatus(); pullBrain(); pullServerDraft(); pullOpinions();   // 사람 의견(ⅩⅣ-D · 기업만)
+      pullStatus(); pullBrain(); pullServerDraft().then(aiRecover); pullOpinions();   // 사람 의견(ⅩⅣ-D · 기업만) · 보관한 AI 결과(10-25 · 원고를 받은 뒤)
     }).catch(function(){
       e.textContent = '서버에 연결하지 못했습니다. 주소와 네트워크를 확인하십시오.';
       e.classList.remove('hidden');
@@ -6189,6 +6315,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     //  10-11 민부장 — 텍스트만이 아니라 도식이 있는 최종 IR 장표(PPT 모양)를 보인다. 원고 글은 아래 접힌 칸에.
     h += '<section class="pb-vsl"><h3>' + esc(d.id + ' ' + d.name) + '</h3>' + (o.snap ? opDeckSlide(sn, o.cur) : '') +
          (txt ? '<details class="pb-optxt"><summary>원고 글 보기(근거 전문 · 발표 시나리오)</summary>' + txt + '</details>' : (o.snap ? '' : '<p class="pb-vempty">아직 쓰지 않았습니다.</p>')) + '</section>';
+    //  10-25(동결 보류 ③) 1차 채움으로 들어온 장표면 기업 화면과 같은 「1차 초안 확인」을 보인다 — 서버가 평가위원에게는 싣지 않는다
+    var fc = s && s.from === 'fill' && sn.fillCheck && sn.fillCheck.slides && sn.fillCheck.slides[o.cur];
+    var fh = fc ? fillCheckHtml(fc, true) : '';
+    if(fh) h += '<div class="pb-slside pb-opfill">' + fh + '</div>';
     if(!o.canWrite) return h;
     var sent = o.rows.filter(function(r){ return r.unit === o.cur && r.status !== '작성중'; })
                      .sort(function(a, b){ return String(a.sentAt).localeCompare(String(b.sentAt)); });
