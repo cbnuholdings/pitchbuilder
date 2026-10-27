@@ -2429,7 +2429,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
         ? '<div class="m"' + (quotaLeft() === 0
             ? ' style="background:var(--pb-warn-bg);border-color:var(--pb-warn-line);color:var(--pb-warn-deep)"' : '') +
           '>AI 사용<b' + (quotaLeft() === 0 ? ' style="color:var(--pb-warn-deep)"' : '') + '>' +
-          llm.quota.used + ' / ' + llm.quota.limit + '회</b></div>' + quotaReqHtml()
+          llm.quota.used + ' / ' + llm.quota.limit + '회</b></div>'
         : '') +
       '<div class="sp"></div>' +
       '<div class="note">자동저장 켜짐 · ' + (sl ? '장표 이동마다' : '단계 이동마다') + '</div>' + (sl ? tonePanelHtml() : '');
@@ -2441,7 +2441,6 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     Array.prototype.forEach.call($('pbMeta').querySelectorAll('.pb-v2d .pb-cov'), function(b){ b.onclick = function(){ setDesign(b.dataset.cov, designShape()); }; });
     Array.prototype.forEach.call($('pbMeta').querySelectorAll('.pb-v2shape button'), function(b){ b.onclick = function(){ setDesign(designCover(), b.dataset.shape); }; });
     if($('slAudit')) $('slAudit').onclick = function(){ if(slideCounts().closed === 12){ syncToServer(); goResult(); } };
-    if($('mtQuotaReq')) $('mtQuotaReq').onclick = quotaRequest;
   }
 
   // 오늘 이 계정이 부른 LLM 횟수 — 안내용(강제는 서버 DAILY_LIMIT가 한다)
@@ -2454,29 +2453,13 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   //  🔴 세는 주체는 서버다. 브라우저가 세면 다른 PC에서 쓴 것이 빠지고 localStorage 를
   //     지우면 0으로 보인다. 화면은 서버가 준 값을 **받아 적기만** 한다.
   function quotaTake(d){
+    if(d && d.lagmpUp && typeof d.lagmpUp.limit === 'number') llm.lagmpUp = { used: +d.lagmpUp.used || 0, limit: +d.lagmpUp.limit };   // 10-28 성장관리 업로드(기업 3회)
     if(d && d.quota && typeof d.quota.limit === 'number' && d.quota.limit > 0){
       llm.quota = { used: +d.quota.used || 0, limit: +d.quota.limit };
-      if('req' in d.quota){ llm.quotaReq = d.quota.req || null; llm.quotaReqLeft = +d.quota.reqLeft || 5; }   // ping 만 싣는다 — AI 응답은 건드리지 않는다
       try{ renderMeta(); }catch(e){}
     }
   }
-  //  AI 횟수 추가 요청(10-10 민부장) — 남은 횟수가 5회 이하일 때 한 번. 관리자가 승인하면 쓴 횟수가 0 으로(25 + 25 = 50)
-  function quotaReqHtml(){
-    if(!llm.quota || isAdmin()) return '';
-    var r = llm.quotaReq;
-    if(r && r.done) return '<div class="m">AI 추가<b>승인됨</b></div>';
-    if(r) return '<div class="m">AI 추가<b>승인 대기</b></div>';
-    if(quotaLeft() > (llm.quotaReqLeft || 5)) return '';
-    return '<button class="m pb-mreq" id="mtQuotaReq" title="관리자 승인 뒤 AI 사용 횟수가 처음부터 다시 셉니다(한 번만)">AI 횟수 추가 요청<b>1회 가능</b></button>';
-  }
-  function quotaRequest(){
-    var note = prompt('AI 사용 횟수 추가를 요청합니다(한 번만 가능).\n관리자가 승인하면 횟수가 처음부터 다시 셉니다.\n\n요청 이유를 적어 주십시오(선택).', '');
-    if(note === null) return;
-    apiGet('quotareq', { note:note }).then(function(d){
-      if(d && d.ok){ llm.quotaReq = d.quotaReq; renderMeta(); alert('요청을 보냈습니다. 관리자가 승인하면 AI 사용 횟수가 다시 채워집니다.'); }
-      else alert((d && d.error) || '요청하지 못했습니다.');
-    }).catch(function(err){ alert('요청하지 못했습니다 — ' + (err.message || '오류')); });
-  }
+  //  AI 횟수 추가 요청(10-10) — 10-28 폐지(민부장 「접수번호당 무조건 총 30회」) · 서버도 quotareq·quotaapprove 를 거절한다
   function quotaLeft(){ return llm.quota ? Math.max(0, llm.quota.limit - llm.quota.used) : null; }
   //  자리마다 다르게 적으면 기업이 서로 다른 숫자로 읽는다 — 문장은 하나로 둔다.
   function quotaText(){
@@ -2732,8 +2715,22 @@ VIZ_EX.K01 = VIZ_EX.K01 || { ex: ["52.8% · 재구매율(6개월)","5.3배 · �
       return a + txt.replace(/\[([^\]]*)\]/g, function(__, x){ return '<span class="ph">' + (/^_+$/.test(x) ? '&#8203;' : x) + '</span>'; });
     });
   }
+  //  10-28 민부장 결정 ② — 덱(PDF·PPT·성장관리 업로드)에서는 기업이 쓰지 않은 예시 칸(기울임 · 견본 문구)을 비운다.
+  //   종전엔 「누락 [__]건 감소」 같은 견본이 기업 원고처럼 실렸다. 작성 화면 미리보기는 안내용 예시를 그대로 둔다.
+  function blankEx(ds){
+    var o = {}, k;
+    for(k in ds) o[k] = ds[k];
+    Object.keys(ds).forEach(function(key){ var m = /^s(\d+)$/.exec(key); if(m && ds['f' + m[1]] === 'italic') o[key] = ''; });
+    if(ds.rows) o.rows = ds.rows.map(function(r){
+      if(r.f !== 'italic') return r;
+      var x = {}; for(var j in r) x[j] = r[j];
+      x.c0 = x.c1 = x.c2 = x.c3 = '';
+      return x;
+    });
+    return o;
+  }
   function vizHtmlV2(s, o){
-    var d = root.vizData(s), ds = vizV2Prep(s.viz, d.ds), T = root.VIZ_V2;
+    var d = root.vizData(s), ds = vizV2Prep(s.viz, o && o.deck ? blankEx(d.ds) : d.ds), T = root.VIZ_V2;
     var d3 = o && o.d3 && (root.VIZ_V2_D3 || []).indexOf(s.viz) >= 0;
     return '<div class="vz' + (o && o.prompt ? ' sz-prompt' : '') + (d3 ? ' d3m' : '') + '" data-viz="' + s.viz + '">' + phV2(root.vizFill(T[s.viz] || T.D01, { ds: ds })) + '</div>';
   }
@@ -3015,11 +3012,14 @@ var V2_ALL = true;   // 10-28 민부장 「전환」 — 기업 전체 v2(되돌
 var V2_QS = (function(){ try { return /[?&]v2=1(&|$)/.test(location.search); } catch(e){ return false; } })();
 function v2On(){ return V2_ALL || V2_QS; }
 //  검수용 손잡이 — ?v2=1 일 때만(시험·관리자 점검이 엔진을 직접 부른다)
-if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = function(){ var L = deckList(); return L.map(function(it, i){ return deckSlideHtml(it, i + 1, L.length); }); }; } catch(e){}
+if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.fitVizText = fitVizText; V2NS.fitV2Viz = fitV2Viz; V2NS.deckHtml = function(){ var L = deckList(); return L.map(function(it, i){ return deckSlideHtml(it, i + 1, L.length); }); }; } catch(e){}
   /* V2RT:END */
   //  카탈로그 v1 도식(N01~N37)을 도식 목록에 붙인다 — 이름·쓰임은 build_viz.js 가 카탈로그 원본에서 옮긴 VIZ_CAT
   VIZ_CAT.forEach(function(c){ if(!dgOf(c.code)) DG.push(c); });
   function vizCut(t, n){ return t.length > n ? t.slice(0, n - 1) + '…' : t; }
+  //  🔴 10-28 팀215 「텍스트가 중간에 잘리고 …… 로 나온다」 — 1차 채움 근거 줄(35~45자)을 칸 상한(20~44자)이 잘랐다.
+  //   민부장 결정 ① 잘라내지 말고 줄바꿈 — 칸 상한은 안전 상한만 두고, 넘치면 글자를 줄인다(fitVizText · v2 도 함께)
+  var VIZ_CELL_MAX = 90, VIZ_CELL_TBL = 40;
   function vizLines(body){
     return String(body || '').split('\n').map(function(l){ return l.trim().replace(/^[·•*\-]\s*/, ''); }).filter(function(l){ return l; });
   }
@@ -3038,7 +3038,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
     var lines = vizLines(s.body), sp = VIZ_EX[s.viz] || VIZ_EX.D01, ds = {}, mm = { state:'fixed' };
     if(sp.table){
       ds.rows = sp.ex.map(function(row, i){
-        var parts = lines[i] ? lines[i].split('/').map(function(p){ return vizCut(p.trim(), 22); }) : null;
+        var parts = lines[i] ? lines[i].split('/').map(function(p){ return vizCut(p.trim(), VIZ_CELL_TBL); }) : null;
         var c = parts ? [0, 1, 2, 3].map(function(j){ return parts[j] || '—'; }) : row;
         var gap = /채용|공백/.test(c[1] + c[2]);
         return { c0:c[0], c1:c[1], c2:c[2], c3:c[3], f: parts ? 'normal' : 'italic',
@@ -3046,7 +3046,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
                  shadow: gap ? 'none' : '0 4px 10px rgba(31,38,55,.10), 0 1px 3px rgba(31,38,55,.07)', bar: gap ? '#C9A24A' : '#9AA4B5' };
       });
     } else {
-      sp.ex.forEach(function(e, i){ ds['s' + i] = lines[i] ? vizCut(lines[i], sp.cut || 44) : e; ds['f' + i] = lines[i] ? 'normal' : 'italic'; });
+      sp.ex.forEach(function(e, i){ ds['s' + i] = lines[i] ? vizCut(lines[i], VIZ_CELL_MAX) : e; ds['f' + i] = lines[i] ? 'normal' : 'italic'; });
     }
     ds.h0 = '64px'; ds.h1 = '98px'; ds.h2 = '132px'; ds.h3 = '166px';
     ['100%', '86%', '72%', '58%', '44%'].forEach(function(w, i){ ds['w' + i] = w; });
@@ -3505,7 +3505,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
            '<div class="pb-viz-ft"><span id="slVizCnt">채워진 칸 ' + vizData(s).filled + ' / ' + vizData(s).total + '</span>' +
              '<span>칸 순서: ' + esc(g.order) + ' — 근거·내용의 한 줄이 한 칸입니다.</span><span><i>기울임</i> = 아직 입력하지 않은 예시</span>' +
              //  칸당 글자 상한(10-27) — 넘는 글자는 「…」로 줄고, 긴 글자는 도형에 맞춰 작아진다
-             '<span>한 칸 ' + ((VIZ_EX[s.viz] || {}).cut || 44) + '자까지 그림에 실립니다 · 길면 글자가 작아집니다</span>' +
+             '<span>한 칸은 줄을 바꿔 다 싣습니다 · 길면 글자가 작아집니다(짧을수록 읽기 좋습니다)</span>' +
              '<span><em class="pb-viz-lb">예측</em> <em class="pb-viz-lb">목표</em> = 도식 수치 라벨(실적 라벨은 붙이지 않음)</span></div>' +
            '<figcaption>' + esc(g.cap) + '</figcaption>' +
            '<div class="two"><div><b>필요 입력</b><span>' + esc(g.inputs) + '</span></div><div class="w"><b>주의</b><span>' + esc(g.warn) + '</span></div></div>' +
@@ -3875,7 +3875,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
     if(busy){ alert('다른 작업(AI·불러오기)이 진행 중입니다. 끝난 뒤 다시 눌러 주십시오.'); return; }
     var s = state.slides[id];
     if(!(s.title + s.msg + s.body).trim()){ alert('먼저 이 장표를 써 주십시오. 빈 장표에는 멘토 의견을 드리지 않습니다.'); return; }
-    if(llm.quota && quotaLeft() === 0){ alert('AI 사용 횟수를 모두 쓰셨습니다.' + (llm.quotaReq ? (llm.quotaReq.done ? ' 추가 횟수도 모두 쓰셨습니다.' : ' 추가 요청이 승인되면 다시 쓰실 수 있습니다.') : ' 상단 [AI 횟수 추가 요청]으로 한 번 더 받으실 수 있습니다.')); return; }
+    if(llm.quota && quotaLeft() === 0){ alert('AI 사용 횟수(기업당 총 ' + llm.quota.limit + '회)를 모두 쓰셨습니다. 추가 횟수는 없습니다.'); return; }
     busy = true;
     state.mentorBusy = { id:id, t0:Date.now() };
     if(state.view === 'write') renderSlideRight();
@@ -4249,7 +4249,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
     if(it.kind === 'slide'){
       var sx = deckSlideOf(it), g = v2Group(it.x.id), pr = vizData(sx).prop ? '<span class="ir2-prop">실측 비율</span>' : '';
       return box('slide', F({ no: g.no, section: g.name, sub: it.sub >= 0 ? '세부' : '', subNo: it.sub + 1, line1: sx.msg.trim(), line2: sx.title.trim() || '[결론형 제목 미작성]',
-        body: pr + V2NS.vizHtmlV2(sx, { d3: designShape() === '입체' }), company: co, page: pg, ir: it.x.id + ' · ' + it.x.name }), deckItemId(it));
+        body: pr + V2NS.vizHtmlV2(sx, { d3: designShape() === '입체', deck: true }), company: co, page: pg, ir: it.x.id + ' · ' + it.x.name }), deckItemId(it));
     }
     if(it.kind === 'rnd'){
       var rl = [];
@@ -4265,7 +4265,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
     if(!v2On()) return vizHtml(s, toneOf(state.tone));
     return '<div class="pb-v2pv"><div class="pb-v2pvin" style="' + v2VarStyle() + '">' + V2NS.vizHtmlV2(s, { d3: designShape() === '입체' }) + '</div></div>';
   }
-  function fitV2Preview(){ Array.prototype.forEach.call(document.querySelectorAll('.pb-v2pv'), function(b){ if(b.clientWidth && b.firstChild) b.firstChild.style.setProperty('--pk', (b.clientWidth / 1760).toFixed(4)); }); }
+  function fitV2Preview(){ Array.prototype.forEach.call(document.querySelectorAll('.pb-v2pv'), function(b){ if(b.clientWidth && b.firstChild){ b.firstChild.style.setProperty('--pk', (b.clientWidth / 1760).toFixed(4)); fitVizText(b.querySelector('.vz'), 14); } }); }
   //  PPT v2 — 장표 틀을 도형·글상자로(ppt_v2 · 6단계) + 테마 색표·schemeClr 후처리 · 발표자 노트는 v1 과 같다
   function exportDeckPptV2(btn){
     var list = deckList(), els = document.querySelectorAll('#pbCenter .pb-slide');
@@ -4287,7 +4287,6 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
           cl.style.transform = 'none'; cl.style.position = 'relative'; cl.style.left = '0'; cl.style.top = '0';
           stage.innerHTML = ''; stage.appendChild(cl);
           return V2NS.irPptSlide(pptx, cl, 'Malgun Gothic').then(function(sl){
-            if(cl.querySelector('.s-draft')) sl.addText('초안 — 검토 전', { x: 7.6, y: 0.08, w: 2.3, h: 0.3, fontFace: 'Malgun Gothic', fontSize: 9, bold: true, color: 'B3261E', align: 'right' });
             sl.addNotes(pptNotes(it));
           });
         });
@@ -4864,6 +4863,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
   //  슬라이드 요소들 → 960×540 쪽 PDF(jsPDF). stage = 화면 밖 960px 무대. [PDF 다운로드]와 성장관리플랫폼 업데이트가 함께 쓴다.
   //  🔴 10-28 팀215 시험 — 입체 도식(덧면 .x3) 17종이 있으면 PDF 가 통째로 실패했다(성장관리 업로드도 같은 길).
   //   html2canvas 1.4.1 이 color-mix 결과(color(srgb …))를 못 읽는다 → 찍기 직전 덧면 색을 rgb 로 계산해 변수에 넣는다(viz_v2.css 가 먼저 쓴다).
+  function noDraft(root){ Array.prototype.forEach.call(root.querySelectorAll('.s-draft'), function(e){ e.remove(); }); }
   function bakeX3(root){
     var rgb = function(v){
       v = String(v || '').trim();
@@ -4890,6 +4890,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
         flattenFields(cl);
         stage.innerHTML = ''; stage.appendChild(cl);
         bakeX3(cl);
+        noDraft(cl);   // 10-28 민부장 — 내보내는 파일(PDF·성장관리 업로드)에는 「초안 — 검토 전」을 싣지 않는다(덱 화면에만)
         return window.html2canvas(cl,{ scale:2, backgroundColor:'#ffffff', useCORS:true, logging:false, width:960, height:540 })
           .then(function(cv){
             if(i > 0) pdf.addPage([960, 540], 'landscape');
@@ -4910,6 +4911,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
     host.innerHTML = list.map(function(it, i){ return '<div class="pb-slidebox">' + deckSlideHtml(it, i + 1, total) + '</div>'; }).join('');
     document.body.appendChild(host); document.body.appendChild(stage);
     Array.prototype.forEach.call(host.querySelectorAll('.s-viz'), fitViz);
+    Array.prototype.forEach.call(host.querySelectorAll('.pb-v2s .ir2-body .vz'), fitV2Viz);   // 성장관리 업로드 PDF 도 화면 덱과 같게(10-28)
     var slides = Array.prototype.filter.call(host.querySelectorAll('.pb-slide'), function(s){ return !s.classList.contains('is-empty'); });
     document.body.classList.add('pb-pdfing');
     var done = function(){ host.remove(); stage.remove(); document.body.classList.remove('pb-pdfing'); };
@@ -5268,6 +5270,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
              : '작성 중인 원고는 자동 저장만 되고 성장관리플랫폼에는 올라가지 않습니다. 완성되면 아래 버튼으로 올려 주십시오.') +
            '</p>' +
            '<button class="pb-cta" style="margin-top:14px;width:auto;padding:11px 22px" id="btnSubmit">성장관리플랫폼 업데이트</button>' +
+           '<p class="pb-note" style="margin-top:10px"><b>' + esc(lagmpUpText()) + '</b> — 기업당 최대 3회 올릴 수 있습니다(관리자 승인 없이 바로 반영). 같은 날 다시 올리면 파일 이름에 V2·V3 가 붙습니다. 원고를 충분히 다듬은 뒤 올려 주십시오.</p>' +
            '<p class="pb-note" style="margin-top:10px">올리시면 성장관리플랫폼 <b>[② 고도화]</b>에 <b>IR 피칭 자료</b>(PDF · 16:9 · [PDF 다운로드]와 같은 것)가 IR 새 판(V번호)으로 쌓입니다. 12장표를 모두 닫고 ① 통합 논리 진단을 받은 뒤에 올릴 수 있습니다. 올린 판은 지워지지 않습니다.</p>' +
            (state.lastLagmp
              ? '<p class="pb-note" style="margin-top:6px' + (state.lastLagmp.ok ? '' : ';color:var(--pb-warn-deep)') + '">' + esc(lagmpMsg()) + '</p>'
@@ -5434,6 +5437,19 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
       bx.style.height = Math.round(540 * k) + 'px';
     });
     Array.prototype.forEach.call(document.querySelectorAll('#pbCenter .s-viz'), fitViz);
+    Array.prototype.forEach.call(document.querySelectorAll('#pbCenter .pb-v2s .ir2-body .vz'), fitV2Viz);
+  }
+  //  v2 도식 맞춤(10-28 · 잘라내지 않고 줄바꿈) — 칸 글자를 도형에 맞추고(최소 14px = 덱 약 7px), 그래도 본문 칸을 넘으면 도식 전체를 줄인다
+  //   (막대 3종 N17·N18·N24 가 긴 이름표로 14px 넘쳤다 · 브라우저 실측). 배치 정보가 없으면(jsdom) 아무것도 바꾸지 않는다.
+  function fitV2Viz(vz){
+    if(!vz) return;
+    vz.style.transform = '';
+    fitVizText(vz, 14);
+    var bd = vz.closest('.ir2-body'); if(!bd) return;
+    var B = bd.getBoundingClientRect(), R = vz.getBoundingClientRect();
+    if(!B.height || !R.height || R.bottom <= B.bottom + 1) return;
+    var z = Math.max(0.6, (B.bottom - R.top) / R.height);
+    vz.style.transformOrigin = '50% 0'; vz.style.transform = 'scale(' + z.toFixed(3) + ')';
   }
   //  도식 글자 맞춤(10-27 민부장 「기업마다 글자 수가 달라 글자가 도식 밖으로 나온다」)
   //   글자를 담은 도형(바탕·테두리·clip-path 가 있는 가장 가까운 상자)보다 글자가 크면 0.5px 씩 줄인다(최소 8.5px).
@@ -5462,16 +5478,18 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
     if(getComputedStyle(el).overflow !== 'visible') o = Math.max(o, el.scrollWidth - el.clientWidth, el.scrollHeight - el.clientHeight);   // 높이를 고정한 상자(D11 B 상쇄 등)
     return o;
   }
-  function fitVizText(root){
+  //  minPx = 더 줄이지 않는 글자 크기(v1 덱 8.5 · v2 는 1920 틀이라 14 = 덱에서 약 7) · 10-28 줄바꿈 전환으로 줄일 폭이 커져 반복 상한 16 → 60
+  function fitVizText(root, minPx){
     if(!root || !root.querySelectorAll) return;
+    var lo = minPx || 8.5;
     Array.prototype.forEach.call(root.querySelectorAll('*'), function(el){
       if(el.tagName === 'svg' || el.closest('svg')) return;
       var own = Array.prototype.some.call(el.childNodes, function(c){ return c.nodeType === 3 && c.nodeValue.trim(); });
       if(!own) return;
       var sh = vizShapeOf(el, root); if(!sh) return;
-      for(var k = 0; k < 16 && vizSpill(el, sh) > 1; k++){
+      for(var k = 0; k < 60 && vizSpill(el, sh) > 1; k++){
         var fs = parseFloat(getComputedStyle(el).fontSize);
-        if(!fs || fs <= 8.5) break;
+        if(!fs || fs <= lo) break;
         el.style.fontSize = (fs - 0.5) + 'px'; el.style.lineHeight = '1.2';
       }
     });
@@ -5748,7 +5766,6 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
             txt('.s-sub', { fontSize: cover ? 13 : 11, color: cover ? 'EDF1FE' : '667087', fit:'shrink' });
             txt('.s-note span', { fontSize:8, color: cover ? 'EDF1FE' : '667087' });
             txt('.s-note em', { fontSize:8, color:'9AA4B5', align:'right' });
-            txt('.s-draft', { fontSize:8, bold:true, color:'B3261E' });
             var lst = cl.querySelector('.s-list');
             if(lst) sl.addText(Array.prototype.map.call(lst.querySelectorAll('li'), function(li){ return { text: li.textContent, options:{ bullet:true, breakLine:true } }; }),
                                { x:PX(lst.offsetLeft), y:PX(lst.offsetTop), w:PX(lst.offsetWidth || 848), h:PX(Math.max(lst.offsetHeight, 200)),
@@ -6102,7 +6119,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
            ? '명단 = <b>성장관리 플랫폼 등재 기업</b>(INNO 선정·조건부선정 · 제외 아님). 이 명단에 없는 기업은 피치빌더에 로그인할 수 없습니다.'
            : '<b style="color:var(--pb-warn-deep)">성장관리 플랫폼 명단을 받지 못해 이전 명부로 보여 드립니다.</b> 잠시 뒤 다시 불러오십시오.') +
          (c.off ? ' · 명단 밖(탈락 등) ' + c.off + '곳은 맨 아래 흐리게' : '') + '</p>';
-    h += '<p class="pb-note">전체 ' + (c.total || 0) + '곳 · 1차 채움 실행 ' + (c.filled || 0) + '곳 · <b>리셋 요청 대기 ' + (c.resetPending || 0) + '곳</b> · <b>AI 추가 요청 대기 ' + (c.quotaPending || 0) + '곳</b>. ' +
+    h += '<p class="pb-note">전체 ' + (c.total || 0) + '곳 · 1차 채움 실행 ' + (c.filled || 0) + '곳 · <b>리셋 요청 대기 ' + (c.resetPending || 0) + '곳</b>. AI 사용은 기업(접수번호)당 총 30회 고정 · 「남은 n」 = 30 − 사용. ' +
          '검토 완료는 그 기업 원고를 열어 결과·덱 화면에서 누릅니다 — 원고를 고치면 기업 화면에서 표식이 다시 붙습니다.</p>' +
          '<table class="pb-tbl pb-fstbl"><thead><tr><th>접수번호</th><th>기업</th><th>1차 채움</th><th>리셋 요청</th><th>AI 사용</th><th>검토</th></tr></thead><tbody>';
     shown.forEach(function(r){
@@ -6113,12 +6130,10 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
       //  10-11 민부장 — 기업이 요청하지 않아도 잠긴 기업은 관리자가 바로 다시 채우기를 열 수 있다(초기화 뒤 기존 자료로 다시 채우는 경우)
       if(!(rq && !rq.done) && st.locked)
         req += '<br><button class="pb-cta sub" style="margin-top:6px;width:auto;padding:6px 12px" data-approve="' + esc(r.cid) + '">다시 채우기 허용</button>';
-      var qu = r.quota || {}, qr = qu.req;
-      var qcell = (qu.limit ? esc(qu.used + ' / ' + qu.limit) : '—') +
-        (qr && !qr.done ? '<br><b style="color:var(--pb-warn-deep)">추가 요청</b> ' + esc(String(qr.at || '').slice(0, 10)) + (qr.note ? '<br><span class="pb-note">' + esc(qr.note) + '</span>' : '') +
-                          '<br><button class="pb-cta sub" style="margin-top:6px;width:auto;padding:6px 12px" data-qapprove="' + esc(r.cid) + '">추가 승인</button>'
-         : (qr && qr.done ? '<br><span class="pb-note">추가 승인됨 ' + esc(String(qr.approvedAt || '').slice(0, 10)) + '</span>' : ''));
-      h += '<tr' + (r.off ? ' style="opacity:.5"' : '') + ((rq && !rq.done) || (qr && !qr.done) ? ' class="is-pending"' : '') + '><td>' + esc(r.cid) + '</td><td>' + esc(r.company || '') + (r.off ? ' <span class="pb-note">· 명단 밖</span>' : '') + '</td><td>' + fillWho(st) + '</td><td>' + req + '</td><td>' + qcell + '</td>' +
+      var qu = r.quota || {};
+      //  10-28 — 남은 횟수를 먼저(민부장 「기업별 남은 차수」) · 추가 요청·승인 칸은 폐지
+      var qcell = qu.limit ? '<b' + (qu.used >= qu.limit ? ' style="color:var(--pb-warn-deep)"' : '') + '>남은 ' + Math.max(0, qu.limit - qu.used) + '</b><br><span class="pb-note">' + esc(qu.used + ' / ' + qu.limit) + ' 사용</span>' : '—';
+      h += '<tr' + (r.off ? ' style="opacity:.5"' : '') + ((rq && !rq.done) ? ' class="is-pending"' : '') + '><td>' + esc(r.cid) + '</td><td>' + esc(r.company || '') + (r.off ? ' <span class="pb-note">· 명단 밖</span>' : '') + '</td><td>' + fillWho(st) + '</td><td>' + req + '</td><td>' + qcell + '</td>' +
            '<td>' + (rv && rv.done ? '✓ ' + esc(reviewWhen(rv)) : '<span class="pb-note">검토 전</span>') + '</td></tr>';
     });
     h += '</tbody></table><button class="pb-cta sub" style="margin-top:12px;width:auto;padding:9px 16px" id="fsReload">다시 불러오기</button></div>';
@@ -6126,17 +6141,6 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
     $('fsReload').onclick = loadFillStatus;
     Array.prototype.forEach.call($('pbCenter').querySelectorAll('[data-fsprog]'), function(b){
       b.onclick = function(){ admin.fsProg = b.dataset.fsprog; renderFillStatus(); };
-    });
-    Array.prototype.forEach.call($('pbCenter').querySelectorAll('[data-qapprove]'), function(b){
-      b.onclick = function(){
-        var cid = b.dataset.qapprove;
-        if(!confirm(cid + ' 의 AI 사용 횟수 추가 요청을 승인합니다.\n\n· 쓴 횟수가 0 으로 돌아가 한도만큼 다시 쓸 수 있습니다.\n· 기업당 한 번만 승인됩니다.\n\n계속할까요?')) return;
-        b.disabled = true; b.textContent = '승인 중…';
-        apiGet('quotaapprove', { cid: cid }).then(function(d){
-          if(!d || !d.ok){ alert('승인하지 못했습니다 — ' + ((d && d.error) || '오류')); b.disabled = false; b.textContent = '추가 승인'; return; }
-          loadFillStatus();
-        }).catch(function(err){ alert('승인하지 못했습니다 — ' + (err.message || '오류')); b.disabled = false; b.textContent = '추가 승인'; });
-      };
     });
     Array.prototype.forEach.call($('pbCenter').querySelectorAll('[data-approve]'), function(b){
       b.onclick = function(){
@@ -6556,6 +6560,9 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
   //  ①(단계별 원고)은 덮어쓰지만 ④는 만들 때마다 쌓인다 — 지난 덱을 되찾을 수 있어야 한다.
   //  ~~saveOutput(노션 ④ 최종 산출물 보관)~~ 10-20 민부장 결정으로 삭제 — 읽는 곳이 없었고(쌓기만) 성장관리플랫폼 판이 같은 역할(④ 기존 10건은 노션에 둔다).
 
+  //  10-28 민부장 — 성장관리 업로드는 기업당 최대 3회(서버 pbup_) · 같은 날 두 번째부터 파일 이름 V2·V3 · 관리자 승인 없음
+  function lagmpUpLeft(){ var u = llm.lagmpUp; return u ? Math.max(0, u.limit - u.used) : null; }
+  function lagmpUpText(){ var u = llm.lagmpUp; return u ? '남은 업로드 ' + lagmpUpLeft() + ' / ' + u.limit + '회' : '업로드는 기업당 최대 3회'; }
   function doSubmit(){
     if(!serverOn()){ alert('서버에 연결돼 있지 않아 제출할 수 없습니다.'); return; }
     //  ★10-20 민부장 지시 — 성장관리플랫폼에 올라가는 파일 = **IR 피칭 자료**(통합 논리 진단을 마친 뒤의 덱 · 960×540).
@@ -6567,10 +6574,12 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
       return;
     }
     var already = state.status === '제출';
+    if(!isAdmin() && lagmpUpLeft() === 0){ alert('성장관리플랫폼 업로드는 기업당 최대 3회입니다. 3회를 모두 쓰셨습니다.\n\n더 올려야 하면 담당자에게 문의해 주십시오.'); return; }
     //  2026-10-01 설계결정 1 — 이 버튼이 성장관리플랫폼에 새 판을 만드는 유일한 순간이다(자동 저장은 보내지 않는다).
     if(!confirm('지금 IR 피칭 자료(PDF · 16:9)를 성장관리플랫폼에 새 판으로 올리시겠습니까?\n\n' +
                 '· 올린 판은 지워지지 않고 쌓이며, 멘토·컨설턴트·평가위원이 봅니다.\n' +
-                '· 직전에 올린 원고와 같으면 새 판을 만들지 않습니다.' +
+                '· 직전에 올린 원고와 같으면 새 판을 만들지 않습니다(횟수도 줄지 않습니다).' +
+                (isAdmin() ? '\n· 관리자 대리 업로드는 기업의 3회 한도에 세지 않습니다.' : '\n· 기업당 최대 3회 · ' + lagmpUpText() + ' · 같은 날 다시 올리면 파일 이름에 V2·V3 가 붙습니다.') +
                 (g.auditStale ? '\n· 통합 논리 진단 이후 원고를 고치셨습니다 — 진단은 고치기 전 기준입니다.' : '') +
                 (already ? '' : '\n· 올린 뒤에도 계속 고치고 다시 올리실 수 있습니다.'))) return;
     state.lastLagmp = null;
@@ -6608,7 +6617,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
   //   🔴 실패하면 null — 호출부(doSubmit)가 올리지 않고 알린다.
   //   🔴 큰 파일은 보내지 않는다. 성장관리플랫폼 한도 20MB 안쪽(≈ 15MB 원본).
   var SUBMIT_PDF_MAX = 20000000;                      // base64 글자 수(≈ 15MB 원본)
-  var SUBMIT_PDF_WAIT = 60000;                        // 60초 — 덱은 장마다 찍어 IR 본문보다 오래 걸린다
+  var SUBMIT_PDF_WAIT = 180000;   // 10-28 60 → 180초 — 세부 장표·사진 표지로 장이 늘었다(넘기면 「만들지 못해」로 멈췄다)                        // 60초 — 덱은 장마다 찍어 IR 본문보다 오래 걸린다
   function submitPdf(){
     //  🔴 반드시 시간 제한을 건다. CDN 이 막힌 망에서는 스크립트 로드가 성공도 실패도 하지
     //    않고 매달릴 수 있고, 그러면 **제출 버튼이 영영 안 끝난다**.
@@ -6634,9 +6643,11 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = func
     if(!g) return '원고를 저장했습니다. 성장관리플랫폼 연동은 켜져 있지 않습니다 — 담당자가 별도로 확인합니다.';
     //  ★알림창과 화면 양쪽에 그대로 쓰인다 — 태그를 넣지 않는다(알림창엔 글자로 보이고 화면은 이스케이프된다).
     //  2026-10-01 — 판 번호(V)는 성장관리플랫폼이 IR 한 줄로 매겨 돌려준다(직접 올린 IR 과 번호가 이어진다).
+    if(g.ok && g.up) llm.lagmpUp = g.up;
     if(g.ok && g.file)
       return '성장관리플랫폼 [② 고도화]에 IR ' + (g.version || '새 판') + '(으)로 올렸습니다' +
-             (g.kind === 'screen' ? ' — 도식 포함.' : '.');
+             (g.kind === 'screen' ? ' — 도식 포함.' : '.') + (g.up ? ' 남은 업로드 ' + Math.max(0, g.up.limit - g.up.used) + ' / ' + g.up.limit + '회.' : '');
+    if(g.error === 'cap') return '성장관리플랫폼 업로드는 기업당 최대 ' + (g.limit || 3) + '회입니다. 모두 쓰셔서 올리지 않았습니다. 원고는 저장했습니다 — 더 올려야 하면 담당자에게 문의해 주십시오.';
     if(g.error === 'unchanged')
       return '직전에 올린 원고와 같아 새 판을 만들지 않았습니다' + (g.version ? ' (현재 IR ' + g.version + ').' : '.');
     if(g.error === 'off')     return '원고를 저장했습니다. 성장관리플랫폼 연동은 켜져 있지 않습니다 — 담당자가 별도로 확인합니다.';
