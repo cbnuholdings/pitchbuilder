@@ -4285,7 +4285,6 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
          '<div class="sp"></div>' +
          '<button class="pb-cta" id="dkPdf">PDF 다운로드</button>' +
          '<button class="pb-cta sub" style="margin-top:8px" id="dkPpt">PPT 다운로드</button>' +
-         canvaLeftHtml() +
          (canReview() ? '<div class="pb-hr"></div>' + reviewButtons().replace(/margin-left:8px;/g, '') : '') +
          '<button class="pb-cta sub" style="margin-top:8px" id="dkEdit">← 작성 화면에서 고치기</button>' +
          '<button class="pb-cta sub" style="margin-top:8px" id="dkBack">← 결과로 돌아가기</button>' +
@@ -4300,66 +4299,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     });
     $('dkPdf').onclick = function(){ exportDeckPdf(this); };
     $('dkPpt').onclick = function(){ exportDeckPpt(this); };
-    if($('dkCanva')) $('dkCanva').onclick = function(){ canvaMake(this); };
     bindReviewBtns();
     $('dkEdit').onclick = goWrite;
     $('dkBack').onclick = goResult;
-  }
-  // ── Canva 디자인본(10-25 · 관리자 대리만) ── 설계 01_설계정본/설계_Canva변환기_GAS_v1_20261024.md
-  //  ★민부장 10-25 — 기업에게 열기 전에 내용(라이선스 4A 이용 동의 조항)을 확인한다. 그때까지는 관리자가 기업을 연 화면에서만 보인다.
-  //   서버도 기업 계정은 막는다(CANVA_TEAM). 원고가 정본 — 디자인본은 만들 때의 원고 지문을 남긴 파생물이다.
-  var CANVA_TPL = [['purple', '보라 파스텔'], ['teal', '청록 민트']];
-  var CANVA_KIND = { gate:'12장표가 아직 닫히지 않았습니다', altviz:'권장 도식이 아닌 장표(디자인본 미지원)', overflow:'칸 글자 수 넘침', extra:'칸보다 많은 근거 줄' };
-  function canvaAdminOk(){ return !LOCAL && serverOn() && isAdmin() && !!(admin && admin.editing && admin.editing.cid); }
-  function canvaLeftHtml(){
-    if(!canvaAdminOk()) return '';
-    return '<div class="pb-hr"></div><p class="fine"><b>Canva 디자인본 · 관리자 시험</b> — 기업 화면에는 아직 보이지 않습니다. 권장 도식만 지원하고, 패스한 장표는 뺍니다(하루 3회).</p>' +
-           '<select id="dkCanvaTpl" aria-label="Canva 템플릿" style="width:100%;margin-top:6px;padding:8px;border-radius:8px;border:1px solid var(--pb-line)">' +
-           CANVA_TPL.map(function(t){ return '<option value="' + t[0] + '">' + esc(t[1]) + '</option>'; }).join('') + '</select>' +
-           '<button class="pb-cta sub" style="margin-top:8px" id="dkCanva">Canva 디자인본 만들기 (PPTX)</button>';
-  }
-  function canvaProblemText(ps){
-    return ps.map(function(p){
-      var at = p.slide ? p.slide + ' ' : '';
-      if(p.kind === 'gate') return '· ' + CANVA_KIND.gate + ' — ' + (p.slides || []).join(', ');
-      if(p.kind === 'altviz') return '· ' + at + CANVA_KIND.altviz + ' (지금 ' + p.viz + ' · 권장 ' + p.want + ')';
-      if(p.kind === 'overflow') return '· ' + at + CANVA_KIND.overflow + ' (' + p.len + '/' + p.max + '자)';
-      return '· ' + at + CANVA_KIND.extra + ' (' + p.lines + '줄 · 칸 ' + p.fits + '줄)';
-    }).join('\n');
-  }
-  function canvaMake(btn){
-    if(!canvaAdminOk() || busy) return;
-    var tpl = ($('dkCanvaTpl') || {}).value || 'purple', cid = admin.editing.cid, label = btn.textContent;
-    var who0 = skey(), base = { cid:cid, tpl:tpl, snapshot: snapshot() };
-    var done = function(){ busy = false; btn.disabled = false; btn.textContent = label; };
-    busy = true; btn.disabled = true; btn.textContent = '점검 중…';
-    apiGet('canvacheck', base).then(function(c){
-      if(!c || !c.ok) throw new Error((c && c.error) || '점검하지 못했습니다.');
-      var ps = c.problems || [], hard = ps.filter(function(p){ return p.kind === 'gate' || p.kind === 'altviz'; });
-      if(hard.length){ alert('디자인본을 만들 수 없습니다.\n\n' + canvaProblemText(hard) + '\n\n권장 도식으로 바꾸거나 기존 PPT 다운로드를 쓰십시오.'); return null; }
-      var force = false;
-      if(ps.length){
-        if(!confirm('디자인본에서 겹치거나 빠질 수 있는 곳이 있습니다.\n\n' + canvaProblemText(ps) + '\n\n그대로 만들까요? (취소 = 원고를 먼저 고친다)')) return null;
-        force = true;
-      }
-      if(!c.same && !confirm('Canva 디자인본을 만듭니다(오늘 남은 횟수 ' + c.left + '회 · 30초~1분).')) return null;
-      btn.textContent = '만드는 중…(1분 안팎)';
-      return apiGet('canvamake', Object.assign({ force:force }, base));
-    }).then(function(r){
-      if(r == null) return;
-      if(skey() !== who0) return;                           // 그사이 다른 기업으로 바꿨다
-      if(!r.ok) throw new Error(r.error + (r.problems ? '\n\n' + canvaProblemText(r.problems) : ''));
-      var bin = atob(r.pptxB64 || ''), u8 = new Uint8Array(bin.length);
-      for(var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-      var url = URL.createObjectURL(new Blob([u8], { type:'application/vnd.openxmlformats-officedocument.presentationml.presentation' }));
-      var a = document.createElement('a');
-      a.href = url; a.download = 'IR_' + cid + '_' + (state.formData.companyName || '') + '_Canva_' + tpl + '.pptx';
-      document.body.appendChild(a); a.click(); a.parentNode.removeChild(a);
-      setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(e){} }, 1000);
-      alert((r.same ? '원고가 바뀌지 않아 지난 디자인본을 그대로 내려받습니다.' : '디자인본을 만들었습니다.') + ' 오늘 남은 횟수 ' + r.left + '회.' +
-            (r.last && r.last.editUrl ? '\n(Canva 원본은 지주회사 계정 폴더 PB_' + cid + ' 에 있습니다.)' : ''));
-    }).catch(function(err){ alert('디자인본을 만들지 못했습니다 — ' + (err.message || '오류')); })
-      .then(done, done);
   }
   function renderDeckCenter(){
     var list = deckList(), total = list.length;
