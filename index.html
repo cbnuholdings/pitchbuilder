@@ -803,6 +803,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 .ir2 .ir2-toc .nm{font-weight:600}
 .ir2 .ir2-toc .ir{color:var(--comp);font-size:16px;font-weight:600}
 .ir2 .ir2-toc em{font-style:normal;color:var(--gray);font-size:17px;margin-left:auto;text-align:right;max-width:48%}
+.ir2 .ir2-prop{position:absolute;right:0;top:6px;z-index:2;font-size:15px;font-weight:600;color:var(--gray);border:1px solid var(--line);border-radius:4px;padding:2px 10px;background:var(--lt1)}   /* 실측 비율(v1 과 같은 조건) */
 .ir2 .ir2-list{margin:0;padding-left:1.2em;font-size:22px;line-height:1.6;align-self:flex-start;width:100%}
 .pb-v2pv{position:relative;width:100%;aspect-ratio:1760/690;overflow:hidden;background:#fff;border-radius:8px}
 .pb-v2pvin{position:absolute;left:0;top:0;width:1760px;height:690px;transform-origin:0 0;transform:scale(var(--pk,.36));font-family:'Noto Sans KR','Malgun Gothic',sans-serif;color:var(--dk1);background:var(--bg);padding:24px;box-sizing:border-box}
@@ -4039,9 +4040,9 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
       return box('toc', F({ no: '·', section: '목차', line2: co + ' — IR 피칭 자료', body: '<ol class="ir2-toc">' + li + '</ol>', company: co, page: pg }));
     }
     if(it.kind === 'slide'){
-      var sx = slideOf(it.x.id), g = v2Group(it.x.id);
+      var sx = slideOf(it.x.id), g = v2Group(it.x.id), pr = vizData(sx).prop ? '<span class="ir2-prop">실측 비율</span>' : '';
       return box('slide', F({ no: g.no, section: g.name, line1: sx.msg.trim(), line2: sx.title.trim() || '[결론형 제목 미작성]',
-        body: V2NS.vizHtmlV2(sx, { d3: designShape() === '입체' }), company: co, page: pg, ir: it.x.id + ' · ' + it.x.name }), it.x.id);
+        body: pr + V2NS.vizHtmlV2(sx, { d3: designShape() === '입체' }), company: co, page: pg, ir: it.x.id + ' · ' + it.x.name }), it.x.id);
     }
     if(it.kind === 'rnd'){
       var rl = [];
@@ -7120,15 +7121,16 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
   //  도식이 있는 덱 장표(PPT 모양) — 덱 함수는 열린 원고(state)를 읽으므로 그 기업 원고를 잠깐 끼워 그리고 바로 되돌린다.
   //  ★다운로드 버튼은 없다(G16) · 「초안 — 검토 전」 표식은 기업 검토 상태를 여기서 모르므로 뺀다.
   function opDeckSlide(sn, id){
-    var keep = { slides:state.slides, tone:state.tone, fd:state.formData };
+    var keep = { slides:state.slides, tone:state.tone, fd:state.formData, design:state.design };
     try{
       state.slides = normSlides(sn.slides || {}); state.tone = sn.tone || ''; state.formData = { companyName: sn.company || '' };
+      state.design = designOk(sn.design) ? sn.design : '';   // 디자인 v2 — 그 기업이 고른 표지·모양(보는 사람 것이 새지 않게 · 10-28)
       var x = SL.filter(function(q){ return q.id === id; })[0], s = slideOf(id);
       if(s.status === 'pass') return '<p class="pb-vempty">패스한 장표입니다(' + esc(s.passReason || '사유 없음') + ') — 피칭 자료에서 빠집니다.</p>';
       if(!slideHas(s)) return '<p class="pb-vempty">아직 쓰지 않은 장표입니다.</p>';
       var ds = deckSlides(), no = ds.indexOf(x) + 2;
       return '<div class="pb-slidebox pb-opdeck">' + deckSlideHtml({ kind:'slide', x:x }, no, ds.length + 1).replace('<span class="s-draft">초안 — 검토 전</span>', '') + '</div>';
-    } finally { state.slides = keep.slides; state.tone = keep.tone; state.formData = keep.fd; }
+    } finally { state.slides = keep.slides; state.tone = keep.tone; state.formData = keep.fd; state.design = keep.design; }
   }
   function opFitDeck(host){
     Array.prototype.forEach.call(host.querySelectorAll('.pb-opdeck'), function(bx){
