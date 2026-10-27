@@ -1465,9 +1465,11 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 .vz.d3m .x3.f20, .vz.d3m .x3.t{ --f:var(--primary-t20) } .vz.d3m .x3.fg{ --f:var(--line) } .vz.d3m .x3.g{ --f:var(--lt2) }
 .vz.d3m .x3::before, .vz.d3m .x3::after{ content:''; position:absolute; pointer-events:none; box-sizing:border-box }
 .vz.d3m .x3::before{ left:calc(-1 * var(--b)); width:calc(100% + 2 * var(--b)); bottom:calc(100% + var(--b)); height:var(--dy);
-  transform-origin:0 100%; transform:skewX(-60deg); background:color-mix(in srgb, var(--f) 55%, var(--lt1)) }
+  transform-origin:0 100%; transform:skewX(-60deg); background:var(--x3top, color-mix(in srgb, var(--f) 55%, var(--lt1))) }
 .vz.d3m .x3::after{ left:calc(100% + var(--b)); top:calc(-1 * var(--b)); width:var(--dx); height:calc(100% + 2 * var(--b));
-  transform-origin:0 0; transform:skewY(-30deg); background:color-mix(in srgb, var(--f) 78%, var(--dk1)) }
+  transform-origin:0 0; transform:skewY(-30deg); background:var(--x3side, color-mix(in srgb, var(--f) 78%, var(--dk1))) }
+/* 🔴 10-28 PDF 생성기(html2canvas 1.4.1)는 color-mix 결과(color(srgb …))를 못 읽어 PDF 전체가 실패한다
+ *    → 찍기 직전 화면이 --x3top·--x3side 에 rgb 값을 미리 계산해 넣는다(bakeX3 · PitchBuilder deckToPdf). 화면은 color-mix 그대로 */
 .vz.d3m .x3:is(.f20, .t, .g, .fg)::before{ border:1px solid var(--line) }   /* 옅은 앞면 — 윗면이 흰색에 묻히지 않게(Q4) */
 .vz.d3m .h2t{ display:none }                                                /* 퍼널 2톤 덧면 → 입체 옆면으로 대체 */
 .vz.d3m .bars{ gap:44px } .vz.d3m .slg{ gap:22px !important }               /* 깊이만큼 여백 — 옆면·윗면이 이웃을 덮지 않게 */
@@ -1752,7 +1754,7 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
                 fill:null, fillDoc:null, second:null,
                 mentorRes:{} };   // 장표별 AI 멘토 결과(P4) — 서버 장표 JSON 엔 ran/edited 만 · 결과 원문은 서버 보관 칸(aiget · 10-25)에서 되찾는다
   var llm = { conn:'byok', key:'', proxy:'', id:'', code:'',
-              model:'gemini-flash-latest', reviewer:false, tipsMode:false,
+              model:'claude-haiku-5-5', reviewer:false, tipsMode:false,
               quota:null };            // 서버가 준 AI 사용 잔여 {used,limit} — 기업만 받는다
   var busy = false;
   // ~~B2 성장관리(LAGMP) 종합의견~~ — 2026-08-19 민부장 지시로 연동 제거. 접속코드만 LAGMP와 공유한다(로그인).
@@ -3013,7 +3015,7 @@ var V2_ALL = true;   // 10-28 민부장 「전환」 — 기업 전체 v2(되돌
 var V2_QS = (function(){ try { return /[?&]v2=1(&|$)/.test(location.search); } catch(e){ return false; } })();
 function v2On(){ return V2_ALL || V2_QS; }
 //  검수용 손잡이 — ?v2=1 일 때만(시험·관리자 점검이 엔진을 직접 부른다)
-if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckList(); return L.map(function(it, i){ return deckSlideHtml(it, i + 1, L.length); }); }; } catch(e){}
+if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.deckHtml = function(){ var L = deckList(); return L.map(function(it, i){ return deckSlideHtml(it, i + 1, L.length); }); }; } catch(e){}
   /* V2RT:END */
   //  카탈로그 v1 도식(N01~N37)을 도식 목록에 붙인다 — 이름·쓰임은 build_viz.js 가 카탈로그 원본에서 옮긴 VIZ_CAT
   VIZ_CAT.forEach(function(c){ if(!dgOf(c.code)) DG.push(c); });
@@ -4299,7 +4301,8 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
         });
     }).catch(function(err){
       console.warn('PPT v2', err);
-      alert('PPT 를 만들지 못했습니다(네트워크 차단 가능).\n\nPDF 다운로드를 이용하십시오.');
+      alert(libFail(err) ? 'PPT 생성 라이브러리를 불러오지 못했습니다(네트워크 차단 가능).\n\nPDF 다운로드를 이용하십시오.'
+                         : 'PPT 를 만드는 중 오류가 났습니다 — ' + errText(err) + '\n\n이 문구를 담당자에게 알려 주십시오.');
     }).then(function(){
       stage.remove(); document.body.classList.remove('pb-pdfing');
       if(btn){ btn.disabled = false; btn.textContent = label; }
@@ -4813,6 +4816,9 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
   //    즉시 resolve 해 [PDF] 직후 [PPT]가 「라이브러리 없음」 오탐을 냈고, CDN 이 응답 없이 매달리면
   //    버튼이 「준비 중…」으로 영구 잠겼다(제출 경로만 25초 race 가 있었다).
   var SCRIPT_WAIT = 20000, scriptLoads = {};
+  //  10-28 — 라이브러리를 못 받은 실패만 「네트워크」로 말한다. 그 밖(렌더 오류 등)은 실제 문구를 보여 진단할 수 있게(팀215 시험: color-mix 오류가 「네트워크」로 보였다)
+  function libFail(err){ return /^(load|timeout|ppt libs)\b/.test(String((err && err.message) || err || '')); }
+  function errText(err){ return String((err && err.message) || err || '알 수 없음').slice(0, 160); }
   function loadScriptOnce(src){
     if(scriptLoads[src]) return scriptLoads[src];
     scriptLoads[src] = new Promise(function(res, rej){
@@ -4856,6 +4862,24 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
   }
 
   //  슬라이드 요소들 → 960×540 쪽 PDF(jsPDF). stage = 화면 밖 960px 무대. [PDF 다운로드]와 성장관리플랫폼 업데이트가 함께 쓴다.
+  //  🔴 10-28 팀215 시험 — 입체 도식(덧면 .x3) 17종이 있으면 PDF 가 통째로 실패했다(성장관리 업로드도 같은 길).
+  //   html2canvas 1.4.1 이 color-mix 결과(color(srgb …))를 못 읽는다 → 찍기 직전 덧면 색을 rgb 로 계산해 변수에 넣는다(viz_v2.css 가 먼저 쓴다).
+  function bakeX3(root){
+    var rgb = function(v){
+      v = String(v || '').trim();
+      var m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(v);
+      if(m){ var h = m[1].length === 3 ? m[1].replace(/./g, '$&$&') : m[1]; return [0, 2, 4].map(function(i){ return parseInt(h.substr(i, 2), 16); }); }
+      m = /rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i.exec(v);
+      return m ? [+m[1], +m[2], +m[3]] : null;
+    };
+    var mix = function(a, b, p){ return 'rgb(' + a.map(function(x, i){ return Math.round(x * p + b[i] * (1 - p)); }).join(',') + ')'; };
+    Array.prototype.forEach.call(root.querySelectorAll('.vz.d3m .x3'), function(el){
+      var cs = getComputedStyle(el), f = rgb(cs.getPropertyValue('--f')), lt = rgb(cs.getPropertyValue('--lt1')), dk = rgb(cs.getPropertyValue('--dk1'));
+      if(!f) return;
+      el.style.setProperty('--x3top', mix(f, lt || [255, 255, 255], 0.55));
+      el.style.setProperty('--x3side', mix(f, dk || [0, 0, 0], 0.78));
+    });
+  }
   function deckToPdf(slides, stage, q){
     var pdf = new window.jspdf.jsPDF({ orientation:'landscape', unit:'px', format:[960, 540], hotfixes:['px_scaling'] });
     var chain = Promise.resolve();
@@ -4865,7 +4889,8 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
         cl.style.transform = 'none'; cl.style.position = 'relative'; cl.style.left = '0'; cl.style.top = '0';
         flattenFields(cl);
         stage.innerHTML = ''; stage.appendChild(cl);
-        return window.html2canvas(cl, { scale:2, backgroundColor:'#ffffff', useCORS:true, logging:false, width:960, height:540 })
+        bakeX3(cl);
+        return window.html2canvas(cl,{ scale:2, backgroundColor:'#ffffff', useCORS:true, logging:false, width:960, height:540 })
           .then(function(cv){
             if(i > 0) pdf.addPage([960, 540], 'landscape');
             pdf.addImage(cv.toDataURL('image/jpeg', q), 'JPEG', 0, 0, 960, 540);
@@ -4913,6 +4938,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
     }).catch(function(err){
       // 망이 막히면 인쇄 경로로 — 안내만 하고 멈추지 않는다
       console.warn('PDF', err);
+      if(!libFail(err)){ alert('PDF 를 만드는 중 오류가 났습니다 — ' + errText(err) + '\n\n이 문구를 담당자에게 알려 주십시오.'); return; }
       if(confirm('PDF 생성 라이브러리를 불러오지 못했습니다(네트워크 차단 가능).\n\n브라우저 인쇄로 저장할까요? 인쇄 대화상자에서 「PDF로 저장」을 고르십시오.')){
         document.body.classList.add('deck-print');
         window.print();
@@ -5035,6 +5061,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
     }).catch(function(err){
       console.warn('PDF', err);
       if(opts.returnData) return;                      // 제출 흐름은 막지 않는다 — 조용히 없는 채로 간다
+      if(!libFail(err)){ alert('PDF 를 만드는 중 오류가 났습니다 — ' + errText(err)); return; }
       if(confirm('PDF 생성 라이브러리를 불러오지 못했습니다(네트워크 차단 가능).\n\n브라우저 인쇄로 저장할까요?')) window.print();
     }).then(function(){
       stage.remove();
@@ -5748,7 +5775,8 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
       })
       .catch(function(err){
         console.warn('PPT', err);
-        alert('PPT 생성 라이브러리를 불러오지 못했습니다(네트워크 차단 가능).\n\nPDF 다운로드 또는 인쇄 저장을 이용하십시오.');
+        alert(libFail(err) ? 'PPT 생성 라이브러리를 불러오지 못했습니다(네트워크 차단 가능).\n\nPDF 다운로드 또는 인쇄 저장을 이용하십시오.'
+                           : 'PPT 를 만드는 중 오류가 났습니다 — ' + errText(err) + '\n\n이 문구를 담당자에게 알려 주십시오.');
       })
       .then(function(){
         stage.remove();
@@ -6738,9 +6766,8 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
     }).then(function(r){ return r.json(); });
   }
 
-  // ── Gemini ──
+  // ── AI(서버 경유 · 10-28 Claude Haiku 5.5) ──
   //  교체 지점은 이 함수 하나뿐이다.
-  var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
   //  kind = 무엇을 부르는지(관리자 사용량 화면이 기능별로 센다·2026-08-22).
   //   ★서버는 action=llm 만 보므로 화면이 알려 주지 않으면 구분이 되지 않는다.
   //  keep = { slot, hash, meta } — 서버가 성공한 결과를 그 칸에 보관한다(10-25 · aiRecover 가 되찾는다)
@@ -6757,30 +6784,8 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
       return callProxy(pl)
              .then(function(d){ llmBump(); quotaTake(d); return parseJSON(d.text); });
     }
-    var url = GEMINI_BASE + encodeURIComponent(llm.model) +
-              ':generateContent?key=' + encodeURIComponent(llm.key);
-    return fetch(url, {
-      method:'POST', headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({
-        systemInstruction:{ parts:[{ text:system }] },
-        contents:[{ role:'user', parts:[{ text:user }] }],
-        // ★투자논리 진단·덱은 응답이 길다.
-        //   2048로는 잘려 MAX_TOKENS가 난다 — JSON 파싱 실패의 진짜 원인이 이것이었다.
-        generationConfig:{ temperature:0.4, responseMimeType:'application/json', maxOutputTokens:8192 }
-      })
-    }).then(function(res){
-      return res.json().then(function(data){
-        if(!res.ok) throw new Error((data && data.error && data.error.message) || ('HTTP ' + res.status));
-        var cand = data && data.candidates && data.candidates[0];
-        if(!cand) throw new Error((data && data.promptFeedback && data.promptFeedback.blockReason)
-                                  ? '안전 필터에 걸렸습니다.' : '응답이 비었습니다.');
-        var text = '', parts = cand.content && cand.content.parts;
-        if(parts) parts.forEach(function(p){ if(p.text) text += p.text; });
-        if(cand.finishReason === 'MAX_TOKENS') throw new Error('응답이 너무 길어 잘렸습니다.');
-        llmBump();
-        return parseJSON(text);
-      });
-    });
+    //  10-28 Gemini → Claude — 브라우저에서 Claude 를 직접 부를 수 없다(CORS) · AI 는 서버 연결에서만 쓴다
+    return Promise.reject(new Error('AI 는 서버에 연결된 상태에서만 쓸 수 있습니다.'));
   }
 
   // ── 서버 설정·상태 받아오기 ──
