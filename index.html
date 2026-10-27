@@ -1062,6 +1062,21 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 .pb-sllg{font-size:11.5px;color:var(--pb-on-ink-3);margin:-4px 0 8px}
 .pb-sl .id{font:400 11px var(--pb-font-mono);opacity:.8}
 .pb-sl .nm{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 세부 장표 트리(10-28 · 카탈로그 grilling Q5) — 대표 아래 들여 쓴 가지 */
+.pb-slrow{display:flex;align-items:center;gap:2px}
+.pb-slrow .pb-sl{flex:1 1 auto;min-width:0}
+.pb-subtg{flex:0 0 28px;height:32px;border-radius:8px;color:var(--pb-on-ink-3);font-size:13px}
+.pb-subtg:hover{background:rgba(244,243,239,.07);color:#fff}
+.pb-subs{margin:0 0 4px 19px;padding-left:8px;border-left:1px solid var(--pb-on-ink-line)}
+.pb-subs.is-pass{opacity:.5}
+.pb-sub{display:flex;align-items:baseline;gap:8px;width:100%;min-height:34px;padding:5px 10px;border-radius:8px;text-align:left;color:var(--pb-on-ink-2)}
+.pb-sub:hover{background:rgba(244,243,239,.07)}
+.pb-sub.is-on{background:var(--pb-accent-ink);color:#fff}
+.pb-sub .id{flex:none;font:400 11px var(--pb-font-mono);opacity:.8}
+.pb-sub .nm{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb-subadd{display:block;margin:2px 0 6px 27px;padding:4px 10px;border:1px dashed var(--pb-on-ink-line);border-radius:8px;font-size:12px;color:var(--pb-on-ink-2)}
+.pb-subadd:hover:not(:disabled){color:#fff;border-color:var(--pb-on-ink-2)}
+.pb-subadd:disabled{opacity:.45;cursor:default}
 .pb-sw{display:inline-flex;border-radius:999px;overflow:hidden;vertical-align:middle;flex:none}
 .pb-sw i{display:block;width:9px;height:15px}
 .pb-tonebtn{display:inline-flex;align-items:center;gap:8px;margin:0 12px;border-radius:999px}
@@ -1109,6 +1124,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
 .pb-slst{padding:4px 12px;border-radius:999px;font-size:13px;font-weight:500;background:var(--pb-line-soft);color:var(--pb-text-mute)}
 .pb-slst.st-done{background:#E6F4EA;color:var(--pb-ok)} .pb-slst.st-doing{background:var(--pb-accent-soft);color:var(--pb-accent-ink)}
 .pb-slst.st-pass{background:var(--pb-warn-bg);color:var(--pb-warn-deep)}
+/* 세부 장표 편집(10-28 C) — 대표와 구별되는 왼쪽 띠 · 안내 한 줄 · 삭제는 진한 붉은 글씨 */
+.pb-slcard.is-sub{border-left:4px solid var(--pb-accent)}
+.pb-slsubnote{margin:-4px 0 12px;font-size:13px;color:var(--pb-text-mute)}
+.pb-slsubdel{color:var(--pb-warn-deep)}
 .pb-slq{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:12px;background:var(--pb-accent-soft)}
 .pb-slq span{flex:none;font:500 12px var(--pb-font-mono);color:var(--pb-accent-ink);padding-top:2px}
 .pb-slq b{font-size:16px;color:#10309E}
@@ -1226,6 +1245,10 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   .pb-shell.is-slides .pb-ringwrap,.pb-shell.is-slides .pb-sllg,.pb-shell.is-slides .pb-left h4{display:none}
   .pb-shell.is-slides .pb-left nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
   .pb-shell.is-slides .pb-sl{flex:0 0 auto;width:auto;max-width:180px}
+  .pb-shell.is-slides .pb-slrow,.pb-shell.is-slides .pb-subs{display:contents}
+  .pb-shell.is-slides .pb-subtg{display:none}
+  .pb-shell.is-slides .pb-sub{flex:0 0 auto;width:auto;max-width:150px;align-self:center}
+  .pb-shell.is-slides .pb-subadd{flex:0 0 auto;margin:0;align-self:center}
   .pb-shell.is-slides .pb-hr{display:none}
   .pb-shell.is-slides .pb-center{padding:16px}
   .pb-meta{padding:0 16px}
@@ -1997,7 +2020,9 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
     var sl = state.slides || {};
     return hashOf(SL.map(function(x){
       var s = sl[x.id] || {};
-      return x.id + '=' + normTxt([s.title, s.msg, s.body, s.viz, s.status === 'pass' ? 'pass:' + (s.passReason || '') : ''].join('|'));
+      return x.id + '=' + normTxt([s.title, s.msg, s.body, s.viz, s.status === 'pass' ? 'pass:' + (s.passReason || '') : ''].join('|')) +
+        //  세부 장표(10-28 D) — 내용 있는 세부만 · 없으면 종전 지문 그대로(기존 검토·진단이 풀리지 않게)
+        (s.subs || []).filter(slideHas).map(function(u){ return '+' + normTxt([u.title, u.msg, u.body, u.viz].join('|')); }).join('');
     }).join('') + '|rnd=' + normTxt(['devGoal','devPrior','devKpi','devVerify'].map(function(k){ return state.formData[k] || ''; }).join('|')));
   }
 
@@ -2116,8 +2141,21 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
       var g = dgOf(s.viz);
       return '## ' + x.id + ' ' + x.name + '\n결론형 제목: ' + (s.title.trim() || '(비어 있음)') +
              '\n핵심 메시지: ' + (s.msg.trim() || '(비어 있음)') + '\n근거·내용:\n' + (s.body.trim() || '(비어 있음)') +
-             '\n도식: ' + (g ? g.code + ' ' + g.name : '');
+             '\n도식: ' + (g ? g.code + ' ' + g.name : '') + subsBlock(x.id);
     }).join('\n\n');
+  }
+  //  세부 장표(Q9 · 10-28 E) — AI 는 목차 단위로 묶어 읽는다. 대표 아래에 붙이고 field 는 목차 ID(IR-xx) 그대로 쓴다.
+  //   근거는 장당 SUB_PROMPT_BODY 자에서 자른다 — 세부 12장이 모두 최대 길이여도 프롬프트가 크게 불지 않게(10만 토큰 점검)
+  var SUB_PROMPT_BODY = 1500;
+  function subsBlock(id){
+    //  번호는 화면 번호(IR-02-3) 그대로 — 빈 세부를 걸러도 다시 매기지 않는다(「세부 n:」 지적이 같은 장을 가리키게)
+    return subsOf(id).map(function(u, k){
+      if(!slideHas(u)) return '';
+      var g = dgOf(u.viz), b = u.body.trim();
+      return '\n### ' + id + ' 세부 ' + (k + 1) + ' (대표를 받쳐 주는 장 · 같은 목차)\n결론형 제목: ' + (u.title.trim() || '(비어 있음)') +
+             '\n핵심 메시지: ' + (u.msg.trim() || '(비어 있음)') + '\n근거·내용:\n' + (b ? (b.length > SUB_PROMPT_BODY ? b.slice(0, SUB_PROMPT_BODY) + '…(줄임)' : b) : '(비어 있음)') +
+             '\n도식: ' + (g ? g.code + ' ' + g.name : '');
+    }).join('');
   }
   function axisPrompt(){
     var rnd = (llm.tipsMode && rndHas()) ? TIPS_STEPS.map(function(st){ return st.inputs.map(function(f){
@@ -2339,7 +2377,8 @@ a.pb-hbtn svg{width:14px;height:14px;flex:none;opacity:.85}
   //  원문 = 덱에 실리는 장표(패스 제외)의 제목·메시지·근거. 발표 시나리오는 덱 밖이라 넣지 않는다.
   function slidesText(){
     return SL.map(function(x){ var s = (state.slides || {})[x.id];
-      return (s && s.status !== 'pass') ? [s.title, s.msg, s.body].join(' ') : ''; }).join(' ');
+      //  세부 장표 원문도 인용 대조 대상(같은 목차 ID 로 인용된다)
+      return (s && s.status !== 'pass') ? [s.title, s.msg, s.body].concat((s.subs || []).map(function(u){ return [u.title, u.msg, u.body].join(' '); })).join(' ') : ''; }).join(' ');
   }
 
   // ══ 화면 ══════════════════════════════════════════════════════
@@ -3145,12 +3184,58 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
     if(SLIDE_ST[s.status]) b.status = s.status;
     if(s.mentor && typeof s.mentor === 'object') b.mentor = { ran: s.mentor.ran === true, edited: s.mentor.edited === true };
     b.warnCount = +s.warnCount || 0;
+    //  세부 장표(10-27 카탈로그 grilling Q5·Q9) — 목차당 최대 3장. 빈 장도 화면에선 둔다(막 추가한 장) · 서버가 저장 때 버린다(subClean_)
+    var subs = Array.isArray(s.subs) ? s.subs.map(function(u){ return normSub(id, u); }).filter(Boolean).slice(0, SUBS_PER) : [];
+    if(subs.length) b.subs = subs;
     return b;
   }
+  var SUBS_PER = 3, SUBS_MAX = 12;   // 서버 SUBS_PER_·SUBS_MAX_ 와 같아야 한다
+  function blankSub(id){ return { title:'', msg:'', body:'', viz:FIT[id][0], scenario:'' }; }
+  function normSub(id, u){
+    if(!u || typeof u !== 'object') return null;
+    var b = blankSub(id);
+    ['title','msg','body','scenario'].forEach(function(k){ if(typeof u[k] === 'string') b[k] = u[k]; });
+    if(dgOf(u.viz)) b.viz = u.viz;
+    return b;
+  }
+  function subsOf(id){ var s = state.slides && state.slides[id]; return (s && s.subs) || []; }
+  function subCount(sl){ var n = 0; SL.forEach(function(x){ var s = sl && sl[x.id]; n += (s && s.subs) ? s.subs.length : 0; }); return n; }
   function normSlides(o){
-    var out = {};
-    SL.forEach(function(x){ out[x.id] = normSlide(x.id, o && o[x.id]); });
+    var out = {}, n = 0;
+    SL.forEach(function(x){
+      var s = out[x.id] = normSlide(x.id, o && o[x.id]);
+      //  덱 전체 12장 상한 — 목차 순서대로 앞에서부터(서버 slidesSubCap_ 와 같다)
+      if(s.subs){ s.subs = s.subs.slice(0, Math.max(0, SUBS_MAX - n)); if(!s.subs.length) delete s.subs; else n += s.subs.length; }
+    });
     return out;
+  }
+  //  세부 장표 추가 — 대표 장표 바로 아래에 빈 장 하나. 패스한 목차·목차당 3장·덱 전체 12장이면 막는다.
+  function subAddBlock(id){
+    var s = state.slides[id];
+    if(s.status === 'pass') return '패스한 장표에는 세부 장표를 더할 수 없습니다.';
+    //  대표가 비면 서버가 그 장표를 저장하지 않는다(빈 장표로 지우지 않는 규칙) → 세부를 지워도 서버에 남아 되살아난다
+    if(!slideHas(s)) return '대표 장표를 먼저 쓰십시오.';
+    if(subsOf(id).length >= SUBS_PER) return '세부 장표는 목차당 ' + SUBS_PER + '장까지입니다.';
+    if(subCount(state.slides) >= SUBS_MAX) return '세부 장표는 덱 전체 ' + SUBS_MAX + '장까지입니다.';
+    return '';
+  }
+  function addSub(id){
+    if(subAddBlock(id)) return false;
+    var s = state.slides[id];
+    s.subs = (s.subs || []).concat([blankSub(id)]);
+    state.cur = SL.map(function(x){ return x.id; }).indexOf(id);
+    state.sub = s.subs.length - 1;
+    state.subFold = state.subFold || {}; delete state.subFold[id];
+    saveLocal(); render();
+    return true;
+  }
+  function goSub(i, k){
+    if(i < 0 || i > 11 || !subsOf(SL[i].id)[k]) return;
+    if(i === state.cur && state.sub === k) return;
+    if(i !== state.cur){ state.cur = i; syncToServer(); }
+    state.sub = k;
+    render();
+    window.scrollTo(0, 0);
   }
   function slideHas(s){ return !!(s && (s.title + s.msg + s.body + s.scenario).trim()); }
   function anySlide(sl){ return SL.some(function(x){ return slideHas(sl && sl[x.id]); }); }
@@ -3239,6 +3324,8 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
   function toneRec(){ return (state.fill && state.fill.sector) || 'BASE'; }
 
   function renderSlideLeft(){
+    //  고른 세부 장표가 사라졌으면(원고 교체·서버가 빈 장을 버림) 대표로 돌아간다
+    if(state.sub >= 0 && !(state.cur < 12 && subsOf(SL[state.cur].id)[state.sub])) state.sub = -1;
     var c = slideCounts(), pct = Math.round(c.closed / 12 * 100);
     var h = '<div class="pb-ringwrap">' +
               '<div class="pb-ring" style="background:conic-gradient(var(--pb-accent) 0 ' + pct + '%,var(--pb-on-ink-line) ' + pct + '% 100%)"><i>' + pct + '%</i></div>' +
@@ -3255,11 +3342,31 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
            '<li>② PDF · PPT 다운로드</li></ol>' +
            '<button class="pb-inkbtn" id="slDeckGo">' + (g.ok ? 'IR 피칭 자료 열기 · PDF·PPT' : (g.closed ? '① 통합 논리 진단으로' : 'PDF·PPT 받는 방법')) + '</button></div>';
     h += '<h4>12장표</h4><p class="pb-sllg">● 완료 ◐ 작성중 ○ 미작성 ⊘ 패스</p><nav aria-label="장표 목록">';
+    //  세부 장표 트리(Q5) — 대표 장표 아래로 접고 편다. ★대표는 .pb-sl, 세부는 .pb-sub(.pb-sl 순번 = 목차 순번을 지킨다)
+    var fold = state.subFold || {};
     SL.forEach(function(x, i){
-      var st = SLIDE_ST[state.slides[x.id].status], on = i === state.cur;
-      h += '<button class="pb-sl' + (on ? ' is-on' : '') + ' st-' + state.slides[x.id].status + '" data-sl="' + i + '"' + (on ? ' aria-current="step"' : '') + '>' +
+      var s = state.slides[x.id], st = SLIDE_ST[s.status], subs = s.subs || [];
+      var on = i === state.cur && !(state.sub >= 0), here = i === state.cur;
+      h += '<div class="pb-slrow">' +
+           '<button class="pb-sl' + (on ? ' is-on' : '') + ' st-' + s.status + '" data-sl="' + i + '"' + (on ? ' aria-current="step"' : '') + '>' +
              '<span class="mk" aria-hidden="true">' + st.mark + '</span>' +
-             '<span class="tx"><span class="id">' + x.id + ' · ' + st.label + '</span><span class="nm">' + esc(x.name) + '</span>' + opRailMark(x.id) + '</span></button>';
+             '<span class="tx"><span class="id">' + x.id + ' · ' + st.label + (subs.length ? ' · 세부 ' + subs.length : '') + '</span><span class="nm">' + esc(x.name) + '</span>' + opRailMark(x.id) + '</span></button>' +
+           (subs.length ? '<button class="pb-subtg" data-subtg="' + x.id + '" aria-expanded="' + !fold[x.id] + '" aria-label="' + x.id + ' 세부 장표 ' + (fold[x.id] ? '펴기' : '접기') + '">' + (fold[x.id] ? '▸' : '▾') + '</button>' : '') +
+           '</div>';
+      if(subs.length && !fold[x.id]){
+        h += '<div class="pb-subs' + (s.status === 'pass' ? ' is-pass' : '') + '" role="group" aria-label="' + x.id + ' 세부 장표">';
+        subs.forEach(function(u, k){
+          var son = here && state.sub === k;
+          h += '<button class="pb-sub' + (son ? ' is-on' : '') + '" data-sub="' + i + ':' + k + '"' + (son ? ' aria-current="step"' : '') + '>' +
+                 '<span class="id">' + x.id + '-' + (k + 1) + '</span><span class="nm">' + esc(u.title.trim() || '(제목 없음)') + '</span></button>';
+        });
+        h += '</div>';
+      }
+      //  지금 장표 아래에만 [＋ 세부 장표] — 막히면 이유를 title 로
+      if(here && i < 12){
+        var why = subAddBlock(x.id);
+        h += '<button class="pb-subadd" id="slSubAdd" data-subadd="' + x.id + '"' + (why ? ' disabled title="' + esc(why) + '"' : '') + '>＋ 세부 장표</button>';
+      }
     });
     if(llm.tipsMode){
       h += '<div class="pb-hr"></div><h4>부록 · R&amp;D<em>선택</em></h4>';
@@ -3275,6 +3382,13 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
     Array.prototype.forEach.call($('pbLeft').querySelectorAll('.pb-sl'), function(b){
       b.onclick = function(){ goSlide(+b.dataset.sl); };
     });
+    Array.prototype.forEach.call($('pbLeft').querySelectorAll('.pb-sub'), function(b){
+      b.onclick = function(){ var p = b.dataset.sub.split(':'); goSub(+p[0], +p[1]); };
+    });
+    Array.prototype.forEach.call($('pbLeft').querySelectorAll('.pb-subtg'), function(b){
+      b.onclick = function(){ var f = state.subFold = state.subFold || {}, id = b.dataset.subtg; if(f[id]) delete f[id]; else f[id] = true; renderSlideLeft(); };
+    });
+    if($('slSubAdd')) $('slSubAdd').onclick = function(){ addSub(this.dataset.subadd); };
     bindLagmpLeft();
     $('slDeckGo').onclick = function(){
       var gg = deckGate();
@@ -3326,21 +3440,33 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
   function renderSlideCenter(){
     $('pbCenter').style.padding = '';
     if(state.cur >= 12){ renderRndCenter(); return; }
-    var x = SL[state.cur], s = state.slides[x.id], st = SLIDE_ST[s.status];
-    var prev = state.cur > 0 ? SL[state.cur - 1] : null, next = state.cur < 11 ? SL[state.cur + 1] : null;
+    //  세부 장표(C · 10-28) — 고른 세부가 있으면 같은 칸을 세부 장표에 대고 그린다. 상태(완료·패스)는 대표만 갖는다(Q9)
+    var et = editTarget(), x = et.x, main = et.main, s = et.s, isSub = et.k >= 0, st = SLIDE_ST[main.status];
+    var sq = editSeq(), pos = seqPos(sq), pv = pos > 0 ? sq[pos - 1] : null, nx = pos < sq.length - 1 ? sq[pos + 1] : null;
     var warns = slideWarns(s), g = dgOf(s.viz), fit = FIT[x.id], t = toneOf(state.tone);
+    var subNo = function(p){ return SL[p[0]].id + '-' + (p[1] + 1); };
+    var pvK, pvV, nxK, nxV;
+    if(!pv){ pvK = '처음'; pvV = '첫 장표입니다'; }
+    else if(pv[1] >= 0){ var pu = subsOf(SL[pv[0]].id)[pv[1]]; pvK = '앞 세부 장표 · ' + subNo(pv); pvV = pu.msg || pu.title || '핵심 메시지 미작성'; }
+    else if(pv[0] === state.cur){ pvK = '대표 장표 · ' + x.id; pvV = main.msg || '핵심 메시지 미작성'; }
+    else { pvK = '앞 장표가 남긴 메시지 · ' + SL[pv[0]].id; pvV = state.slides[SL[pv[0]].id].msg || '핵심 메시지 미작성'; }
+    if(!nx){ nxK = '끝'; nxV = '마지막 장표입니다 — 다음은 통합 논리 진단'; }
+    else if(nx[1] >= 0){ var nu = subsOf(SL[nx[0]].id)[nx[1]]; nxK = '다음 세부 장표 · ' + subNo(nx); nxV = nu.title || '(제목 없음)'; }
+    else { nxK = '다음 장표가 이어받을 질문 · ' + SL[nx[0]].id; nxV = SL[nx[0]].q; }
     var h = fillBanner();
     h += '<div class="pb-sllink">' +
-           '<button class="pb-slnb" id="slPrevB"' + (prev ? '' : ' disabled') + '><span class="k">← 앞 장표가 남긴 메시지 · ' + (prev ? prev.id : '처음') + '</span>' +
-             '<span class="v">' + esc(prev ? (state.slides[prev.id].msg || '핵심 메시지 미작성') : '첫 장표입니다') + '</span></button>' +
-           '<div class="pb-slid">' + x.id + '</div>' +
-           '<button class="pb-slnb r" id="slNextB"' + (next ? '' : ' disabled') + '><span class="k">다음 장표가 이어받을 질문 · ' + (next ? next.id : '끝') + ' →</span>' +
-             '<span class="v">' + esc(next ? next.q : '마지막 장표입니다 — 다음은 통합 논리 진단') + '</span></button>' +
+           '<button class="pb-slnb" id="slPrevB"' + (pv ? '' : ' disabled') + '><span class="k">← ' + esc(pvK) + '</span>' +
+             '<span class="v">' + esc(pvV) + '</span></button>' +
+           '<div class="pb-slid">' + (isSub ? x.id + '-' + (et.k + 1) : x.id) + '</div>' +
+           '<button class="pb-slnb r" id="slNextB"' + (nx ? '' : ' disabled') + '><span class="k">' + esc(nxK) + ' →</span>' +
+             '<span class="v">' + esc(nxV) + '</span></button>' +
          '</div>';
-    h += '<section class="pb-slcard" aria-labelledby="slName">' +
-           '<div class="pb-slhd"><div><span class="pb-slno">' + x.id + ' · ' + (state.cur + 1) + ' / 12</span>' +
-             '<h2 id="slName">' + esc(x.name) + '</h2></div>' +
-             '<span class="pb-slst st-' + s.status + '">' + st.label + (s.status === 'pass' && s.passReason ? ' · ' + esc(s.passReason) : '') + '</span></div>' +
+    h += '<section class="pb-slcard' + (isSub ? ' is-sub' : '') + '" aria-labelledby="slName">' +
+           '<div class="pb-slhd"><div><span class="pb-slno">' + (isSub ? x.id + '-' + (et.k + 1) + ' · 세부 장표 ' + (et.k + 1) + ' / ' + main.subs.length : x.id + ' · ' + (state.cur + 1) + ' / 12') + '</span>' +
+             '<h2 id="slName">' + esc(x.name) + (isSub ? ' · 세부' : '') + '</h2></div>' +
+             (isSub ? '<span class="pb-slst pb-slsubtag">세부 · 진행률 밖</span>'
+                    : '<span class="pb-slst st-' + s.status + '">' + st.label + (s.status === 'pass' && s.passReason ? ' · ' + esc(s.passReason) : '') + '</span>') + '</div>' +
+           (isSub ? '<p class="pb-slsubnote">대표 장표 「' + esc(main.title || x.name) + '」를 받쳐 주는 장입니다. 완료·패스는 대표 장표에서 정합니다' + (main.status === 'pass' ? ' — <b>대표를 패스해 이 장도 덱에서 빠집니다.</b>' : '.') + '</p>' : '') +
            '<div class="pb-slq"><span>투자자 질문</span><b>' + esc(x.q) + '</b></div>';
     SLIDE_FIELDS.forEach(function(f){
       var v = s[f.k], warned = warns.some(function(w){ return w.k === f.k; });
@@ -3353,7 +3479,16 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
     });
     // 도표 — 고르기와 쓰임만(그림은 P5)
     //  같은 도식을 다른 장표가 이미 쓰면 옆에 적는다(명단 v1 Q4 — 덱 규칙 「같은 도식 반복 금지」 · 막지는 않는다)
-    var usedAt = function(code){ return SL.filter(function(y){ var o = state.slides[y.id]; return y.id !== x.id && o && o.status !== 'pass' && o.viz === code && slideHas(o); }).map(function(y){ return y.id; }); };
+    //  세부 장표도 센다(IR-02-1 처럼) — 지금 편집 중인 장만 뺀다
+    var usedAt = function(code){
+      var out = [];
+      SL.forEach(function(y){
+        var o = state.slides[y.id]; if(!o || o.status === 'pass') return;
+        if(!(y.id === x.id && !isSub) && o.viz === code && slideHas(o)) out.push(y.id);
+        (o.subs || []).forEach(function(u, k){ if(!(y.id === x.id && k === et.k) && u.viz === code && slideHas(u)) out.push(y.id + '-' + (k + 1)); });
+      });
+      return out;
+    };
     var opt = function(code, lab){ var u = usedAt(code); return '<option value="' + code + '"' + (s.viz === code ? ' selected' : '') + '>' + esc(lab + (u.length ? ' · ' + u.join('·') + '에서 사용 중' : '')) + '</option>'; };
     h += '<div class="pb-slf"><div class="lb"><label for="slViz">도표</label></div><select id="slViz">' +
            '<optgroup label="이 장표 권장·대안">' + fit.map(function(c, k){ var d = dgOf(c); return opt(c, c + ' ' + d.name + (k ? ' · 대안' : ' · 권장') + (d.core ? '' : ' (선택·부록)')); }).join('') + '</optgroup>' +
@@ -3378,21 +3513,59 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
            '<textarea id="slf-scenario" data-sk="scenario" rows="5" placeholder="① 여는 말: 이 장표에서 무엇을 말할지 한 문장&#10;② 강조할 근거: 짚을 숫자·사례&#10;③ 넘기는 말: 다음 장표로 잇는 한 문장">' + esc(s.scenario) + '</textarea></details>' +
          '</section>';
     h += '<div class="pb-slbar2">' +
-           '<button class="pb-slarr" id="slPrev" aria-label="이전 장표"' + (prev ? '' : ' disabled') + '>‹</button>' +
-           '<span class="pb-slno">' + (state.cur + 1) + ' / 12</span>' +
-           '<button class="pb-slarr" id="slNext" aria-label="다음 장표"' + (next ? '' : ' disabled') + '>›</button>' +
+           '<button class="pb-slarr" id="slPrev" aria-label="이전 장표"' + (pv ? '' : ' disabled') + '>‹</button>' +
+           '<span class="pb-slno">' + (isSub ? x.id + '-' + (et.k + 1) : (state.cur + 1) + ' / 12') + '</span>' +
+           '<button class="pb-slarr" id="slNext" aria-label="다음 장표"' + (nx ? '' : ' disabled') + '>›</button>' +
            '<span class="pb-slline" id="slLine">' + esc(stateLine(s, warns)) + '</span>' +
-           (s.status === 'pass'
+           //  세부 장표 — 상태 버튼 대신 [대표 장표로]·[이 세부 장표 삭제]·[저장하기](서버 저장만 · 상태는 바꾸지 않는다)
+           (isSub
+             ? '<button class="pb-cta sub" id="slSubUp" style="width:auto;padding:11px 18px">대표 장표로</button>' +
+               '<button class="pb-cta sub pb-slsubdel" id="slSubDel" style="width:auto;padding:11px 18px">이 세부 장표 삭제</button>' +
+               '<span class="pb-slsave' + (state.saveCls ? ' ' + state.saveCls : '') + '" id="slSave" aria-live="polite">' + esc(state.saveTxt || '') + '</span>' +
+               '<button class="pb-cta" id="slSubSave" style="width:auto;padding:11px 22px" title="서버에 저장합니다. 완료 표시는 대표 장표에서 합니다">저장하기</button></div>'
+             : '') +
+           (isSub ? '' : (s.status === 'pass'
              ? '<button class="pb-cta sub" id="slUnpass" style="width:auto;padding:11px 18px">패스 해제</button>'
              : '<button class="pb-cta sub" id="slPass" style="width:auto;padding:11px 18px">패스</button>') +
            '<span class="pb-slsave' + (state.saveCls ? ' ' + state.saveCls : '') + '" id="slSave" aria-live="polite">' + esc(state.saveTxt || '') + '</span>' +
            //  10-10 민부장 지시 — [완료] → [저장하기]. 누르면 서버에 저장하고 이 장표를 「완료」로 표시한 뒤 다음 장표로 간다
            '<button class="pb-cta" id="slDone" style="width:auto;padding:11px 22px" title="서버에 저장하고 이 장표를 완료로 표시한 뒤 다음 장표로 갑니다">' + (s.status === 'done' ? '저장됨 · 다음 장표' : '저장하기') + '</button>' +
-         '</div>';
+         '</div>');
     $('pbCenter').innerHTML = h;
     bindSlideCenter(x.id);
   }
+  //  지금 편집 대상 — 대표 장표 또는 고른 세부 장표(k = -1 이면 대표)
+  function editTarget(){
+    if(!SL[state.cur]) return { x:{ id:null }, main:null, k:-1, s:null };   // R&D 부록(12~) — 장표가 아니다
+    var x = SL[state.cur], main = state.slides[x.id], k = state.sub >= 0 && (main.subs || [])[state.sub] ? state.sub : -1;
+    return { x:x, main:main, k:k, s: k >= 0 ? main.subs[k] : main };
+  }
+  //  읽는 순서 = 대표 → 그 목차의 세부들 → 다음 목차(이전·다음 화살표가 이 순서로 움직인다)
+  function editSeq(){
+    var q = [];
+    SL.forEach(function(x, i){ q.push([i, -1]); subsOf(x.id).forEach(function(u, k){ q.push([i, k]); }); });
+    return q;
+  }
+  function seqPos(q){
+    var k = editTarget().k;
+    for(var j = 0; j < q.length; j++) if(q[j][0] === state.cur && q[j][1] === k) return j;
+    return 0;
+  }
+  function goEdit(d){
+    var q = editSeq(), p = q[seqPos(q) + d];
+    if(!p) return;
+    if(p[1] >= 0) goSub(p[0], p[1]); else goSlide(p[0]);
+  }
+  function delSub(id, k){
+    var s = state.slides[id];
+    if(!s.subs || !s.subs[k]) return;
+    s.subs.splice(k, 1);
+    if(!s.subs.length) delete s.subs;
+    state.sub = -1;
+    slideChanged(); syncToServer(); render();
+  }
   function stateLine(s, warns){
+    if(!s.mentor) return '세부 장표 · 진행률 밖(완성도는 대표 12장 기준) · 남은 경고 ' + warns.length + '건';
     var m = s.mentor;
     return (m.ran ? 'AI 멘토 받음' : 'AI 멘토 안 받음') + ' · ' + (m.ran ? (m.edited ? '멘토 후 수정 있음' : '수정 사항 없음') : '—') +
            ' · 남은 경고 ' + warns.length + '건';
@@ -3419,7 +3592,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
 
   function renderSlideRight(){
     if(state.cur >= 12){ $('pbRight').innerHTML = '<div class="pb-slside"><section><h3>R&amp;D 부록</h3><p class="pb-note">R&amp;D 과제를 준비하는 기업만 씁니다. 덱 본편에는 들어가지 않습니다.</p></section></div>'; return; }
-    var x = SL[state.cur], s = state.slides[x.id], warns = slideWarns(s);
+    var x = SL[state.cur], s = state.slides[x.id], warns = slideWarns(editTarget().s);   // 실시간 점검은 편집 중인 장(세부면 세부) · 의견·멘토는 목차 단위
     var h = '<div class="pb-slside">' + opCard(x.id, s) + '<section aria-live="polite"><div class="hd"><h3>실시간 점검</h3><span>입력 즉시 · AI 0회</span></div>';
     h += warns.length ? warns.map(function(w){
       return '<button class="pb-slwarn" data-fk="' + w.k + '"><i aria-hidden="true">!</i><span><small>' +
@@ -3623,7 +3796,9 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
       '# 장표 규격(명세 v1.0)', id + ' ' + x.name, '투자자 질문: ' + x.q, '제목 틀: ' + x.frame,
       '검토 기준: ' + x.check, '있어야 할 자료: ' + x.need, '',
       '# 이 장표 원고', '결론형 제목: ' + (s.title || '(비어 있음)'), '핵심 메시지: ' + (s.msg || '(비어 있음)'),
-      '근거·내용:\n' + (s.body || '(비어 있음)'), '',
+      '근거·내용:\n' + (s.body || '(비어 있음)'),
+      //  세부 장표(10-28 E) — 목차 단위로 함께 본다. 세부에 대한 지적은 field 를 대표 칸 기준으로 두고 text 머리에 「세부 n:」
+      subsBlock(id) ? '\n# 이 목차의 세부 장표(대표와 함께 본다 · 세부에 대한 지적은 text 앞에 「세부 n:」을 붙인다)' + subsBlock(id) : '', '',
       '# 앞뒤 장표 요지(논리 연결 확인용 — 이 장표 밖을 고치라고 하지 마라)',
       i > 0 ? '앞: ' + slideBrief(SL[i - 1].id) : '앞: (첫 장표)',
       i < 11 ? '뒤: ' + slideBrief(SL[i + 1].id) : '뒤: (마지막 장표 — 다음은 통합 논리 진단)', '',
@@ -3660,7 +3835,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
     var s = state.slides[id], items = slideItems(id), ids = items.map(function(it){ return it.id; });
     var sec = secondItems(), srcOk = {};
     sec.forEach(function(e){ srcOk[e.src] = e; });
-    var hay = (s.title + s.msg + s.body + sec.map(function(e){ return e.text; }).join(' ')).replace(/[,\s]/g, '');
+    var hay = (s.title + s.msg + s.body + (s.subs || []).map(function(u){ return u.title + u.msg + u.body; }).join(' ') + sec.map(function(e){ return e.text; }).join(' ')).replace(/[,\s]/g, '');
     var F = { title:1, msg:1, body:1 };
     var ops = arr(d.opinions).filter(function(o){ return o && String(o.text || '').trim() && !MENTOR_JUDGE_RE.test(String(o.text)); })
       .slice(0, 5).map(function(o){
@@ -3709,7 +3884,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
     }, 1000);
     var finish = function(){
       busy = false; state.mentorBusy = null; clearInterval(mentorTick);
-      if(state.view === 'write'){ renderSlideLeft(); renderSlideRight(); renderMeta(); if($('slLine')) $('slLine').textContent = stateLine(s, slideWarns(s)); }
+      if(state.view === 'write'){ renderSlideLeft(); renderSlideRight(); renderMeta(); var es = editTarget().s; if(es && $('slLine')) $('slLine').textContent = stateLine(es, slideWarns(es)); }
     };
     var who = skey(), p;
     try{ p = callLLM(MENTOR_SYSTEM, mentorPrompt(id), 'mentor', { slot:'mentor:' + id, hash: mentorFp(s) }); }
@@ -3729,7 +3904,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
   function passPrompt(id, reason){
     var x = SL.filter(function(y){ return y.id === id; })[0], s = state.slides[id];
     return ['# 패스하려는 장표', id + ' ' + x.name, '투자자 질문: ' + x.q, '있어야 할 자료: ' + x.need, '패스 사유: ' + reason, '',
-      '# 지금까지 쓴 것', (s.title + '\n' + s.msg + '\n' + s.body).trim() || '(비어 있음)', '',
+      '# 지금까지 쓴 것', (s.title + '\n' + s.msg + '\n' + s.body).trim() || '(비어 있음)', subsBlock(id) ? '(패스하면 아래 세부 장표도 덱에서 빠진다)' + subsBlock(id) : '', '',
       '# 할 일', '- 이 장표가 빠지면 IR 자료로서 무엇이 비는지(투자자가 답을 못 찾는 질문, 약해지는 다른 장표)를 1~2문장으로.',
       '- 앞으로 준비·확인할 것을 최대 3개(구체적 자료 이름으로). 없는 수치를 만들지 마라. 점수·등급을 쓰지 마라.', '',
       '# 출력 JSON', '{"limits":"…","prepare":["…"]}'].join('\n');
@@ -3744,7 +3919,9 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
     return { at:at, reason:why, limits:lim, prepare:prep };
   }
   //  AI 멘토·패스를 물을 때의 장표 지문(10-25) — 서버가 결과와 함께 보관하고, 되찾을 때 지금 원고와 대조한다
-  function mentorFp(s){ s = s || {}; return hashOf(normTxt([s.title, s.msg, s.body].join('|'))); }
+  //  세부 장표가 있을 때만 붙인다 — 세부 없는 장표의 지문은 종전과 같다(서버 보관 의견 되찾기가 끊기지 않게)
+  function mentorFp(s){ s = s || {}; var us = (s.subs || []).filter(slideHas);
+    return hashOf(normTxt([s.title, s.msg, s.body].join('|') + us.map(function(u){ return '+' + [u.title, u.msg, u.body].join('|'); }).join(''))); }
 
   var FIELD_NAME = { title:'결론형 제목', msg:'핵심 메시지', body:'근거·내용' };
   function mentorPanel(x, s){
@@ -3801,7 +3978,8 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
         if(!g) return;
         g.done = b.dataset.act;
         if(g.done === 'apply'){
-          var s = state.slides[id], cur = s[g.field] || '';
+          //  세부 장표를 보고 있으면 그 세부 칸에 붙인다(가운데에 보이는 장 = 반영되는 장 · 10-28 E)
+          var et = editTarget(), s = et.x.id === id ? et.s : state.slides[id], cur = s[g.field] || '';
           var add = g.field === 'body' ? '· ' + g.text.replace(/^·\s*/, '') : g.text;
           slideEdit(id, g.field, cur ? cur + (g.field === 'body' ? '\n' : ' ') + add : add);
           renderSlideCenter();                                  // 반영한 문장이 칸에 보이도록
@@ -3817,10 +3995,17 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
       ta.oninput = function(){ slideEdit(id, ta.dataset.sk, ta.value); };
     });
     $('slViz').onchange = function(){ slideEdit(id, 'viz', this.value); renderSlideCenter(); };
-    var g = function(d){ return function(){ goSlide(state.cur + d); }; };
+    var g = function(d){ return function(){ goEdit(d); }; };
     ['slPrevB','slPrev'].forEach(function(k){ if($(k)) $(k).onclick = g(-1); });
     ['slNextB','slNext'].forEach(function(k){ if($(k)) $(k).onclick = g(1); });
-    $('slDone').onclick = slideComplete;
+    if($('slDone')) $('slDone').onclick = slideComplete;
+    if($('slSubUp')) $('slSubUp').onclick = function(){ goSlide(state.cur); };
+    if($('slSubSave')) $('slSubSave').onclick = function(){ syncToServer(); };
+    if($('slSubDel')) $('slSubDel').onclick = function(){
+      var k = editTarget().k;
+      if(k < 0 || !confirm(id + '-' + (k + 1) + ' 세부 장표를 삭제합니다. 되돌릴 수 없습니다.\n\n계속할까요?')) return;
+      delSub(id, k);
+    };
     if($('slPass')) $('slPass').onclick = passOpen;
     if($('slUnpass')) $('slUnpass').onclick = function(){
       var s = state.slides[id];
@@ -3855,6 +4040,26 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
   }
   //  편집 = 그 자리만 고친다(초점·커서를 지키려고 가운데를 다시 그리지 않는다)
   function slideEdit(id, k, v){
+    var et = editTarget();
+    //  세부 장표 — 글자만 고친다. 대표의 상태·멘토 표시는 건드리지 않는다(완성도는 대표 기준 · Q9)
+    if(et.k >= 0 && et.x.id === id){
+      var u = et.s; u[k] = v;
+      if(et.main.mentor.ran && k !== 'scenario') et.main.mentor.edited = true;   // 멘토는 목차 단위로 읽었다 — 세부를 고쳐도 「멘토 후 수정」
+      var fu = SLIDE_FIELDS.filter(function(x){ return x.k === k; })[0];
+      if(fu && $('slc-' + k)){ $('slc-' + k).textContent = v.length + ' / ' + fu.max + '자'; $('slc-' + k).classList.toggle('over', v.length > fu.max); }
+      var wu = slideWarns(u);
+      SLIDE_FIELDS.forEach(function(x){ var ta = $('slf-' + x.k); if(ta) ta.classList.toggle('is-warn', wu.some(function(w){ return w.k === x.k; })); });
+      if($('slLine')) $('slLine').textContent = stateLine(u, wu);
+      if((k === 'title' || k === 'body') && $('slVizPic')){
+        var vu = vizData(u);
+        $('slVizPic').innerHTML = vizPreview(u);
+        if(v2On()) fitV2Preview(); else fitVizText($('slVizPic'));
+        if($('slVizCnt')) $('slVizCnt').textContent = '채워진 칸 ' + vu.filled + ' / ' + vu.total;
+      }
+      slideChanged();
+      renderSlideLeft(); renderSlideRight(); renderMeta();
+      return;
+    }
     var s = state.slides[id], was = s.status;
     s[k] = v;
     if(k !== 'scenario' || v.trim()){
@@ -3884,8 +4089,8 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
   function slideChanged(){ saveLocal(); }
   function goSlide(i){
     var max = llm.tipsMode ? 12 + TIPS_STEPS.length - 1 : 11;
-    if(i < 0 || i > max || i === state.cur) return;
-    state.cur = i;
+    if(i < 0 || i > max || (i === state.cur && !(state.sub >= 0))) return;
+    state.cur = i; state.sub = -1;          // 목차를 누르면 대표 장표로(세부는 트리에서 고른다)
     syncToServer();                      // 장표를 넘길 때마다 서버에 올린다(옛 단계 이동과 같다)
     render();
     if($('slGuideVeil')){ if(i < 12) openGuidePop(); else closePops(); }   // 열어 둔 지식 문항은 새 장표 것으로 바꾼다
@@ -4040,9 +4245,9 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
       return box('toc', F({ no: '·', section: '목차', line2: co + ' — IR 피칭 자료', body: '<ol class="ir2-toc">' + li + '</ol>', company: co, page: pg }));
     }
     if(it.kind === 'slide'){
-      var sx = slideOf(it.x.id), g = v2Group(it.x.id), pr = vizData(sx).prop ? '<span class="ir2-prop">실측 비율</span>' : '';
-      return box('slide', F({ no: g.no, section: g.name, line1: sx.msg.trim(), line2: sx.title.trim() || '[결론형 제목 미작성]',
-        body: pr + V2NS.vizHtmlV2(sx, { d3: designShape() === '입체' }), company: co, page: pg, ir: it.x.id + ' · ' + it.x.name }), it.x.id);
+      var sx = deckSlideOf(it), g = v2Group(it.x.id), pr = vizData(sx).prop ? '<span class="ir2-prop">실측 비율</span>' : '';
+      return box('slide', F({ no: g.no, section: g.name, sub: it.sub >= 0 ? '세부' : '', subNo: it.sub + 1, line1: sx.msg.trim(), line2: sx.title.trim() || '[결론형 제목 미작성]',
+        body: pr + V2NS.vizHtmlV2(sx, { d3: designShape() === '입체' }), company: co, page: pg, ir: it.x.id + ' · ' + it.x.name }), deckItemId(it));
     }
     if(it.kind === 'rnd'){
       var rl = [];
@@ -5078,10 +5283,27 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
   function deckList(){
     var out = [{ kind:'cover' }];
     if(v2On()) out.push({ kind:'toc' });   // 디자인 v2 — 표지(사진형) + 목차 1장 · 간지 없음(7단계 Q3)
-    deckSlides().forEach(function(x){ out.push({ kind:'slide', x:x }); });
+    //  세부 장표(Q9) — 대표 바로 뒤에 · 대표를 패스하면 deckSlides 에서 빠지므로 세부도 함께 빠진다 · 빈 세부는 싣지 않는다(다운로드 전 안내)
+    deckSlides().forEach(function(x){
+      out.push({ kind:'slide', x:x, sub:-1 });
+      subsOf(x.id).forEach(function(u, k){ if(slideHas(u)) out.push({ kind:'slide', x:x, sub:k }); });
+    });
     if(llm.tipsMode && rndHas()) out.push({ kind:'rnd' });
     if(deckMissing().length) out.push({ kind:'appx' });
     return out;
+  }
+  //  덱 장 하나의 원고 — 대표 또는 세부
+  function deckSlideOf(it){ return it.sub >= 0 ? subsOf(it.x.id)[it.sub] : slideOf(it.x.id); }
+  function deckItemId(it){ return it.x.id + (it.sub >= 0 ? '-' + (it.sub + 1) : ''); }
+  //  덱에 못 싣는 빈 세부 장표(패스하지 않은 목차만) — 다운로드 전에 알린다
+  function emptySubs(){
+    var out = [];
+    deckSlides().forEach(function(x){ subsOf(x.id).forEach(function(u, k){ if(!slideHas(u)) out.push(x.id + '-' + (k + 1)); }); });
+    return out;
+  }
+  function emptySubsOk(){
+    var e = emptySubs();
+    return !e.length || confirm('내용이 없는 세부 장표 ' + e.length + '장(' + e.join(', ') + ')은 덱에 싣지 않습니다.\n\n그대로 받을까요?');
   }
   function deckFooter(){ return (companyName() || '[회사명]') + ' · IR PitchBuilder · ' + localYMD(); }
   function localYMD(){
@@ -5108,8 +5330,8 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
                foot + '</div>';
     }
     if(it.kind === 'slide'){
-      var s = slideOf(it.x.id), d = vizData(s);
-      return '<div class="pb-slide" data-kind="slide" data-id="' + it.x.id + '">' + draft + sk(it.x.id + ' · ' + it.x.name) +
+      var s = deckSlideOf(it), d = vizData(s);
+      return '<div class="pb-slide" data-kind="slide" data-id="' + deckItemId(it) + '">' + draft + sk(it.x.id + ' · ' + it.x.name + (it.sub >= 0 ? ' · 세부 ' + (it.sub + 1) : '')) +
                '<div class="s-head' + (s.title.trim() ? '' : ' is-void') + '">' + esc(s.title.trim() || '[결론형 제목 미작성]') + '</div>' +
                (s.msg.trim() ? '<div class="s-sub">' + esc(s.msg) + '</div>' : '') +
                '<div class="s-body"><div class="s-fig s-viz">' +
@@ -5141,7 +5363,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
   }
   function renderDeckLeft(){
     var list = deckList();
-    var lab = function(it){ return it.kind === 'cover' ? '표지' : it.kind === 'toc' ? '목차' : it.kind === 'slide' ? it.x.id + ' ' + it.x.name : it.kind === 'rnd' ? '부록 · R&D' : '부록 · MISSING'; };
+    var lab = function(it){ return it.kind === 'cover' ? '표지' : it.kind === 'toc' ? '목차' : it.kind === 'slide' ? (it.sub >= 0 ? '└ ' + deckItemId(it) + ' 세부' : it.x.id + ' ' + it.x.name) : it.kind === 'rnd' ? '부록 · R&D' : '부록 · MISSING'; };
     var h = '<h4>IR 피칭 자료<em>' + list.length + '장</em></h4>';
     list.forEach(function(it, i){ h += '<button class="pb-nav" data-s="' + i + '">' + ('0' + (i + 1)).slice(-2) + ' · ' + esc(lab(it)) + '</button>'; });
     h += '<div class="pb-hr"></div>' +
@@ -5162,8 +5384,8 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
         if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
       };
     });
-    $('dkPdf').onclick = function(){ exportDeckPdf(this); };
-    $('dkPpt').onclick = function(){ exportDeckPpt(this); };
+    $('dkPdf').onclick = function(){ if(emptySubsOk()) exportDeckPdf(this); };
+    $('dkPpt').onclick = function(){ if(emptySubsOk()) exportDeckPpt(this); };
     bindReviewBtns();
     $('dkEdit').onclick = goWrite;
     $('dkBack').onclick = goResult;
@@ -5242,10 +5464,11 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
 
   //  우측 — 덱 구성 메모(화면에만). 숫자 대조는 하지 않는다: 덱이 곧 원고라 대조할 다른 원문이 없다.
   function renderDeckRight(){
-    var over = [];
-    deckSlides().forEach(function(x){ var o = vizOverflow(slideOf(x.id)); if(o.length) over.push(x.id + ' — 넘친 근거 ' + o.length + '줄'); });
+    var over = [], items = deckList().filter(function(it){ return it.kind === 'slide'; }), nSub = items.filter(function(it){ return it.sub >= 0; }).length, es = emptySubs();
+    items.forEach(function(it){ var o = vizOverflow(deckSlideOf(it)); if(o.length) over.push(deckItemId(it) + ' — 넘친 근거 ' + o.length + '줄'); });
     var h = '<div class="pb-panel"><h5>덱 구성</h5>' +
-            '<p>장표 ' + deckSlides().length + '장 · 패스 ' + passSlides().length + '장 · 색상톤 <b>' + esc(toneOf(state.tone).label) + '</b></p>';
+            '<p>장표 ' + deckSlides().length + '장' + (nSub ? ' · 세부 ' + nSub + '장' : '') + ' · 패스 ' + passSlides().length + '장 · 색상톤 <b>' + esc(toneOf(state.tone).label) + '</b></p>';
+    if(es.length) h += '<p class="pb-note" id="dkEmptySub" style="margin-top:10px;color:var(--pb-warn-txt-on-ink)">내용이 없는 세부 장표 ' + es.length + '장(' + esc(es.join(', ')) + ')은 덱에 싣지 않습니다. 쓰시려면 작성 화면에서 채우고, 아니면 지우십시오.</p>';
     if(over.length){
       h += '<p class="pb-note" style="margin-top:10px;color:var(--pb-warn-txt-on-ink)">도식 칸보다 근거 줄이 많은 장표 — 덱에는 앞 칸 수만큼만 실리고, 넘친 줄은 PPT 발표자 노트로 갑니다.</p>';
       over.forEach(function(o){ h += '<div class="pb-ck yet"><span>—</span>' + esc(o) + '</div>'; });
@@ -5271,11 +5494,12 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.deckHtml = function(){ var L = deckLi
     if(it.kind === 'cover'){
       var q = qnaNotes();
       if(q.length) L.push('[발표 전체 — 예상 질문 대비]', q.join('\n'));
-      L.push('[구성] 장표 ' + deckSlides().length + '장 · 패스 ' + passSlides().length + '장');
+      var ns = deckList().filter(function(x){ return x.kind === 'slide' && x.sub >= 0; }).length;
+      L.push('[구성] 장표 ' + deckSlides().length + '장' + (ns ? ' · 세부 ' + ns + '장' : '') + ' · 패스 ' + passSlides().length + '장');
     } else if(it.kind === 'slide'){
-      var s = slideOf(it.x.id), mr = (state.mentorRes || {})[it.x.id];
+      var s = deckSlideOf(it), mr = (state.mentorRes || {})[it.x.id];
       if(s.scenario.trim()) L.push('[발표 시나리오]', s.scenario.trim());
-      if(mr && arr(mr.questions).length) L.push('[예상 질문]', arr(mr.questions).map(function(x){ return '· ' + x; }).join('\n'));
+      if(!(it.sub >= 0) && mr && arr(mr.questions).length)   // 예상 질문은 목차 단위 — 대표 장 노트에만 L.push('[예상 질문]', arr(mr.questions).map(function(x){ return '· ' + x; }).join('\n'));
       var o = vizOverflow(s);
       if(o.length) L.push('[도식에 싣지 못한 근거]', o.map(function(x){ return '· ' + x; }).join('\n'));
     } else if(it.kind === 'appx'){
