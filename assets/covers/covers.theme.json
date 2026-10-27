@@ -1,0 +1,2182 @@
+{
+ "version": "v2-20261028",
+ "rule": "PPT 색 1개 → 같은 색상 채도 변주(V5)",
+ "covers": [
+  {
+   "coverId": "C46",
+   "name": "휴머노이드 로봇",
+   "group": "로봇·AI·보안·IoT",
+   "tone": "IT",
+   "source": "shapes",
+   "ppt": "#53C3CD",
+   "hue": 185,
+   "theme": {
+    "primary": "#28828A",
+    "secondary": "#436C6F",
+    "accent": "#00DCF0",
+    "bg": "#ECF6F7"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.52,
+    "whiteOnSecondary": 5.81,
+    "whiteOnAccent": 1.68
+   },
+   "contrastBg": {
+    "textOnBg": 13.8,
+    "primaryOnBg": 4.11
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C33",
+   "name": "사이버 보안",
+   "group": "로봇·AI·보안·IoT",
+   "tone": "IT",
+   "source": "shapes",
+   "ppt": "#00BDFB",
+   "hue": 195,
+   "theme": {
+    "primary": "#0D80A5",
+    "secondary": "#376B7B",
+    "accent": "#00B4F0",
+    "bg": "#EAF5FE"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.52,
+    "whiteOnSecondary": 5.91,
+    "whiteOnAccent": 2.39
+   },
+   "contrastBg": {
+    "textOnBg": 13.73,
+    "primaryOnBg": 4.09
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C47",
+   "name": "스마트시티·IoT",
+   "group": "로봇·AI·보안·IoT",
+   "tone": "IT",
+   "source": "shapes",
+   "ppt": "#476ADD",
+   "hue": 226,
+   "theme": {
+    "primary": "#264DCF",
+    "secondary": "#5566A0",
+    "accent": "#3363FF",
+    "bg": "#EBEDF9"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 6.9,
+    "whiteOnSecondary": 5.53,
+    "whiteOnAccent": 4.81
+   },
+   "contrastBg": {
+    "textOnBg": 13.02,
+    "primaryOnBg": 5.92
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C22",
+   "name": "큐브·데이터",
+   "group": "로봇·AI·보안·IoT",
+   "tone": "IT",
+   "source": "photo",
+   "ppt": "#152434",
+   "hue": 211,
+   "theme": {
+    "primary": "#152434",
+    "secondary": "#1E242B",
+    "accent": "#004186",
+    "bg": "#EAEAEA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 15.74,
+    "whiteOnSecondary": 15.64,
+    "whiteOnAccent": 10
+   },
+   "contrastBg": {
+    "textOnBg": 12.62,
+    "primaryOnBg": 13.09
+   },
+   "info": [],
+   "warnings": [
+    "사진 대체(PPT 고유색 없음)"
+   ],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C26",
+   "name": "블록체인",
+   "group": "로봇·AI·보안·IoT",
+   "tone": "IT",
+   "source": "shapes",
+   "ppt": "#0587AF",
+   "hue": 194,
+   "theme": {
+    "primary": "#0D7FA2",
+    "secondary": "#366979",
+    "accent": "#00B5EC",
+    "bg": "#EAEFF3"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.59,
+    "whiteOnSecondary": 6.08,
+    "whiteOnAccent": 2.38
+   },
+   "contrastBg": {
+    "textOnBg": 13.11,
+    "primaryOnBg": 3.97
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C37",
+   "name": "디지털 금융",
+   "group": "금융·핀테크·투자",
+   "tone": "IT",
+   "source": "shapes",
+   "ppt": "#1FFBFD",
+   "hue": 181,
+   "theme": {
+    "primary": "#0B8384",
+    "secondary": "#2C6263",
+    "accent": "#00CACC",
+    "bg": "#EAFEFF"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.57,
+    "whiteOnSecondary": 6.92,
+    "whiteOnAccent": 2.03
+   },
+   "contrastBg": {
+    "textOnBg": 14.54,
+    "primaryOnBg": 4.38
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C41",
+   "name": "금융 위기·리스크",
+   "group": "금융·핀테크·투자",
+   "tone": "IT",
+   "source": "shapes",
+   "ppt": "#FBBF20",
+   "hue": 44,
+   "theme": {
+    "primary": "#926D0C",
+    "secondary": "#6D5D31",
+    "accent": "#DB9F00",
+    "bg": "#FEF5EA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.76,
+    "whiteOnSecondary": 6.44,
+    "whiteOnAccent": 2.34
+   },
+   "contrastBg": {
+    "textOnBg": 14.07,
+    "primaryOnBg": 4.41
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C61",
+   "name": "황금알·자산",
+   "group": "금융·핀테크·투자",
+   "tone": "IT",
+   "source": "photo",
+   "ppt": "#BEA37B",
+   "hue": 36,
+   "theme": {
+    "primary": "#8D7044",
+    "secondary": "#796C58",
+    "accent": "#FF9E0F",
+    "bg": "#E8E0D7"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.63,
+    "whiteOnSecondary": 5.12,
+    "whiteOnAccent": 2.07
+   },
+   "contrastBg": {
+    "textOnBg": 11.62,
+    "primaryOnBg": 3.55
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [
+    "저채도 보정",
+    "사진 대체(PPT 고유색 없음)"
+   ],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C24",
+   "name": "바이오",
+   "group": "바이오·의료·헬스케어",
+   "tone": "BT",
+   "source": "shapes",
+   "ppt": "#083D65",
+   "hue": 206,
+   "theme": {
+    "primary": "#083D65",
+    "secondary": "#22394B",
+    "accent": "#0061AA",
+    "bg": "#EAEBED"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 11.26,
+    "whiteOnSecondary": 11.97,
+    "whiteOnAccent": 6.38
+   },
+   "contrastBg": {
+    "textOnBg": 12.73,
+    "primaryOnBg": 9.44
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C30",
+   "name": "의약품·캡슐",
+   "group": "바이오·의료·헬스케어",
+   "tone": "BT",
+   "source": "shapes",
+   "ppt": "#DC3539",
+   "hue": 359,
+   "theme": {
+    "primary": "#D12428",
+    "secondary": "#A15455",
+    "accent": "#FF3338",
+    "bg": "#F9EAEB"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 5.26,
+    "whiteOnSecondary": 5.36,
+    "whiteOnAccent": 3.63
+   },
+   "contrastBg": {
+    "textOnBg": 13.01,
+    "primaryOnBg": 4.51
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C50",
+   "name": "정형외과·영상",
+   "group": "바이오·의료·헬스케어",
+   "tone": "BT",
+   "source": "photo",
+   "ppt": "#111251",
+   "hue": 239,
+   "theme": {
+    "primary": "#111251",
+    "secondary": "#23233F",
+    "accent": "#00029F",
+    "bg": "#EAEAEC"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 17.08,
+    "whiteOnSecondary": 15.18,
+    "whiteOnAccent": 13.91
+   },
+   "contrastBg": {
+    "textOnBg": 12.64,
+    "primaryOnBg": 14.22
+   },
+   "info": [],
+   "warnings": [
+    "사진 대체(PPT 고유색 없음)"
+   ],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C66",
+   "name": "백신 개발",
+   "group": "바이오·의료·헬스케어",
+   "tone": "BT",
+   "source": "shapes",
+   "ppt": "#476ADD",
+   "hue": 226,
+   "theme": {
+    "primary": "#264DCF",
+    "secondary": "#5566A0",
+    "accent": "#3363FF",
+    "bg": "#EBEDF9"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 6.9,
+    "whiteOnSecondary": 5.53,
+    "whiteOnAccent": 4.81
+   },
+   "contrastBg": {
+    "textOnBg": 13.02,
+    "primaryOnBg": 5.92
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C67",
+   "name": "동물병원·펫",
+   "group": "바이오·의료·헬스케어",
+   "tone": "BT",
+   "source": "shapes",
+   "ppt": "#FDBDC7",
+   "hue": 351,
+   "theme": {
+    "primary": "#E21233",
+    "secondary": "#A94C5A",
+    "accent": "#FF3353",
+    "bg": "#FEE8EB"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.81,
+    "whiteOnSecondary": 5.43,
+    "whiteOnAccent": 3.59
+   },
+   "contrastBg": {
+    "textOnBg": 12.98,
+    "primaryOnBg": 4.11
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C36",
+   "name": "영양·식단",
+   "group": "바이오·의료·헬스케어",
+   "tone": "BT",
+   "source": "shapes",
+   "ppt": "#FD9034",
+   "hue": 27,
+   "theme": {
+    "primary": "#B85C0F",
+    "secondary": "#89603D",
+    "accent": "#FF7705",
+    "bg": "#FFF0EA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.59,
+    "whiteOnSecondary": 5.52,
+    "whiteOnAccent": 2.66
+   },
+   "contrastBg": {
+    "textOnBg": 13.67,
+    "primaryOnBg": 4.13
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C45",
+   "name": "홈 트레이닝",
+   "group": "바이오·의료·헬스케어",
+   "tone": "BT",
+   "source": "shapes",
+   "ppt": "#F79465",
+   "hue": 19,
+   "theme": {
+    "primary": "#CB4C10",
+    "secondary": "#985F44",
+    "accent": "#FF6319",
+    "bg": "#FCDCD3"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.58,
+    "whiteOnSecondary": 5.18,
+    "whiteOnAccent": 2.98
+   },
+   "contrastBg": {
+    "textOnBg": 11.8,
+    "primaryOnBg": 3.56
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C49",
+   "name": "로컬 푸드",
+   "group": "식품·외식·생활",
+   "tone": "LOCAL",
+   "source": "shapes",
+   "ppt": "#F8C391",
+   "hue": 29,
+   "theme": {
+    "primary": "#B35F0F",
+    "secondary": "#86603C",
+    "accent": "#FF7C00",
+    "bg": "#FCE9DC"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.6,
+    "whiteOnSecondary": 5.6,
+    "whiteOnAccent": 2.58
+   },
+   "contrastBg": {
+    "textOnBg": 12.89,
+    "primaryOnBg": 3.91
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C68",
+   "name": "요리·레시피",
+   "group": "식품·외식·생활",
+   "tone": "LOCAL",
+   "source": "shapes",
+   "ppt": "#FBE4C2",
+   "hue": 36,
+   "theme": {
+    "primary": "#A5680D",
+    "secondary": "#7B6037",
+    "accent": "#F08F00",
+    "bg": "#FDF5E9"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.58,
+    "whiteOnSecondary": 5.88,
+    "whiteOnAccent": 2.43
+   },
+   "contrastBg": {
+    "textOnBg": 14.03,
+    "primaryOnBg": 4.23
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C64",
+   "name": "딸기·농산물",
+   "group": "식품·외식·생활",
+   "tone": "LOCAL",
+   "source": "shapes",
+   "ppt": "#D95E7A",
+   "hue": 346,
+   "theme": {
+    "primary": "#C62F51",
+    "secondary": "#9C5868",
+    "accent": "#FF3361",
+    "bg": "#F1D2D7"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 5.35,
+    "whiteOnSecondary": 5.24,
+    "whiteOnAccent": 3.56
+   },
+   "contrastBg": {
+    "textOnBg": 10.8,
+    "primaryOnBg": 3.8
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C01",
+   "name": "커피",
+   "group": "식품·외식·생활",
+   "tone": "LOCAL",
+   "source": "shapes",
+   "ppt": "#EFDBC7",
+   "hue": 30,
+   "theme": {
+    "primary": "#A3692E",
+    "secondary": "#83694E",
+    "accent": "#FF870F",
+    "bg": "#F9F1EB"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.55,
+    "whiteOnSecondary": 5.13,
+    "whiteOnAccent": 2.41
+   },
+   "contrastBg": {
+    "textOnBg": 13.6,
+    "primaryOnBg": 4.07
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C14",
+   "name": "캠핑·레저",
+   "group": "식품·외식·생활",
+   "tone": "LOCAL",
+   "source": "shapes",
+   "ppt": "#61C8B1",
+   "hue": 167,
+   "theme": {
+    "primary": "#2E8471",
+    "secondary": "#466D64",
+    "accent": "#00F0BA",
+    "bg": "#ECF6F3"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.51,
+    "whiteOnSecondary": 5.78,
+    "whiteOnAccent": 1.48
+   },
+   "contrastBg": {
+    "textOnBg": 13.77,
+    "primaryOnBg": 4.09
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C44",
+   "name": "시즌·이벤트",
+   "group": "식품·외식·생활",
+   "tone": "LOCAL",
+   "source": "shapes",
+   "ppt": "#FBE034",
+   "hue": 52,
+   "theme": {
+    "primary": "#84740B",
+    "secondary": "#635B2C",
+    "accent": "#CCB000",
+    "bg": "#FEFAEA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.68,
+    "whiteOnSecondary": 6.86,
+    "whiteOnAccent": 2.15
+   },
+   "contrastBg": {
+    "textOnBg": 14.51,
+    "primaryOnBg": 4.48
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C38",
+   "name": "전기차",
+   "group": "에너지·환경·모빌리티",
+   "tone": "ET",
+   "source": "shapes",
+   "ppt": "#1ED0A6",
+   "hue": 166,
+   "theme": {
+    "primary": "#13846A",
+    "secondary": "#326559",
+    "accent": "#00D4A2",
+    "bg": "#EAF7F2"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.63,
+    "whiteOnSecondary": 6.69,
+    "whiteOnAccent": 1.92
+   },
+   "contrastBg": {
+    "textOnBg": 13.8,
+    "primaryOnBg": 4.21
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C39",
+   "name": "지구·친환경",
+   "group": "에너지·환경·모빌리티",
+   "tone": "ET",
+   "source": "shapes",
+   "ppt": "#B0D66C",
+   "hue": 82,
+   "theme": {
+    "primary": "#5F8024",
+    "secondary": "#57663D",
+    "accent": "#90E000",
+    "bg": "#E4F0D4"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.57,
+    "whiteOnSecondary": 6.23,
+    "whiteOnAccent": 1.63
+   },
+   "contrastBg": {
+    "textOnBg": 12.81,
+    "primaryOnBg": 3.85
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C63",
+   "name": "해양 플라스틱",
+   "group": "에너지·환경·모빌리티",
+   "tone": "ET",
+   "source": "shapes",
+   "ppt": "#0085F2",
+   "hue": 207,
+   "theme": {
+    "primary": "#1178CD",
+    "secondary": "#447399",
+    "accent": "#1C99FF",
+    "bg": "#EAEFFD"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.57,
+    "whiteOnSecondary": 5.05,
+    "whiteOnAccent": 2.98
+   },
+   "contrastBg": {
+    "textOnBg": 13.2,
+    "primaryOnBg": 3.98
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C17",
+   "name": "그린·잔디",
+   "group": "에너지·환경·모빌리티",
+   "tone": "ET",
+   "source": "shapes",
+   "ppt": "#34AF27",
+   "hue": 114,
+   "theme": {
+    "primary": "#28851E",
+    "secondary": "#3F693A",
+    "accent": "#15E000",
+    "bg": "#EAF3EA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.7,
+    "whiteOnSecondary": 6.38,
+    "whiteOnAccent": 1.8
+   },
+   "contrastBg": {
+    "textOnBg": 13.38,
+    "primaryOnBg": 4.15
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C32",
+   "name": "교육·아이디어",
+   "group": "교육·콘텐츠·미디어",
+   "tone": "CT",
+   "source": "shapes",
+   "ppt": "#F8BA16",
+   "hue": 44,
+   "theme": {
+    "primary": "#926D0C",
+    "secondary": "#6D5D31",
+    "accent": "#DB9F00",
+    "bg": "#FEF4EA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.76,
+    "whiteOnSecondary": 6.44,
+    "whiteOnAccent": 2.34
+   },
+   "contrastBg": {
+    "textOnBg": 13.98,
+    "primaryOnBg": 4.38
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C53",
+   "name": "온라인 도서관",
+   "group": "교육·콘텐츠·미디어",
+   "tone": "CT",
+   "source": "shapes",
+   "ppt": "#9CCCD2",
+   "hue": 187,
+   "theme": {
+    "primary": "#3E8089",
+    "secondary": "#537174",
+    "accent": "#05E3FF",
+    "bg": "#DEECEE"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.51,
+    "whiteOnSecondary": 5.27,
+    "whiteOnAccent": 1.56
+   },
+   "contrastBg": {
+    "textOnBg": 12.53,
+    "primaryOnBg": 3.73
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C43",
+   "name": "책·성장",
+   "group": "교육·콘텐츠·미디어",
+   "tone": "CT",
+   "source": "shapes",
+   "ppt": "#0E7FB7",
+   "hue": 200,
+   "theme": {
+    "primary": "#0E7BB2",
+    "secondary": "#3B6C85",
+    "accent": "#00A9FD",
+    "bg": "#EAEEF4"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.67,
+    "whiteOnSecondary": 5.72,
+    "whiteOnAccent": 2.59
+   },
+   "contrastBg": {
+    "textOnBg": 13.04,
+    "primaryOnBg": 4.01
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C60",
+   "name": "포트폴리오",
+   "group": "교육·콘텐츠·미디어",
+   "tone": "CT",
+   "source": "shapes",
+   "ppt": "#49A6A6",
+   "hue": 180,
+   "theme": {
+    "primary": "#387F7F",
+    "secondary": "#4B6B6B",
+    "accent": "#00F4F4",
+    "bg": "#EBF2F2"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.66,
+    "whiteOnSecondary": 5.81,
+    "whiteOnAccent": 1.38
+   },
+   "contrastBg": {
+    "textOnBg": 13.38,
+    "primaryOnBg": 4.11
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C25",
+   "name": "패션",
+   "group": "교육·콘텐츠·미디어",
+   "tone": "CT",
+   "source": "photo",
+   "ppt": "#562429",
+   "hue": 354,
+   "theme": {
+    "primary": "#562429",
+    "secondary": "#483234",
+    "accent": "#B70012",
+    "bg": "#ECEAEA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 12.5,
+    "whiteOnSecondary": 11.79,
+    "whiteOnAccent": 6.95
+   },
+   "contrastBg": {
+    "textOnBg": 12.67,
+    "primaryOnBg": 10.43
+   },
+   "info": [],
+   "warnings": [
+    "사진 대체(PPT 고유색 없음)"
+   ],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C57",
+   "name": "부동산·도시",
+   "group": "부동산·물류·유통",
+   "tone": "LOCAL",
+   "source": "shapes",
+   "ppt": "#5A9BD5",
+   "hue": 208,
+   "theme": {
+    "primary": "#3079BB",
+    "secondary": "#567795",
+    "accent": "#299AFF",
+    "bg": "#ECF1F8"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.59,
+    "whiteOnSecondary": 4.7,
+    "whiteOnAccent": 2.93
+   },
+   "contrastBg": {
+    "textOnBg": 13.38,
+    "primaryOnBg": 4.04
+   },
+   "info": [],
+   "warnings": [
+    "PPT 공통 기본색"
+   ],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C58",
+   "name": "부동산 상승",
+   "group": "부동산·물류·유통",
+   "tone": "LOCAL",
+   "source": "shapes",
+   "ppt": "#F79465",
+   "hue": 19,
+   "theme": {
+    "primary": "#CB4C10",
+    "secondary": "#985F44",
+    "accent": "#FF6319",
+    "bg": "#FCDCD3"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.58,
+    "whiteOnSecondary": 5.18,
+    "whiteOnAccent": 2.98
+   },
+   "contrastBg": {
+    "textOnBg": 11.8,
+    "primaryOnBg": 3.56
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C52",
+   "name": "온라인 배송",
+   "group": "부동산·물류·유통",
+   "tone": "LOCAL",
+   "source": "shapes",
+   "ppt": "#F78C0E",
+   "hue": 32,
+   "theme": {
+    "primary": "#AA620E",
+    "secondary": "#7F5F39",
+    "accent": "#F58400",
+    "bg": "#FEEFEA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.71,
+    "whiteOnSecondary": 5.84,
+    "whiteOnAccent": 2.57
+   },
+   "contrastBg": {
+    "textOnBg": 13.55,
+    "primaryOnBg": 4.2
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C27",
+   "name": "전구·아이디어",
+   "group": "비즈니스·전략(공통)",
+   "tone": "BASE",
+   "source": "shapes",
+   "ppt": "#BEA00E",
+   "hue": 50,
+   "theme": {
+    "primary": "#89730B",
+    "secondary": "#665D2E",
+    "accent": "#D1AD00",
+    "bg": "#F5F1EA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.65,
+    "whiteOnSecondary": 6.62,
+    "whiteOnAccent": 2.17
+   },
+   "contrastBg": {
+    "textOnBg": 13.48,
+    "primaryOnBg": 4.13
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C31",
+   "name": "체스·전략",
+   "group": "비즈니스·전략(공통)",
+   "tone": "BASE",
+   "source": "shapes",
+   "ppt": "#FFB03B",
+   "hue": 36,
+   "theme": {
+    "primary": "#A5680D",
+    "secondary": "#7B6037",
+    "accent": "#F08F00",
+    "bg": "#FFE4CE"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.58,
+    "whiteOnSecondary": 5.88,
+    "whiteOnAccent": 2.43
+   },
+   "contrastBg": {
+    "textOnBg": 12.46,
+    "primaryOnBg": 3.76
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C40",
+   "name": "퍼즐·마지막 조각",
+   "group": "비즈니스·전략(공통)",
+   "tone": "BASE",
+   "source": "shapes",
+   "ppt": "#FD2906",
+   "hue": 9,
+   "theme": {
+    "primary": "#E23012",
+    "secondary": "#A9594C",
+    "accent": "#FF5033",
+    "bg": "#FFEAEA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.5,
+    "whiteOnSecondary": 4.98,
+    "whiteOnAccent": 3.26
+   },
+   "contrastBg": {
+    "textOnBg": 13.16,
+    "primaryOnBg": 3.9
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C62",
+   "name": "빨간 우산·차별화",
+   "group": "비즈니스·전략(공통)",
+   "tone": "BASE",
+   "source": "photo",
+   "ppt": "#7E0A0A",
+   "hue": 0,
+   "theme": {
+    "primary": "#7E0A0A",
+    "secondary": "#5E2A2A",
+    "accent": "#C50000",
+    "bg": "#EEEAEA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 10.85,
+    "whiteOnSecondary": 11.41,
+    "whiteOnAccent": 6.22
+   },
+   "contrastBg": {
+    "textOnBg": 12.72,
+    "primaryOnBg": 9.09
+   },
+   "info": [],
+   "warnings": [
+    "사진 대체(PPT 고유색 없음)"
+   ],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C29",
+   "name": "스마트 홈 터치",
+   "group": "비즈니스·전략(공통)",
+   "tone": "BASE",
+   "source": "photo",
+   "ppt": "#CDBAB0",
+   "hue": 21,
+   "theme": {
+    "primary": "#9E694C",
+    "secondary": "#887063",
+    "accent": "#FF7329",
+    "bg": "#EDE7E4"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.59,
+    "whiteOnSecondary": 4.62,
+    "whiteOnAccent": 2.71
+   },
+   "contrastBg": {
+    "textOnBg": 12.4,
+    "primaryOnBg": 3.75
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [
+    "저채도 보정",
+    "사진 대체(PPT 고유색 없음)"
+   ],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C28",
+   "name": "비즈니스 캔버스",
+   "group": "비즈니스·전략(공통)",
+   "tone": "BASE",
+   "source": "shapes",
+   "ppt": "#110E26",
+   "hue": 248,
+   "theme": {
+    "primary": "#110E26",
+    "secondary": "#16151F",
+    "accent": "#0E0071",
+    "bg": "#EAEAEA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 18.84,
+    "whiteOnSecondary": 18.09,
+    "whiteOnAccent": 16.7
+   },
+   "contrastBg": {
+    "textOnBg": 12.62,
+    "primaryOnBg": 15.66
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C34",
+   "name": "컨설팅",
+   "group": "비즈니스·전략(공통)",
+   "tone": "BASE",
+   "source": "shapes",
+   "ppt": "#85BB24",
+   "hue": 81,
+   "theme": {
+    "primary": "#5A7F18",
+    "secondary": "#526335",
+    "accent": "#89D500",
+    "bg": "#EFF5EA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.68,
+    "whiteOnSecondary": 6.57,
+    "whiteOnAccent": 1.81
+   },
+   "contrastBg": {
+    "textOnBg": 13.68,
+    "primaryOnBg": 4.22
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C21",
+   "name": "5개년 사업계획",
+   "group": "비즈니스·전략(공통)",
+   "tone": "BASE",
+   "source": "shapes",
+   "ppt": "#015A6B",
+   "hue": 190,
+   "theme": {
+    "primary": "#085564",
+    "secondary": "#21444B",
+    "accent": "#008EA9",
+    "bg": "#EAECED"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 8.42,
+    "whiteOnSecondary": 10.54,
+    "whiteOnAccent": 3.86
+   },
+   "contrastBg": {
+    "textOnBg": 12.81,
+    "primaryOnBg": 7.11
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C54",
+   "name": "스타트업 피치덱",
+   "group": "비즈니스·전략(공통)",
+   "tone": "BASE",
+   "source": "shapes",
+   "ppt": "#444D26",
+   "hue": 74,
+   "theme": {
+    "primary": "#444E25",
+    "secondary": "#3E4330",
+    "accent": "#88B000",
+    "bg": "#EBEBEA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 8.89,
+    "whiteOnSecondary": 10.24,
+    "whiteOnAccent": 2.54
+   },
+   "contrastBg": {
+    "textOnBg": 12.73,
+    "primaryOnBg": 7.45
+   },
+   "info": [],
+   "warnings": [
+    "저채도 보정"
+   ],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C55",
+   "name": "5 Forces",
+   "group": "비즈니스·전략(공통)",
+   "tone": "BASE",
+   "source": "shapes",
+   "ppt": "#083D65",
+   "hue": 206,
+   "theme": {
+    "primary": "#083D65",
+    "secondary": "#22394B",
+    "accent": "#0061AA",
+    "bg": "#EAEBED"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 11.26,
+    "whiteOnSecondary": 11.97,
+    "whiteOnAccent": 6.38
+   },
+   "contrastBg": {
+    "textOnBg": 12.73,
+    "primaryOnBg": 9.44
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C56",
+   "name": "프로젝트 기획",
+   "group": "비즈니스·전략(공통)",
+   "tone": "BASE",
+   "source": "shapes",
+   "ppt": "#223362",
+   "hue": 224,
+   "theme": {
+    "primary": "#223362",
+    "secondary": "#343B50",
+    "accent": "#0033C1",
+    "bg": "#EAEAEC"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 12.22,
+    "whiteOnSecondary": 11.13,
+    "whiteOnAccent": 9.36
+   },
+   "contrastBg": {
+    "textOnBg": 12.64,
+    "primaryOnBg": 10.17
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C65",
+   "name": "기술 로드맵",
+   "group": "비즈니스·전략(공통)",
+   "tone": "BASE",
+   "source": "shapes",
+   "ppt": "#AA51AA",
+   "hue": 300,
+   "theme": {
+    "primary": "#A64FA6",
+    "secondary": "#8E678E",
+    "accent": "#FF33FF",
+    "bg": "#F3ECF3"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.89,
+    "whiteOnSecondary": 4.69,
+    "whiteOnAccent": 2.93
+   },
+   "contrastBg": {
+    "textOnBg": 13.09,
+    "primaryOnBg": 4.22
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C23",
+   "name": "스트라이프·추상",
+   "group": "비즈니스·전략(공통)",
+   "tone": "BASE",
+   "source": "shapes",
+   "ppt": "#EA3293",
+   "hue": 328,
+   "theme": {
+    "primary": "#DE1780",
+    "secondary": "#A74E7D",
+    "accent": "#FF339F",
+    "bg": "#FBEAF0"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.63,
+    "whiteOnSecondary": 5.21,
+    "whiteOnAccent": 3.37
+   },
+   "contrastBg": {
+    "textOnBg": 13.11,
+    "primaryOnBg": 3.99
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C02",
+   "name": "옛 감성·꽃",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#FF8687",
+   "hue": 360,
+   "theme": {
+    "primary": "#E21214",
+    "secondary": "#A94C4C",
+    "accent": "#FF3335",
+    "bg": "#FFD9D9"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.85,
+    "whiteOnSecondary": 5.49,
+    "whiteOnAccent": 3.64
+   },
+   "contrastBg": {
+    "textOnBg": 11.7,
+    "primaryOnBg": 3.74
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C03",
+   "name": "노란 리본",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#00A9EA",
+   "hue": 197,
+   "theme": {
+    "primary": "#0E7EA9",
+    "secondary": "#396B7E",
+    "accent": "#00B0F4",
+    "bg": "#EAF2FB"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.59,
+    "whiteOnSecondary": 5.87,
+    "whiteOnAccent": 2.47
+   },
+   "contrastBg": {
+    "textOnBg": 13.44,
+    "primaryOnBg": 4.06
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C04",
+   "name": "베이지 단색",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#E2CBB7",
+   "hue": 28,
+   "theme": {
+    "primary": "#9C6A3F",
+    "secondary": "#836C59",
+    "accent": "#FF8419",
+    "bg": "#F4ECE6"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.62,
+    "whiteOnSecondary": 4.94,
+    "whiteOnAccent": 2.45
+   },
+   "contrastBg": {
+    "textOnBg": 13,
+    "primaryOnBg": 3.96
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C06",
+   "name": "바이올렛·꽃병",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#CD9FD2",
+   "hue": 294,
+   "theme": {
+    "primary": "#9E4EA7",
+    "secondary": "#8A668E",
+    "accent": "#EB33FF",
+    "bg": "#EDDFEE"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 5.12,
+    "whiteOnSecondary": 4.8,
+    "whiteOnAccent": 3.26
+   },
+   "contrastBg": {
+    "textOnBg": 11.85,
+    "primaryOnBg": 4
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C07",
+   "name": "상큼·도형",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#87C6DD",
+   "hue": 196,
+   "theme": {
+    "primary": "#2C7D9B",
+    "secondary": "#4A6F7C",
+    "accent": "#05BCFF",
+    "bg": "#D9EAF2"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.65,
+    "whiteOnSecondary": 5.45,
+    "whiteOnAccent": 2.18
+   },
+   "contrastBg": {
+    "textOnBg": 12.29,
+    "primaryOnBg": 3.77
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C08",
+   "name": "콘크리트·크리에이티브",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#C7905A",
+   "hue": 30,
+   "theme": {
+    "primary": "#A06B36",
+    "secondary": "#836B53",
+    "accent": "#FF8914",
+    "bg": "#F6F0EC"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.52,
+    "whiteOnSecondary": 5.01,
+    "whiteOnAccent": 2.38
+   },
+   "contrastBg": {
+    "textOnBg": 13.44,
+    "primaryOnBg": 4
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C09",
+   "name": "파스텔·가방",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#FBC0BC",
+   "hue": 4,
+   "theme": {
+    "primary": "#E22012",
+    "secondary": "#A9524C",
+    "accent": "#FF4033",
+    "bg": "#FDE8E7"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.72,
+    "whiteOnSecondary": 5.25,
+    "whiteOnAccent": 3.48
+   },
+   "contrastBg": {
+    "textOnBg": 12.92,
+    "primaryOnBg": 4.02
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C10",
+   "name": "보라 단색",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#8C66C8",
+   "hue": 263,
+   "theme": {
+    "primary": "#6D41B4",
+    "secondary": "#756094",
+    "accent": "#8233FF",
+    "bg": "#EFEDF6"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 6.85,
+    "whiteOnSecondary": 5.44,
+    "whiteOnAccent": 5.43
+   },
+   "contrastBg": {
+    "textOnBg": 13.1,
+    "primaryOnBg": 5.91
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C11",
+   "name": "바다·여름",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#41CFDA",
+   "hue": 184,
+   "theme": {
+    "primary": "#1B8189",
+    "secondary": "#39676A",
+    "accent": "#00D0E0",
+    "bg": "#EBF7F9"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.62,
+    "whiteOnSecondary": 6.32,
+    "whiteOnAccent": 1.89
+   },
+   "contrastBg": {
+    "textOnBg": 13.88,
+    "primaryOnBg": 4.22
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C12",
+   "name": "유화·추상",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#F86238",
+   "hue": 13,
+   "theme": {
+    "primary": "#D93D12",
+    "secondary": "#A25C48",
+    "accent": "#FF5829",
+    "bg": "#FEECEB"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.54,
+    "whiteOnSecondary": 5.05,
+    "whiteOnAccent": 3.14
+   },
+   "contrastBg": {
+    "textOnBg": 13.31,
+    "primaryOnBg": 3.98
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C13",
+   "name": "연필·노트",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#F08C01",
+   "hue": 35,
+   "theme": {
+    "primary": "#A6660D",
+    "secondary": "#7C6038",
+    "accent": "#F18C00",
+    "bg": "#FCEFEA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.64,
+    "whiteOnSecondary": 5.85,
+    "whiteOnAccent": 2.47
+   },
+   "contrastBg": {
+    "textOnBg": 13.5,
+    "primaryOnBg": 4.12
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C15",
+   "name": "레트로·우주",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#FD97B5",
+   "hue": 342,
+   "theme": {
+    "primary": "#E21250",
+    "secondary": "#A94C67",
+    "accent": "#FF336F",
+    "bg": "#FEDDE5"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.73,
+    "whiteOnSecondary": 5.36,
+    "whiteOnAccent": 3.53
+   },
+   "contrastBg": {
+    "textOnBg": 12.06,
+    "primaryOnBg": 3.76
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C16",
+   "name": "핑크·벽돌",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#FD9693",
+   "hue": 2,
+   "theme": {
+    "primary": "#E21812",
+    "secondary": "#A94E4C",
+    "accent": "#FF3933",
+    "bg": "#FEDDDC"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.8,
+    "whiteOnSecondary": 5.41,
+    "whiteOnAccent": 3.57
+   },
+   "contrastBg": {
+    "textOnBg": 11.99,
+    "primaryOnBg": 3.79
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C18",
+   "name": "클래식 블루",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#024B80",
+   "hue": 205,
+   "theme": {
+    "primary": "#0A4A78",
+    "secondary": "#28455A",
+    "accent": "#006FBF",
+    "bg": "#EAEBEE"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 9.28,
+    "whiteOnSecondary": 10.05,
+    "whiteOnAccent": 5.22
+   },
+   "contrastBg": {
+    "textOnBg": 12.73,
+    "primaryOnBg": 7.78
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C19",
+   "name": "옐로 텍스처",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#F9CA17",
+   "hue": 48,
+   "theme": {
+    "primary": "#8E720B",
+    "secondary": "#6A5E2F",
+    "accent": "#D6AA00",
+    "bg": "#FEF7EA"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.6,
+    "whiteOnSecondary": 6.45,
+    "whiteOnAccent": 2.19
+   },
+   "contrastBg": {
+    "textOnBg": 14.25,
+    "primaryOnBg": 4.32
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C20",
+   "name": "프리즘",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#F2EAE3",
+   "hue": 28,
+   "theme": {
+    "primary": "#996D47",
+    "secondary": "#836F5E",
+    "accent": "#FF871F",
+    "bg": "#FAF7F4"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.53,
+    "whiteOnSecondary": 4.77,
+    "whiteOnAccent": 2.4
+   },
+   "contrastBg": {
+    "textOnBg": 14.22,
+    "primaryOnBg": 4.25
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C35",
+   "name": "삼각·파스텔",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#ED636D",
+   "hue": 356,
+   "theme": {
+    "primary": "#DB1927",
+    "secondary": "#A64F55",
+    "accent": "#FF3342",
+    "bg": "#F8D3D4"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 5.02,
+    "whiteOnSecondary": 5.43,
+    "whiteOnAccent": 3.62
+   },
+   "contrastBg": {
+    "textOnBg": 11.03,
+    "primaryOnBg": 3.65
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C42",
+   "name": "플로차트·화이트",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#1C819E",
+   "hue": 193,
+   "theme": {
+    "primary": "#1B7D9A",
+    "secondary": "#3E6A77",
+    "accent": "#00BCF2",
+    "bg": "#EAEFF1"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.72,
+    "whiteOnSecondary": 5.94,
+    "whiteOnAccent": 2.22
+   },
+   "contrastBg": {
+    "textOnBg": 13.1,
+    "primaryOnBg": 4.07
+   },
+   "info": [],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C48",
+   "name": "리빙 코랄",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#F86F6C",
+   "hue": 1,
+   "theme": {
+    "primary": "#E21712",
+    "secondary": "#A94E4C",
+    "accent": "#FF3733",
+    "bg": "#FCD5D4"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.81,
+    "whiteOnSecondary": 5.41,
+    "whiteOnAccent": 3.59
+   },
+   "contrastBg": {
+    "textOnBg": 11.28,
+    "primaryOnBg": 3.58
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  },
+  {
+   "coverId": "C59",
+   "name": "물감·블루",
+   "group": "분위기·색감(업종 무관)",
+   "tone": "MOOD",
+   "source": "shapes",
+   "ppt": "#FF8B5F",
+   "hue": 16,
+   "theme": {
+    "primary": "#D04511",
+    "secondary": "#9B5D45",
+    "accent": "#FF5C1F",
+    "bg": "#FFDAD2"
+   },
+   "coverOverlay": {
+    "color": "primary",
+    "opacity": 0.62
+   },
+   "contrast": {
+    "whiteOnPrimary": 4.62,
+    "whiteOnSecondary": 5.19,
+    "whiteOnAccent": 3.09
+   },
+   "contrastBg": {
+    "textOnBg": 11.72,
+    "primaryOnBg": 3.57
+   },
+   "info": [
+    "밝은 표지 — 배경에 표지 색 40%"
+   ],
+   "warnings": [],
+   "locked": false,
+   "reviewedBy": null
+  }
+ ]
+}
