@@ -3019,7 +3019,22 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.fitVizText = fi
   function vizCut(t, n){ return t.length > n ? t.slice(0, n - 1) + '…' : t; }
   //  🔴 10-28 팀215 「텍스트가 중간에 잘리고 …… 로 나온다」 — 1차 채움 근거 줄(35~45자)을 칸 상한(20~44자)이 잘랐다.
   //   민부장 결정 ① 잘라내지 말고 줄바꿈 — 칸 상한은 안전 상한만 두고, 넘치면 글자를 줄인다(fitVizText · v2 도 함께)
-  var VIZ_CELL_MAX = 90, VIZ_CELL_TBL = 40;
+  var VIZ_CELL_MAX = 200, VIZ_CELL_TBL = 60;   // 10-28(2) 90 → 200 — 팀에스지 실물 PDF: 한 문단 근거가 90자에서 「…」
+  //  10-28(2) 근거를 한 문단으로 쓰면 첫 칸에 몰리고 나머지 칸이 빈다(팀에스지 IR-01 피라미드) — 칸이 남으면 문장 경계에서 나눠 채운다.
+  //   가장 긴 줄부터 「…다. / …됨. / …함. / . ! ?」 뒤에서 자른다(나눌 곳이 없으면 그대로). 원고는 바꾸지 않는다(그림에만).
+  function vizSpread(lines, need){
+    var out = lines.slice(), guard = 0;
+    while(out.length < need && guard++ < 20){
+      var at = -1, len = 0;
+      out.forEach(function(l, i){ if(l.length > len && /[.!?]\s+\S/.test(l)){ len = l.length; at = i; } });
+      if(at < 0) break;
+      var parts = out[at].split(/(?<=[.!?])\s+(?=\S)/).filter(Boolean);
+      if(parts.length < 2) break;
+      var mid = Math.ceil(parts.length / 2);
+      out.splice(at, 1, parts.slice(0, mid).join(' '), parts.slice(mid).join(' '));
+    }
+    return out;
+  }
   function vizLines(body){
     return String(body || '').split('\n').map(function(l){ return l.trim().replace(/^[·•*\-]\s*/, ''); }).filter(function(l){ return l; });
   }
@@ -3046,6 +3061,7 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.fitVizText = fi
                  shadow: gap ? 'none' : '0 4px 10px rgba(31,38,55,.10), 0 1px 3px rgba(31,38,55,.07)', bar: gap ? '#C9A24A' : '#9AA4B5' };
       });
     } else {
+      if(lines.length && lines.length < sp.ex.length) lines = vizSpread(lines, sp.ex.length);
       sp.ex.forEach(function(e, i){ ds['s' + i] = lines[i] ? vizCut(lines[i], VIZ_CELL_MAX) : e; ds['f' + i] = lines[i] ? 'normal' : 'italic'; });
     }
     ds.h0 = '64px'; ds.h1 = '98px'; ds.h2 = '132px'; ds.h3 = '166px';
@@ -4277,31 +4293,51 @@ if(V2_QS) try { window.__pbV2 = V2NS; V2NS.bakeX3 = bakeX3; V2NS.fitVizText = fi
     stage.style.cssText = 'position:fixed;left:-20000px;top:0;width:960px;background:#fff;z-index:-1';
     document.body.appendChild(stage);
     var r = designTheme();
+    //  🔴 10-28 팀215 「Cannot read properties of undefined (reading 'length')」 — 로컬은 330장·부록·세부·사진 표지 모두 재현 안 됨.
+    //   → 한 장이 실패해도 덱 전체를 멈추지 않는다: 장 변환 실패 = 그 장만 그림으로 · 노트 실패 = 노트만 뺀다 · 색표 후처리 실패 = 후처리 없이 저장.
+    //     무엇이 어디서 실패했는지 모아 알린다(다음 진단 재료).
+    var fails = [], step = '라이브러리';
     loadAnyScript(PPT_LIBS).then(function(){
       if(!window.PptxGenJS || !window.JSZip) throw new Error('ppt libs');
       var pptx = new window.PptxGenJS(), chain = Promise.resolve();
       pptx.defineLayout({ name:'PB169', width:10, height:5.625 }); pptx.layout = 'PB169';
+      var nSl = function(){ return (pptx._slides || []).length; };
       list.forEach(function(it, i){
         chain = chain.then(function(){
+          step = (i + 1) + '장';
           var cl = els[i].cloneNode(true);
           cl.style.transform = 'none'; cl.style.position = 'relative'; cl.style.left = '0'; cl.style.top = '0';
           stage.innerHTML = ''; stage.appendChild(cl);
-          return V2NS.irPptSlide(pptx, cl, 'Malgun Gothic').then(function(sl){
-            sl.addNotes(pptNotes(it));
+          noDraft(cl);
+          var n0 = nSl(), p;
+          try{ p = V2NS.irPptSlide(pptx, cl, 'Malgun Gothic'); }catch(e){ p = Promise.reject(e); }
+          return p.then(function(sl){
+            try{ sl.addNotes(pptNotes(it)); }catch(e){ fails.push((i + 1) + '장 노트: ' + errText(e)); }
+          }, function(e){
+            fails.push((i + 1) + '장 도형 변환: ' + errText(e) + ' → 그림으로 넣음');
+            if(pptx._slides && pptx._slides.length > n0) pptx._slides.splice(n0);   // 반쯤 만든 장을 버린다
+            return loadScriptOnce(PDF_LIBS[0]).then(function(){
+              return window.html2canvas(cl, { scale:2, backgroundColor:'#ffffff', useCORS:true, logging:false, width:960, height:540 });
+            }).then(function(cv){ pptx.addSlide().addImage({ data: cv.toDataURL('image/jpeg', 0.92), x:0, y:0, w:10, h:5.625 }); });
           });
         });
       });
-      return chain.then(function(){ return pptx.write({ outputType: 'arraybuffer' }); })
-        .then(function(ab){ return V2NS.irPptPost(ab, V2NS.IRTheme.build(r.theme), 'IR-' + r.id, window.JSZip); })
+      return chain.then(function(){ step = '파일 쓰기'; return pptx.write({ outputType: 'arraybuffer' }); })
+        .then(function(ab){
+          step = '색표 후처리';
+          return Promise.resolve().then(function(){ return V2NS.irPptPost(ab, V2NS.IRTheme.build(r.theme), 'IR-' + r.id, window.JSZip); })
+            .catch(function(e){ fails.push('색표 후처리: ' + errText(e) + ' → 후처리 없이 저장'); return { ab: ab }; });
+        })
         .then(function(res){
+          if(fails.length) alert('PPT 를 만들었습니다. 다만 일부를 대신 처리했습니다 — 담당자에게 이 내용을 알려 주십시오.\n\n· ' + fails.slice(0, 6).join('\n· '));
           var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([res.ab], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' }));
           a.download = pdfFileName('IR피칭자료').replace(/\.pdf$/, '.pptx'); document.body.appendChild(a); a.click(); a.remove();
           setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
         });
     }).catch(function(err){
-      console.warn('PPT v2', err);
+      console.warn('PPT v2', step, err);
       alert(libFail(err) ? 'PPT 생성 라이브러리를 불러오지 못했습니다(네트워크 차단 가능).\n\nPDF 다운로드를 이용하십시오.'
-                         : 'PPT 를 만드는 중 오류가 났습니다 — ' + errText(err) + '\n\n이 문구를 담당자에게 알려 주십시오.');
+                         : 'PPT 를 만드는 중 오류가 났습니다(' + step + ') — ' + errText(err) + (fails.length ? '\n\n· ' + fails.slice(0, 4).join('\n· ') : '') + '\n\n이 문구를 담당자에게 알려 주십시오.');
     }).then(function(){
       stage.remove(); document.body.classList.remove('pb-pdfing');
       if(btn){ btn.disabled = false; btn.textContent = label; }
